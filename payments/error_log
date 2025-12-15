@@ -1,0 +1,69 @@
+[15-Sep-2025 11:26:37 Europe/Riga] PHP Warning:  require_once(config.php): Failed to open stream: No such file or directory in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/checkout.php on line 4
+[15-Sep-2025 11:26:37 Europe/Riga] PHP Fatal error:  Uncaught Error: Failed opening required 'config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/checkout.php:4
+Stack trace:
+#0 {main}
+  thrown in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/checkout.php on line 4
+[15-Sep-2025 11:52:26 Europe/Riga] PHP Parse error:  syntax error, unexpected token "{" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/checkout.php on line 7
+[15-Sep-2025 11:53:27 Europe/Riga] PHP Parse error:  syntax error, unexpected token "=>" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/config.php on line 8
+[15-Sep-2025 11:54:02 Europe/Riga] PHP Parse error:  syntax error, unexpected token "=>" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/config.php on line 8
+[15-Sep-2025 11:54:35 Europe/Riga] PHP Parse error:  syntax error, unexpected token "=>" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/config.php on line 8
+[15-Sep-2025 11:56:35 Europe/Riga] PHP Parse error:  syntax error, unexpected token "=>" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/config.php on line 8
+[15-Sep-2025 11:56:40 Europe/Riga] PHP Parse error:  syntax error, unexpected token "=>" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/config.php on line 8
+[15-Sep-2025 11:57:08 Europe/Riga] PHP Parse error:  syntax error, unexpected token "=>" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/config.php on line 8
+[15-Sep-2025 11:58:23 Europe/Riga] PHP Parse error:  syntax error, unexpected token "=>" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/config.php on line 8
+[17-Sep-2025 11:09:09 Europe/Riga] PHP Parse error:  syntax error, unexpected token "]" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/checkout.php on line 31
+[17-Sep-2025 11:29:50 Europe/Riga] PHP Parse error:  syntax error, unexpected token "(", expecting "{" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/success.php on line 11
+[17-Sep-2025 11:30:20 Europe/Riga] PHP Parse error:  syntax error, unexpected token "(", expecting "{" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/success.php on line 11
+[17-Sep-2025 11:30:44 Europe/Riga] PHP Parse error:  syntax error, unexpected token "(", expecting "{" in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/success.php on line 11
+[17-Sep-2025 11:49:30 Europe/Riga] PHP Parse error:  Unclosed '{' on line 4 in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/success.php on line 36
+[17-Sep-2025 11:50:08 Europe/Riga] PHP Parse error:  Unclosed '{' on line 4 in /home/grobina1/public_html/4pt/kliecis/IT-Support/payments/success.php on line 36
+[29-Sep-2025 22:55:59 Europe/Riga] PHP Fatal error:  Uncaught Error sending request to Stripe: (Status 400) (Request req_nwfSiDolMWGNYS) Invalid URL: Non-ASCII characters in URLs must be percent-encoded in order for the URL to be valid.
+Stripe\Exception\InvalidRequestException: Invalid URL: Non-ASCII characters in URLs must be percent-encoded in order for the URL to be valid. in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/Exception/ApiErrorException.php:38
+Stack trace:
+#0 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/Exception/InvalidRequestException.php(35): Stripe\Exception\ApiErrorException::factory()
+#1 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/ApiRequestor.php(232): Stripe\Exception\InvalidRequestException::factory()
+#2 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/ApiRequestor.php(193): Stripe\ApiRequestor::_specificV1APIError()
+#3 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/ApiRequestor.php(650): Stripe\ApiRequestor->handleErrorResponse()
+#4 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/ApiRequestor.php(137): Stripe\ApiRequestor->_interpretResponse()
+#5 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/ApiOperations/Request.php(111): Stripe\ApiRequestor->request()
+#6 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/Checkout/Session.php(145): Stripe\ApiResource::_staticRequest()
+#7 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php(13): Stripe\Checkout\Session::create()
+#8 {main}
+  thrown in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/stripe-php-master/lib/Exception/ApiErrorException.php on line 38
+[29-Sep-2025 23:26:33 Europe/Riga] PHP Parse error:  syntax error, unexpected double-quoted string "cancel_url", expecting "]" in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 18
+[07-Oct-2025 01:50:53 Europe/Riga] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 11
+[07-Oct-2025 01:53:11 Europe/Riga] PHP Warning:  Undefined variable $plan in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 5
+[07-Oct-2025 01:53:11 Europe/Riga] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 14
+[07-Oct-2025 01:55:00 Europe/Riga] PHP Warning:  Undefined variable $savienojums in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 5
+[07-Oct-2025 01:55:00 Europe/Riga] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, null given in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php:5
+Stack trace:
+#0 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php(5): mysqli_query()
+#1 {main}
+  thrown in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 5
+[07-Oct-2025 01:55:10 Europe/Riga] PHP Warning:  Undefined variable $savienojums in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 5
+[07-Oct-2025 01:55:10 Europe/Riga] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, null given in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php:5
+Stack trace:
+#0 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php(5): mysqli_query()
+#1 {main}
+  thrown in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 5
+[07-Oct-2025 01:55:13 Europe/Riga] PHP Warning:  Undefined variable $savienojums in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 5
+[07-Oct-2025 01:55:13 Europe/Riga] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, null given in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php:5
+Stack trace:
+#0 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php(5): mysqli_query()
+#1 {main}
+  thrown in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 5
+[07-Oct-2025 01:55:39 Europe/Riga] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 15
+[07-Oct-2025 01:55:39 Europe/Riga] PHP Warning:  Undefined variable $savienojums in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 19
+[07-Oct-2025 01:55:39 Europe/Riga] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, null given in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php:19
+Stack trace:
+#0 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php(19): mysqli_query()
+#1 {main}
+  thrown in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 19
+[07-Oct-2025 01:55:56 Europe/Riga] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 15
+[07-Oct-2025 01:55:56 Europe/Riga] PHP Warning:  Undefined variable $plan_encoded in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/checkout.php on line 24
+[07-Oct-2025 01:59:15 Europe/Riga] PHP Warning:  Undefined variable $allowed_plans in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/success.php on line 16
+[07-Oct-2025 01:59:15 Europe/Riga] PHP Fatal error:  Uncaught TypeError: in_array(): Argument #2 ($haystack) must be of type array, null given in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/success.php:16
+Stack trace:
+#0 /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/success.php(16): in_array()
+#1 {main}
+  thrown in /home/grobina1/public_html/4pt/kliecis/Net-Pakalpojumi/payments/success.php on line 16
