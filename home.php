@@ -15,7 +15,7 @@ if ($homeId <= 0) {
 }
 
 // Fetch property from database
-$stmt = $savienojums->prepare("SELECT * FROM est_homes WHERE id = ? AND status = 'active'");
+$stmt = $savienojums->prepare("SELECT * FROM est_homes WHERE id = ?");
 $stmt->bind_param('i', $homeId);
 $stmt->execute();
 $result = $stmt->get_result();

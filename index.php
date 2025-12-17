@@ -1,8 +1,21 @@
-<?php session_start(); ?>
 <?php 
+session_start();
+require_once 'con_db.php';
+
 $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plan'] ?? '';
 $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
+
+// Fetch 3 newest homes from database
+$newestHomes = [];
+$sql = "SELECT id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image 
+        FROM est_homes ORDER BY created_at DESC LIMIT 3";
+$result = $savienojums->query($sql);
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $newestHomes[] = $row;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="lv">
@@ -715,74 +728,46 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
     <section class="listings">
         <div class="container">
             <div class="section-header">
-                <span class="section-label">Populārākie piedāvājumi</span>
-                <h2 class="section-title-new">Izcili īpašumi tev</h2>
-                <p class="section-subtitle">Izpēti mūsu labākos piedāvājumus un atrodi savu nākamo mājvietu.</p>
+                <span class="section-label">Jaunākie piedāvājumi</span>
+                <h2 class="section-title-new">Jaunākie īpašumi</h2>
+                <p class="section-subtitle">Izpēti jaunākos piedāvājumus un atrodi savu nākamo mājvietu.</p>
             </div>
             
             <div class="listing-grid">
-                <div class="card">
-                    <div class="card-image">
-                        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Dzīvoklis">
-                        <span class="badge rent">Izīrē</span>
-                        <button class="favorite-btn"><i class="far fa-heart"></i></button>
-                    </div>
-                    <div class="card-details">
-                        <h3>Moderns dzīvoklis centrā</h3>
-                        <p class="location"><i class="fas fa-map-marker-alt"></i> Rīga, Brīvības iela</p>
-                        <div class="features">
-                            <span><i class="fas fa-bed"></i> 2 guļamist.</span>
-                            <span><i class="fas fa-ruler-combined"></i> 55 m²</span>
-                            <span><i class="fas fa-bath"></i> 1 vannas</span>
+                <?php if (!empty($newestHomes)): ?>
+                    <?php foreach ($newestHomes as $home): 
+                        $isRent = $home['type'] === 'rent';
+                        $priceDisplay = $isRent 
+                            ? number_format($home['price'], 0, ',', ' ') . ' € / mēn'
+                            : number_format($home['price'], 0, ',', ' ') . ' €';
+                        $badgeClass = $isRent ? 'rent' : 'sale';
+                        $badgeText = $isRent ? 'Izīrē' : 'Pārdod';
+                        $image = $home['main_image'] ?: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=500&q=60';
+                    ?>
+                    <div class="card">
+                        <div class="card-image">
+                            <img src="<?php echo htmlspecialchars($image); ?>" alt="<?php echo htmlspecialchars($home['title']); ?>">
+                            <span class="badge <?php echo $badgeClass; ?>"><?php echo $badgeText; ?></span>
+                            <button class="favorite-btn"><i class="far fa-heart"></i></button>
                         </div>
-                        <div class="price-row">
-                            <span class="price">450 € / mēn</span>
-                            <a href="#" class="btn-view">Skatīt <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-image">
-                        <img src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Māja">
-                        <span class="badge sale">Pārdod</span>
-                        <button class="favorite-btn"><i class="far fa-heart"></i></button>
-                    </div>
-                    <div class="card-details">
-                        <h3>Ģimenes māja Pierīgā</h3>
-                        <p class="location"><i class="fas fa-map-marker-alt"></i> Mārupe, Ziedu iela</p>
-                        <div class="features">
-                            <span><i class="fas fa-bed"></i> 4 guļamist.</span>
-                            <span><i class="fas fa-ruler-combined"></i> 180 m²</span>
-                            <span><i class="fas fa-bath"></i> 2 vannas</span>
-                        </div>
-                        <div class="price-row">
-                            <span class="price">210 000 €</span>
-                            <a href="#" class="btn-view">Skatīt <i class="fas fa-arrow-right"></i></a>
+                        <div class="card-details">
+                            <h3><?php echo htmlspecialchars($home['title']); ?></h3>
+                            <p class="location"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($home['city'] . ', ' . $home['location_text']); ?></p>
+                            <div class="features">
+                                <span><i class="fas fa-bed"></i> <?php echo (int)$home['bedrooms']; ?> guļamist.</span>
+                                <span><i class="fas fa-ruler-combined"></i> <?php echo (int)$home['area']; ?> m²</span>
+                                <span><i class="fas fa-bath"></i> <?php echo (int)$home['bathrooms']; ?> vannas</span>
+                            </div>
+                            <div class="price-row">
+                                <span class="price"><?php echo $priceDisplay; ?></span>
+                                <a href="home.php?id=<?php echo $home['id']; ?>" class="btn-view">Skatīt <i class="fas fa-arrow-right"></i></a>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-image">
-                        <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Loft">
-                        <span class="badge rent">Izīrē</span>
-                        <button class="favorite-btn"><i class="far fa-heart"></i></button>
-                    </div>
-                    <div class="card-details">
-                        <h3>Lofta tipa studija</h3>
-                        <p class="location"><i class="fas fa-map-marker-alt"></i> Liepāja, Jūras iela</p>
-                        <div class="features">
-                            <span><i class="fas fa-bed"></i> 1 guļamist.</span>
-                            <span><i class="fas fa-ruler-combined"></i> 40 m²</span>
-                            <span><i class="fas fa-bath"></i> 1 vannas</span>
-                        </div>
-                        <div class="price-row">
-                            <span class="price">300 € / mēn</span>
-                            <a href="#" class="btn-view">Skatīt <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p style="text-align: center; grid-column: 1/-1; color: #6b7a8f;">Nav pieejamu īpašumu.</p>
+                <?php endif; ?>
             </div>
         </div>
     </section>
