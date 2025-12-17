@@ -1,9 +1,12 @@
 <?php
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login/login.php');
     exit();
 }
+$isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
+$plan = $_SESSION['plan'] ?? '';
+$canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
 ?>
 <!DOCTYPE html>
 <html lang="lv">
@@ -20,17 +23,22 @@ if (!isset($_SESSION['user_id'])) {
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
             <li><a href="index.php">Sākums</a></li>
-            <li><a href="#">Meklēt īpašumu</a></li>
-            <li><a href="owner.php" class="active">Kļūsti par īpašnieku</a></li>
+            <li><a href="homes.php">Meklēt īpašumu</a></li>
+            <?php if ($isOwner): ?>
+                <li><a href="owner.php" class="active">Kļūsti par īpašnieku</a></li>
+            <?php endif; ?>
+            <?php if ($canCreate): ?>
+                <li><a href="newhome.php">Izveidot sludinājumu</a></li>
+            <?php endif; ?>
             <li><a href="about.php">Par mums</a></li>
         </ul>
         <div class="auth-buttons">
             <?php if (isset($_SESSION['user_id'])): ?>
                 <span style="margin-right: 15px; font-weight: bold; color: inherit;">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
-                <a href="logout.php" class="btn-register" style="background-color: #c0392b;">Iziet</a>
+                <a href="login/logout.php" class="btn-register" style="background-color: #c0392b;">Iziet</a>
             <?php else: ?>
-                <a href="login.php" class="btn-login">Ielogoties</a>
-                <a href="register.php" class="btn-register">Reģistrēties</a>
+                <a href="login/login.php" class="btn-login">Ielogoties</a>
+                <a href="login/register.php" class="btn-register">Reģistrēties</a>
             <?php endif; ?>
         </div>
         <div class="hamburger">
