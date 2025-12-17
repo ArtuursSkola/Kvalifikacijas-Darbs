@@ -6,10 +6,10 @@ $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plan'] ?? '';
 $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
 
-// Fetch 3 newest PUBLISHED homes from database (drafts need admin approval)
+// Fetch 3 newest ACTIVE homes from database (drafts need admin approval)
 $newestHomes = [];
 $sql = "SELECT id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image 
-        FROM est_homes WHERE status = 'published' ORDER BY created_at DESC LIMIT 3";
+        FROM est_homes WHERE status = 'active' ORDER BY created_at DESC LIMIT 3";
 $result = $savienojums->query($sql);
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -23,6 +23,7 @@ if ($result && $result->num_rows > 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeEstate - Tavs mājoklis</title>
+    <link rel="icon" type="image/png" href="Images/Logo.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
