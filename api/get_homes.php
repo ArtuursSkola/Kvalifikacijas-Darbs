@@ -12,6 +12,7 @@ $sql = "SELECT id, title, city, address, location_text, type, price, area, bedro
                floor_info, description, main_image, thumb1, thumb2, thumb3, 
                rent_price, utilities_price, total_price, status, property_category
         FROM est_homes 
+        WHERE status = 'active'
         ORDER BY created_at DESC";
 
 $result = $savienojums->query($sql);

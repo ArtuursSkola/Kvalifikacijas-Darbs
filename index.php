@@ -6,10 +6,10 @@ $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plan'] ?? '';
 $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
 
-// Fetch 3 newest homes from database
+// Fetch 3 newest PUBLISHED homes from database (drafts need admin approval)
 $newestHomes = [];
 $sql = "SELECT id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image 
-        FROM est_homes ORDER BY created_at DESC LIMIT 3";
+        FROM est_homes WHERE status = 'published' ORDER BY created_at DESC LIMIT 3";
 $result = $savienojums->query($sql);
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -726,7 +726,7 @@ if ($result && $result->num_rows > 0) {
     </header>
 
     <section class="listings">
-        <div class="container">
+        <div class="container"> 
             <div class="section-header">
                 <span class="section-label">Jaunākie piedāvājumi</span>
                 <h2 class="section-title-new">Jaunākie īpašumi</h2>

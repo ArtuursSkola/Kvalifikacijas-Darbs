@@ -28,6 +28,32 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     }
 }
 
+// Handle approve (change draft to published)
+if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
+    $approveId = (int)$_GET['approve'];
+    $stmt = $savienojums->prepare("UPDATE est_homes SET status = 'published' WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param('i', $approveId);
+        if ($stmt->execute()) {
+            $success = 'Sludinājums apstiprināts un tagad ir publicēts!';
+        }
+        $stmt->close();
+    }
+}
+
+// Handle reject (delete the listing since 'rejected' status doesn't exist in enum)
+if (isset($_GET['reject']) && is_numeric($_GET['reject'])) {
+    $rejectId = (int)$_GET['reject'];
+    $stmt = $savienojums->prepare("DELETE FROM est_homes WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param('i', $rejectId);
+        if ($stmt->execute()) {
+            $success = 'Sludinājums noraidīts un dzēsts.';
+        }
+        $stmt->close();
+    }
+}
+
 // Handle create
 if (isset($_POST['create_listing'])) {
     $title = trim($_POST['title'] ?? '');
@@ -131,8 +157,9 @@ $stmt->close();
 
 // Stats
 $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_homes")->fetch_row()[0];
-$activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='active'")->fetch_row()[0];
+$activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='published'")->fetch_row()[0];
 $draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='draft'")->fetch_row()[0];
+$pendingCount = $draftCount; // Drafts awaiting approval
 $rentCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE type='rent'")->fetch_row()[0];
 $buyCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE type='buy'")->fetch_row()[0];
 
@@ -272,6 +299,8 @@ function buildUrl($overrides = []) {
         .stat-card.orange i { color: #f39c12; }
         .stat-card.green i { color: #27ae60; }
         .stat-card.gray i { color: #6b7a8f; }
+        .stat-card.purple i { color: #9b59b6; }
+        .stat-card.red i { color: #e74c3c; }
         .stat-card .val { font-size: 1.4rem; font-weight: 700; color: #1d2733; }
         .stat-card .lbl { font-size: 0.8rem; color: #6b7a8f; }
         
@@ -366,7 +395,7 @@ function buildUrl($overrides = []) {
         .badge.red { background: rgba(231,76,60,0.12); color: #e74c3c; }
         
         /* Actions */
-        .actions { display: flex; gap: 6px; }
+        .actions { display: flex; gap: 6px; flex-wrap: wrap; }
         .btn-sm {
             padding: 6px 10px;
             border-radius: 6px;
@@ -375,10 +404,16 @@ function buildUrl($overrides = []) {
             text-decoration: none;
             display: inline-flex;
             align-items: center;
+            transition: all 0.2s;
         }
         .btn-sm.edit { background: rgba(52,152,219,0.12); color: #3498db; }
         .btn-sm.view { background: rgba(39,174,96,0.12); color: #27ae60; }
         .btn-sm.delete { background: rgba(231,76,60,0.12); color: #e74c3c; }
+        .btn-sm.approve { background: rgba(39,174,96,0.15); color: #27ae60; }
+        .btn-sm.reject { background: rgba(231,76,60,0.15); color: #e74c3c; }
+        .btn-sm:hover { transform: scale(1.1); }
+        .btn-sm.approve:hover { background: #27ae60; color: #fff; }
+        .btn-sm.reject:hover { background: #e74c3c; color: #fff; }
         
         /* Pagination */
         .pagination {
@@ -514,11 +549,11 @@ function buildUrl($overrides = []) {
                     <div class="lbl">Aktīvi</div>
                 </div>
             </div>
-            <div class="stat-card gray">
-                <i class="fas fa-file-alt"></i>
+            <div class="stat-card purple">
+                <i class="fas fa-clock"></i>
                 <div>
                     <div class="val"><?php echo $draftCount; ?></div>
-                    <div class="lbl">Melnraksti</div>
+                    <div class="lbl">Gaida apstiprinājumu</div>
                 </div>
             </div>
             <div class="stat-card blue">
@@ -549,10 +584,8 @@ function buildUrl($overrides = []) {
                     </select>
                     <select name="status">
                         <option value="">Visi statusi</option>
-                        <option value="active" <?php echo $filterStatus === 'active' ? 'selected' : ''; ?>>Aktīvs</option>
+                        <option value="published" <?php echo $filterStatus === 'published' ? 'selected' : ''; ?>>Publicēts</option>
                         <option value="draft" <?php echo $filterStatus === 'draft' ? 'selected' : ''; ?>>Melnraksts</option>
-                        <option value="inactive" <?php echo $filterStatus === 'inactive' ? 'selected' : ''; ?>>Neaktīvs</option>
-                        <option value="sold" <?php echo $filterStatus === 'sold' ? 'selected' : ''; ?>>Pārdots</option>
                     </select>
                     <button type="submit"><i class="fas fa-filter"></i></button>
                     <?php if ($search || $filterType || $filterStatus): ?>
@@ -593,19 +626,24 @@ function buildUrl($overrides = []) {
                                     <td><?php echo htmlspecialchars($h['owner_name'] ?? '—'); ?></td>
                                     <td>
                                         <?php
-                                        $statusClass = ['active' => 'green', 'draft' => 'gray', 'inactive' => 'red', 'sold' => 'blue'];
-                                        $statusLabel = ['active' => 'Aktīvs', 'draft' => 'Melnraksts', 'inactive' => 'Neaktīvs', 'sold' => 'Pārdots'];
+                                        $statusClass = ['published' => 'green', 'draft' => 'gray'];
+                                        $statusLabel = ['published' => 'Publicēts', 'draft' => 'Gaida apstiprinājumu'];
+                                        $st = $h['status'] ?: 'draft';
                                         ?>
-                                        <span class="badge <?php echo $statusClass[$h['status']] ?? 'gray'; ?>">
-                                            <?php echo $statusLabel[$h['status']] ?? $h['status']; ?>
+                                        <span class="badge <?php echo $statusClass[$st] ?? 'gray'; ?>">
+                                            <?php echo $statusLabel[$st] ?? $st; ?>
                                         </span>
                                     </td>
                                     <td><?php echo $h['created_at'] ? date('d.m.Y', strtotime($h['created_at'])) : '—'; ?></td>
                                     <td>
                                         <div class="actions">
-                                            <button class="btn-sm edit" onclick='openEditModal(<?php echo json_encode($h); ?>)'><i class="fas fa-edit"></i></button>
-                                            <a href="../home1.php?id=<?php echo $h['id']; ?>" class="btn-sm view" target="_blank"><i class="fas fa-eye"></i></a>
-                                            <a href="<?php echo buildUrl(['delete' => $h['id']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')"><i class="fas fa-trash"></i></a>
+                                            <?php if ($h['status'] === 'draft'): ?>
+                                                <a href="<?php echo buildUrl(['approve' => $h['id']]); ?>" class="btn-sm approve" onclick="return confirm('Apstiprināt šo sludinājumu?')" title="Apstiprināt"><i class="fas fa-check"></i></a>
+                                                <a href="<?php echo buildUrl(['reject' => $h['id']]); ?>" class="btn-sm reject" onclick="return confirm('Noraidīt un dzēst šo sludinājumu?')" title="Noraidīt"><i class="fas fa-times"></i></a>
+                                            <?php endif; ?>
+                                            <button class="btn-sm edit" onclick='openEditModal(<?php echo json_encode($h); ?>)' title="Rediģēt"><i class="fas fa-edit"></i></button>
+                                            <a href="../home.php?id=<?php echo $h['id']; ?>" class="btn-sm view" target="_blank" title="Skatīt"><i class="fas fa-eye"></i></a>
+                                            <a href="<?php echo buildUrl(['delete' => $h['id']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')" title="Dzēst"><i class="fas fa-trash"></i></a>
                                         </div>
                                     </td>
                                 </tr>
@@ -669,7 +707,7 @@ function buildUrl($overrides = []) {
                             <label>Statuss</label>
                             <select name="status">
                                 <option value="draft">Melnraksts</option>
-                                <option value="active">Aktīvs</option>
+                                <option value="published">Publicēts</option>
                             </select>
                         </div>
                     </div>
@@ -722,9 +760,7 @@ function buildUrl($overrides = []) {
                             <label>Statuss</label>
                             <select name="status" id="edit_status">
                                 <option value="draft">Melnraksts</option>
-                                <option value="active">Aktīvs</option>
-                                <option value="inactive">Neaktīvs</option>
-                                <option value="sold">Pārdots</option>
+                                <option value="published">Publicēts</option>
                             </select>
                         </div>
                     </div>
