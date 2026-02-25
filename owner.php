@@ -683,7 +683,7 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
     </style>
 </head>
 <body class="owner-page">
-    <nav class="navbar scrolled">
+    <nav class="navbar">
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
             <li><a href="index.php">Sākums</a></li>
@@ -698,7 +698,7 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
         </ul>
         <div class="auth-buttons">
             <?php if (isset($_SESSION['user_id'])): ?>
-                <span style="margin-right: 15px; font-weight: bold; color: inherit;">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
+                <span style="margin-right: 15px; font-weight: bold; color: inherit;">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?><?php echo $plan ? ' (' . htmlspecialchars($plan) . ')' : ''; ?>!</span>
                 <a href="login/logout.php" class="btn-register" style="background-color: #c0392b;">Iziet</a>
             <?php else: ?>
                 <a href="login/login.php" class="btn-login">Ielogoties</a>

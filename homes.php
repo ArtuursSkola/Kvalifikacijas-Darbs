@@ -15,70 +15,20 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        :root {
-            --primary: #1d2733;
-            --primary-light: #2c3e50;
-            --accent: #30b607;
-            --accent-light: #4cd964;
-            --accent-dark: #259106;
-            --white: #ffffff;
-            --light-bg: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-400: #94a3b8;
-            --gray-600: #475569;
-            --gray-800: #1e293b;
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
-            --shadow-md: 0 8px 30px rgba(0,0,0,0.08);
-            --shadow-lg: 0 20px 50px rgba(0,0,0,0.12);
-            --radius-sm: 8px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
-        }
-
         body.homes-page {
             background: var(--light-bg);
             min-height: 100vh;
         }
 
-        /* Navbar Override */
-        .navbar.scrolled {
-            background: rgba(255,255,255,0.98);
-            backdrop-filter: blur(20px);
-        }
-
-        /* Hero Section */
+        /* Hero Section offsets */
         .homes-hero {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, #1a5a2e 100%);
-            padding: 140px 24px 100px;
-            position: relative;
-            overflow: hidden;
+            margin-top: -80px; /* Offset for fixed navbar */
         }
-
-        .homes-hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 800px;
-            height: 800px;
-            background: radial-gradient(circle, rgba(48,182,7,0.15) 0%, transparent 60%);
-            animation: pulse 8s ease-in-out infinite;
-        }
-
-        .homes-hero::after {
-            content: '';
-            position: absolute;
-            bottom: -30%;
-            left: -10%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 50%);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.8; }
+        
+        @media (max-width: 768px) {
+            .homes-hero {
+                margin-top: -70px;
+            }
         }
 
         .homes-hero__inner {
@@ -835,7 +785,7 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
     </style>
 </head>
 <body class="homes-page">
-    <nav class="navbar scrolled">
+    <nav class="navbar">
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
             <li><a href="index.php">Sākums</a></li>
@@ -850,10 +800,10 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
         </ul>
         <div class="auth-buttons">
             <?php if (isset($_SESSION['user_id'])): ?>
-                <span style="margin-right: 15px; font-weight: 600; color: var(--primary);">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
+                <span style="margin-right: 15px; font-weight: 600; color: inherit;">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
                 <a href="login/logout.php" class="btn-register" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Iziet</a>
             <?php else: ?>
-                <a href="login/login.php" class="btn-login">Ielogoties</a>
+                <a href="login/login.php" class="btn-login" style="color: inherit;">Ielogoties</a>
                 <a href="login/register.php" class="btn-register">Reģistrēties</a>
             <?php endif; ?>
         </div>

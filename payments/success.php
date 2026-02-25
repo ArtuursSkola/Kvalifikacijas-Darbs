@@ -1,6 +1,5 @@
 <?php
 session_start();
-require_once "../stripe-php-master/init.php";
 require_once "../con_db.php";
 require_once "config.php";
 

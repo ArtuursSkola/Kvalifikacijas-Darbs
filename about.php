@@ -15,134 +15,10 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
     
     <style>
-        :root {
-            --primary: #1d2733;
-            --primary-light: #2c3e50;
-            --accent: #30b607;
-            --accent-light: #4cd964;
-            --accent-dark: #259106;
-            --white: #ffffff;
-            --light-bg: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-400: #94a3b8;
-            --gray-600: #475569;
-            --gray-800: #1e293b;
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
-            --shadow-md: 0 8px 30px rgba(0,0,0,0.08);
-            --shadow-lg: 0 20px 50px rgba(0,0,0,0.12);
-            --radius-sm: 8px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--light-bg);
-            color: var(--gray-800);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        /* Navbar */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 48px;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
-        }
-
-        .navbar.scrolled {
-            padding: 12px 48px;
-            box-shadow: var(--shadow-md);
-        }
-
-        .logo {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
-        .logo span { color: var(--accent); }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 8px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--gray-600);
-            font-weight: 500;
-            padding: 10px 18px;
-            border-radius: var(--radius-sm);
-            transition: all 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: var(--accent);
-            background: rgba(48,182,7,0.08);
-        }
-
-        .nav-links a.active {
-            color: var(--accent);
-            background: rgba(48,182,7,0.1);
-        }
-
-        .auth-buttons {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .btn-login {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 500;
-            padding: 10px 20px;
-        }
-
-        .btn-register {
-            background: var(--accent);
-            color: var(--white);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 10px 24px;
-            border-radius: var(--radius-sm);
-            transition: all 0.3s;
-        }
-
-        .btn-register:hover {
-            background: var(--accent-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(48,182,7,0.35);
-        }
-
-        .hamburger {
-            display: none;
-            font-size: 1.5rem;
-            color: var(--primary);
-            cursor: pointer;
-        }
-
-        /* Hero Section */
+        /* About page specific offsets */
         .hero {
             position: relative;
             min-height: 100vh;
@@ -153,6 +29,7 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
             padding: 120px 24px 80px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, #1a5a2e 100%);
             overflow: hidden;
+            margin-top: -80px; /* Offset for fixed navbar */
         }
 
         .hero::before {
@@ -826,19 +703,8 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
         }
 
         @media (max-width: 768px) {
-            .navbar {
-                padding: 14px 20px;
-            }
-
-            .nav-links, .auth-buttons {
-                display: none;
-            }
-
-            .hamburger {
-                display: block;
-            }
-
             .hero {
+                margin-top: -70px;
                 min-height: auto;
                 padding: 140px 20px 80px;
             }
@@ -911,10 +777,10 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
         </ul>
         <div class="auth-buttons">
             <?php if (isset($_SESSION['user_id'])): ?>
-                <span style="font-weight: 600; color: var(--primary);">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
+                <span style="font-weight: 600; color: inherit;">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
                 <a href="login/logout.php" class="btn-register" style="background: #e74c3c;">Iziet</a>
             <?php else: ?>
-                <a href="login/login.php" class="btn-login">Ielogoties</a>
+                <a href="login/login.php" class="btn-login" style="color: inherit;">Ielogoties</a>
                 <a href="login/register.php" class="btn-register">Reģistrēties</a>
             <?php endif; ?>
         </div>
