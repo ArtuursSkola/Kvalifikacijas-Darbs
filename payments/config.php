@@ -57,11 +57,12 @@ namespace {
     // 3) Inicializē Stripe
     \Stripe\Stripe::setApiKey($stripeSecretKey);
 
-    // 4) Bāzes URL maksājumiem (pielāgo serverim)
-    const PAYMENTS_BASE_URL = 'https://kristovskis.lv/4pt/kliecis/HomeEst/payments/';
-
+    // 4) Bāzes URL maksājumiem (pielāgo serverim dinamiskāk)
     function payments_base_url(): string {
-        return PAYMENTS_BASE_URL;
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'];
+        $path = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+        return $protocol . '://' . $host . $path . '/';
     }
 }
 ?>

@@ -50,7 +50,7 @@ function isActive($pageName) {
         <div class="auth-buttons">
             <?php if (isset($_SESSION['user_id'])): ?>
                 <span style="margin-right: 15px; font-weight: 600; color: inherit;">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
-                <a href="login/logout.php" class="btn-register" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Iziet</a>
+                <a href="login/logout.php?i=1" class="btn-register" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Iziet</a>
             <?php else: ?>
                 <a href="login/login.php" class="btn-login" style="color: inherit;">Ielogoties</a>
                 <a href="login/register.php" class="btn-register">Reģistrēties</a>

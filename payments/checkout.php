@@ -14,7 +14,7 @@ try {
     $checkout_session = \Stripe\Checkout\Session::create([
         'mode' => 'payment',
         'success_url' => payments_base_url() . 'success.php?session_id={CHECKOUT_SESSION_ID}',
-        'cancel_url' => 'https://kristovskis.lv/4pt/kliecis/HomeEst/owner.php',
+        'cancel_url' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . '/owner.php',
         'locale' => 'lv',
         'line_items' => [[
             'quantity' => 1,
