@@ -204,8 +204,14 @@
 
 /* Enhanced Listings Section */
 .listings {
-    padding: 100px 20px;
+    padding: 56px 20px;
     background: #f8fafc;
+}
+
+.listings .container,
+.features-section .container {
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .listing-grid {
@@ -369,7 +375,7 @@
 
 /* Enhanced Features Section */
 .features-section {
-    padding: 100px 20px;
+    padding: 56px 20px;
     background: linear-gradient(180deg, #fff, #f8fafc);
 }
 
@@ -432,7 +438,7 @@
 /* CTA Section */
 .cta-section {
     background: linear-gradient(135deg, #30b607, #259106);
-    padding: 80px 20px;
+    padding: 56px 20px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -485,6 +491,18 @@
 .btn-cta:hover {
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+}
+
+@media (max-width: 768px) {
+    .listings,
+    .features-section,
+    .cta-section {
+        padding: 40px 16px;
+    }
+
+    .section-header {
+        margin-bottom: 32px;
+    }
 }
 
 /* Enhanced Footer */
