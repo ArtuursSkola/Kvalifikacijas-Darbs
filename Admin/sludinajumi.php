@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/admin.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -8,7 +9,7 @@ if (!file_exists($configPath)) {
 require $configPath;
 
 if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin','moderator'], true)) {
-    header('Location: login.php');
+    header('Location: ' . admin_route('login'));
     exit;
 }
 
@@ -507,9 +508,9 @@ function buildUrl($overrides = []) {
     <aside class="sidebar">
         <div class="sidebar-logo">Home<span>Estate</span></div>
         <ul class="sidebar-menu">
-            <li><a href="index.php"><i class="fas fa-home"></i> Pārskats</a></li>
-            <li><a href="lietotaji.php"><i class="fas fa-users"></i> Lietotāji</a></li>
-            <li><a href="sludinajumi.php" class="active"><i class="fas fa-building"></i> Sludinājumi</a></li>
+            <li><a href="<?php echo admin_route('dashboard'); ?>"><i class="fas fa-home"></i> Pārskats</a></li>
+            <li><a href="<?php echo admin_route('users'); ?>"><i class="fas fa-users"></i> Lietotāji</a></li>
+            <li><a href="<?php echo admin_route('listings'); ?>" class="active"><i class="fas fa-building"></i> Sludinājumi</a></li>
             <li><a href="#"><i class="fas fa-shopping-cart"></i> Pirkumi</a></li>
             <li><a href="#"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>
@@ -602,7 +603,7 @@ function buildUrl($overrides = []) {
                     </select>
                     <button type="submit"><i class="fas fa-filter"></i></button>
                     <?php if ($search || $filterType || $filterStatus): ?>
-                        <a href="sludinajumi.php" class="clear">Notīrīt</a>
+                        <a href="<?php echo admin_route('listings'); ?>" class="clear">Notīrīt</a>
                     <?php endif; ?>
                 </form>
             </div>
@@ -655,7 +656,7 @@ function buildUrl($overrides = []) {
                                                 <a href="<?php echo buildUrl(['reject' => $h['id']]); ?>" class="btn-sm reject" onclick="return confirm('Noraidīt šo sludinājumu?')" title="Noraidīt"><i class="fas fa-times"></i></a>
                                             <?php endif; ?>
                                             <button class="btn-sm edit" onclick='openEditModal(<?php echo json_encode($h); ?>)' title="Rediģēt"><i class="fas fa-edit"></i></button>
-                                            <a href="../home.php?id=<?php echo $h['id']; ?>" class="btn-sm view" target="_blank" title="Skatīt"><i class="fas fa-eye"></i></a>
+                                            <a href="<?php echo main_route('property.show', ['id' => $h['id']]); ?>" class="btn-sm view" target="_blank" title="Skatīt"><i class="fas fa-eye"></i></a>
                                             <a href="<?php echo buildUrl(['delete' => $h['id']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')" title="Dzēst"><i class="fas fa-trash"></i></a>
                                         </div>
                                     </td>

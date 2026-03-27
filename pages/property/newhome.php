@@ -1,14 +1,15 @@
 <?php
 session_start();
+require_once __DIR__ . '/../../routes/main.php';
 
 // Only logged-in owners with paid plan can create listings
 $plan = $_SESSION['plan'] ?? '';
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'ipasnieks' || !in_array($plan, ['Silver', 'Gold'])) {
-    header('Location: owner.php');
+    header('Location: ' . main_route('owner'));
     exit();
 }
 
-$configPath = __DIR__ . '/con_db.php';
+$configPath = dirname(__DIR__, 2) . '/con_db.php';
 if (!file_exists($configPath)) {
     die('Nav atrasts con_db.php');
 }
@@ -72,7 +73,7 @@ function ensureColumns(mysqli $conn, string $table, array &$errors): void {
 }
 
 // Upload helper for image inputs (file preferred, URL as fallback)
-$uploadDir = __DIR__ . '/uploads';
+$uploadDir = dirname(__DIR__, 2) . '/uploads';
 if (!is_dir($uploadDir)) {
     @mkdir($uploadDir, 0775, true);
 }
@@ -254,33 +255,33 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Izveidot sludinājumu - HomeEstate</title>
-    <link rel="icon" type="image/png" href="Images/Logo.png">
+    <link rel="icon" type="image/png" href="<?php echo asset_path('Images/Logo.png'); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="css/newhome.css">
+    <link rel="stylesheet" href="<?php echo asset_path('style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo asset_path('css/newhome.css'); ?>">
 </head>
 <body class="owner-page">
     <nav class="navbar scrolled">
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
-            <li><a href="index.php">Sākums</a></li>
-            <li><a href="homes.php">Meklēt īpašumu</a></li>
+            <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
+            <li><a href="<?php echo main_route('property.list'); ?>">Meklēt īpašumu</a></li>
             <?php if ($isOwner): ?>
-                <li><a href="owner.php">Kļūsti par īpašnieku</a></li>
+                <li><a href="<?php echo main_route('owner'); ?>">Kļūsti par īpašnieku</a></li>
             <?php endif; ?>
             <?php if ($canCreate): ?>
-                <li><a href="newhome.php" class="active">Izveidot sludinājumu</a></li>
+                <li><a href="<?php echo main_route('property.create'); ?>" class="active">Izveidot sludinājumu</a></li>
             <?php endif; ?>
-            <li><a href="about.php">Par mums</a></li>
+            <li><a href="<?php echo main_route('about'); ?>">Par mums</a></li>
         </ul>
         <div class="auth-buttons">
             <?php if (isset($_SESSION['user_id'])): ?>
                 <span style="margin-right: 15px; font-weight: bold; color: inherit;">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
-                <a href="login/logout.php" class="btn-register" style="background-color: #c0392b;">Iziet</a>
+                <a href="<?php echo main_route('logout'); ?>" class="btn-register" style="background-color: #c0392b;">Iziet</a>
             <?php else: ?>
-                <a href="login/login.php" class="btn-login">Ielogoties</a>
-                <a href="login/register.php" class="btn-register">Reģistrēties</a>
+                <a href="<?php echo main_route('login'); ?>" class="btn-login">Ielogoties</a>
+                <a href="<?php echo main_route('register'); ?>" class="btn-register">Reģistrēties</a>
             <?php endif; ?>
         </div>
         <div class="hamburger">
@@ -301,7 +302,7 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
 
         <div class="step-status" id="step-status">1/5: Pamatinformācija</div>
 
-        <form method="POST" action="newhome.php" enctype="multipart/form-data" id="newhome-form">
+        <form method="POST" action="<?php echo main_route('property.create'); ?>" enctype="multipart/form-data" id="newhome-form">
             <div class="step active" data-step="1">
                 <div class="form-grid">
                     <div>

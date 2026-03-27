@@ -1,6 +1,7 @@
 <?php
 session_start();
-require_once 'con_db.php';
+require_once __DIR__ . '/../../routes/main.php';
+require_once dirname(__DIR__, 2) . '/con_db.php';
 
 $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plan'] ?? '';
@@ -10,7 +11,7 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
 $homeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($homeId <= 0) {
-    header('Location: homes.php');
+    header('Location: ' . main_route('property.list'));
     exit;
 }
 
@@ -21,7 +22,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    header('Location: homes.php');
+    header('Location: ' . main_route('property.list'));
     exit;
 }
 
@@ -55,33 +56,33 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($home['title']); ?> - HomeEstate</title>
-    <link rel="icon" type="image/png" href="Images/Logo.png">
+    <link rel="icon" type="image/png" href="<?php echo asset_path('Images/Logo.png'); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="<?php echo asset_path('style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo asset_path('css/home.css'); ?>">
 </head>
 <body class="property-detail-page">
     <nav class="navbar scrolled">
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
-            <li><a href="index.php">Sākums</a></li>
-            <li><a href="homes.php" class="active">Meklēt īpašumu</a></li>
+            <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
+            <li><a href="<?php echo main_route('property.list'); ?>" class="active">Meklēt īpašumu</a></li>
             <?php if ($isOwner): ?>
-                <li><a href="owner.php">Kļūsti par īpašnieku</a></li>
+                <li><a href="<?php echo main_route('owner'); ?>">Kļūsti par īpašnieku</a></li>
             <?php endif; ?>
             <?php if ($canCreate): ?>
-                <li><a href="newhome.php">Izveidot sludinājumu</a></li>
+                <li><a href="<?php echo main_route('property.create'); ?>">Izveidot sludinājumu</a></li>
             <?php endif; ?>
-            <li><a href="about.php">Par mums</a></li>
+            <li><a href="<?php echo main_route('about'); ?>">Par mums</a></li>
         </ul>
         <div class="auth-buttons">
             <?php if (isset($_SESSION['user_id'])): ?>
                 <span style="margin-right: 15px; font-weight: 600; color: var(--primary);">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
-                <a href="login/logout.php" class="btn-register" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Iziet</a>
+                <a href="<?php echo main_route('logout'); ?>" class="btn-register" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Iziet</a>
             <?php else: ?>
-                <a href="login/login.php" class="btn-login">Ielogoties</a>
-                <a href="login/register.php" class="btn-register">Reģistrēties</a>
+                <a href="<?php echo main_route('login'); ?>" class="btn-login">Ielogoties</a>
+                <a href="<?php echo main_route('register'); ?>" class="btn-register">Reģistrēties</a>
             <?php endif; ?>
         </div>
         <div class="hamburger">
@@ -90,7 +91,7 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
     </nav>
 
     <div class="back-nav">
-        <a href="homes.php" class="btn-back">
+        <a href="<?php echo main_route('property.list'); ?>" class="btn-back">
             <i class="fas fa-arrow-left"></i>
             Atpakaļ uz meklēšanu
         </a>
@@ -238,9 +239,9 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
                 <div class="footer-col">
                     <h4>Navigācija</h4>
                     <ul>
-                        <li><a href="index.php">Sākums</a></li>
-                        <li><a href="homes.php">Īpašumi</a></li>
-                        <li><a href="about.php">Par mums</a></li>
+                        <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
+                        <li><a href="<?php echo main_route('property.list'); ?>">Īpašumi</a></li>
+                        <li><a href="<?php echo main_route('about'); ?>">Par mums</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
@@ -284,6 +285,6 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
             thumb.classList.add('active');
         }
     </script>
-    <script src="script.js"></script>
+    <script src="<?php echo asset_path('script.js'); ?>"></script>
 </body>
 </html>

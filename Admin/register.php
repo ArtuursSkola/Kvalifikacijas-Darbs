@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/admin.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -112,7 +113,7 @@ if (isset($_POST['register_btn'])) {
 			<?php if ($msg): ?>
 				<div class="msg <?php echo strpos($msg, 'izveidots') !== false ? 'ok' : 'err'; ?>"><?php echo htmlspecialchars($msg); ?></div>
 			<?php endif; ?>
-			<form method="POST" action="register.php">
+			<form method="POST" action="<?php echo admin_route('register'); ?>">
 				<div class="form-group">
 					<label>Lietotājvārds</label>
 					<input type="text" name="username" required>
@@ -138,8 +139,8 @@ if (isset($_POST['register_btn'])) {
 				</div>
 				<button type="submit" name="register_btn" class="btn-submit">Izveidot kontu</button>
 			</form>
-			<div class="switch">Jau ir konts? <a href="login.php">Ielogoties</a></div>
-			<div class="switch"><a href="../login/login.php">Atpakaļ uz lietotāju login</a></div>
+			<div class="switch">Jau ir konts? <a href="<?php echo admin_route('login'); ?>">Ielogoties</a></div>
+			<div class="switch"><a href="<?php echo main_route('login'); ?>">Atpakaļ uz lietotāju login</a></div>
 		</div>
 	</div>
 </body>

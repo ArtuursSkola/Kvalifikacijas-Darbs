@@ -1,11 +1,12 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/main.php';
 require_once "../con_db.php";
 require_once "config.php";
 
 // Must be logged in
 if (!isset($_SESSION['username'])) {
-    header("Location: ../login/login.php");
+    header("Location: " . main_route('login'));
     exit;
 }
 
@@ -16,7 +17,7 @@ $allowed_plans = ['Silver', 'Gold'];
 $session_id = $_GET['session_id'] ?? '';
 if (!$session_id) {
     $_SESSION["pazinojums_modal"] = "Nav norādīts Stripe sesijas ID!";
-    header("Location: ../index.php");
+    header("Location: " . main_route('home'));
     exit;
 }
 
@@ -31,13 +32,13 @@ try {
 
     if ($plan_name === '') {
         $_SESSION["pazinojums_modal"] = "Nevar iegūt plāna nosaukumu no Stripe metadata!";
-        header("Location: ../index.php");
+        header("Location: " . main_route('home'));
         exit;
     }
 
     if (!in_array($plan_name, $allowed_plans)) {
         $_SESSION["pazinojums_modal"] = "Nepareizs plāna nosaukums!";
-        header("Location: ../index.php");
+        header("Location: " . main_route('home'));
         exit;
     }
 
@@ -52,7 +53,7 @@ try {
 
         if (!$user) {
             $_SESSION["pazinojums_modal"] = "Neizdevās atrast lietotāju datubāzē.";
-            header("Location: ../index.php");
+            header("Location: " . main_route('home'));
             exit;
         }
 
@@ -89,6 +90,6 @@ try {
     $_SESSION["pazinojums_modal"] = "Nav iespējams iegūt maksājuma informāciju: " . $e->getMessage();
 }
 
-header("Location: ../index.php");
+header("Location: " . main_route('home'));
 exit;
 ?>

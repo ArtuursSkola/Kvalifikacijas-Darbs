@@ -2,6 +2,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+require_once __DIR__ . '/routes/main.php';
 
 $pageTitle = 'HomeEstate - Tavs mājoklis';
 $extraStyles = ['index'];
@@ -28,7 +29,7 @@ if ($result && $result->num_rows > 0) {
             <h1>Atrodi savu <span class="highlight">sapņu mājokli</span> viegli un ātri</h1>
             <p>Ērts un drošs veids, kā īrēt vai iegādāties nekustamo īpašumu. Tūkstošiem īpašumu gaida tevi!</p>
             
-            <form class="search-bar" action="homes.php" method="GET">
+            <form class="search-bar" action="<?php echo main_route('property.list'); ?>" method="GET">
                 <div class="input-group">
                     <i class="fas fa-map-marker-alt"></i>
                     <input type="text" name="city" placeholder="Pilsēta vai rajons">
@@ -108,7 +109,7 @@ if ($result && $result->num_rows > 0) {
                             </div>
                             <div class="price-row">
                                 <span class="price"><?php echo $priceDisplay; ?></span>
-                                <a href="home.php?id=<?php echo $home['id']; ?>" class="btn-view">Skatīt <i class="fas fa-arrow-right"></i></a>
+                                <a href="<?php echo main_route('property.show', ['id' => $home['id']]); ?>" class="btn-view">Skatīt <i class="fas fa-arrow-right"></i></a>
                             </div>
                         </div>
                     </div>
@@ -143,7 +144,7 @@ if ($result && $result->num_rows > 0) {
     <section class="cta-section">
         <h2>Gatavs sākt savu meklēšanu?</h2>
         <p>Pievienojies tūkstošiem apmierinātu klientu un atrodi savu ideālo mājokli jau šodien.</p>
-        <a href="homes.php" class="btn-cta">
+        <a href="<?php echo main_route('property.list'); ?>" class="btn-cta">
             <i class="fas fa-search"></i>
             Sākt meklēšanu
         </a>

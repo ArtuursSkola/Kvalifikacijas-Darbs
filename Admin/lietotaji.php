@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/admin.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -8,7 +9,7 @@ if (!file_exists($configPath)) {
 require $configPath;
 
 if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin','moderator'], true)) {
-    header('Location: login.php');
+    header('Location: ' . admin_route('login'));
     exit;
 }
 
@@ -474,9 +475,9 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
     <aside class="sidebar">
         <div class="sidebar-logo">Home<span>Estate</span></div>
         <ul class="sidebar-menu">
-            <li><a href="index.php"><i class="fas fa-home"></i> Pārskats</a></li>
-            <li><a href="lietotaji.php" class="active"><i class="fas fa-users"></i> Lietotāji</a></li>
-            <li><a href="sludinajumi.php"><i class="fas fa-building"></i> Sludinājumi</a></li>
+            <li><a href="<?php echo admin_route('dashboard'); ?>"><i class="fas fa-home"></i> Pārskats</a></li>
+            <li><a href="<?php echo admin_route('users'); ?>" class="active"><i class="fas fa-users"></i> Lietotāji</a></li>
+            <li><a href="<?php echo admin_route('listings'); ?>"><i class="fas fa-building"></i> Sludinājumi</a></li>
             <li><a href="#"><i class="fas fa-shopping-cart"></i> Pirkumi</a></li>
             <li><a href="#"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>

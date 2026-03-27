@@ -1,10 +1,11 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/main.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../con_db.php';
 
 if (!isset($_SESSION['username']) || !isset($_GET['offer_id'])) {
-    header("Location: ../login/login.php");
+    header("Location: " . main_route('login'));
     exit;
 }
 
@@ -20,7 +21,7 @@ $stmt->close();
 
 if (!$offer) {
     $_SESSION["pazinojums"] = "Nepareizs pakalpojums.";
-    header("Location: ../index.php#pakalpojumi");
+    header("Location: " . main_route('home') . '#pakalpojumi');
     exit;
 }
 
@@ -37,7 +38,7 @@ $session = \Stripe\Checkout\Session::create([
     ]],
     "mode" => "payment",
     "success_url" => payments_base_url() . "success_offer.php?offer_id={$offer_id}&session_id={CHECKOUT_SESSION_ID}",
-    "cancel_url" => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . '/owner.php',
+    "cancel_url" => main_route_absolute('owner'),
     "locale" => "lv"
 ]);
 

@@ -1,5 +1,6 @@
 <?php
 // includes/footer.php
+require_once __DIR__ . '/../routes/main.php';
 ?>
     <footer>
         <div class="footer-content">
@@ -16,10 +17,10 @@
             <div class="footer-col">
                 <h4>Ātrās saites</h4>
                 <ul>
-                    <li><a href="index.php">Sākums</a></li>
-                    <li><a href="homes.php">Meklēt īpašumu</a></li>
-                    <li><a href="about.php">Par mums</a></li>
-                    <li><a href="owner.php">Īpašniekiem</a></li>
+                    <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
+                    <li><a href="<?php echo main_route('property.list'); ?>">Meklēt īpašumu</a></li>
+                    <li><a href="<?php echo main_route('about'); ?>">Par mums</a></li>
+                    <li><a href="<?php echo main_route('owner'); ?>">Īpašniekiem</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -46,6 +47,6 @@
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script src="script.js"></script>
+    <script src="<?php echo asset_path('script.js'); ?>"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/admin.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -8,7 +9,7 @@ if (!file_exists($configPath)) {
 require $configPath;
 
 if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin','moderator'], true)) {
-    header('Location: login.php');
+    header('Location: ' . admin_route('login'));
     exit;
 }
 
@@ -372,9 +373,9 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
     <aside class="sidebar">
         <div class="sidebar-logo">Home<span>Estate</span></div>
         <ul class="sidebar-menu">
-            <li><a href="index.php" class="active"><i class="fas fa-home"></i> Pārskats</a></li>
-            <li><a href="lietotaji.php"><i class="fas fa-users"></i> Lietotāji</a></li>
-            <li><a href="sludinajumi.php"><i class="fas fa-building"></i> Sludinājumi</a></li>
+            <li><a href="<?php echo admin_route('dashboard'); ?>" class="active"><i class="fas fa-home"></i> Pārskats</a></li>
+            <li><a href="<?php echo admin_route('users'); ?>"><i class="fas fa-users"></i> Lietotāji</a></li>
+            <li><a href="<?php echo admin_route('listings'); ?>"><i class="fas fa-building"></i> Sludinājumi</a></li>
             <li><a href="#"><i class="fas fa-shopping-cart"></i> Pirkumi</a></li>
             <li><a href="#"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>
@@ -398,8 +399,8 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
                 </div>
             </div>
             <div class="header-actions">
-                <a href="../index.php" class="btn-icon" title="Publiskā lapa"><i class="fas fa-globe"></i></a>
-                <a href="../login/logout.php" class="btn-icon" title="Iziet"><i class="fas fa-sign-out-alt"></i></a>
+                <a href="<?php echo main_route('home'); ?>" class="btn-icon" title="Publiskā lapa"><i class="fas fa-globe"></i></a>
+                <a href="<?php echo main_route('logout'); ?>" class="btn-icon" title="Iziet"><i class="fas fa-sign-out-alt"></i></a>
             </div>
         </div>
 
@@ -446,7 +447,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
             <div class="panel">
                 <div class="panel-header">
                     <h3><i class="fas fa-users"></i> Jaunākie lietotāji</h3>
-                    <a href="lietotaji.php" class="panel-link">Skatīt visus →</a>
+                    <a href="<?php echo admin_route('users'); ?>" class="panel-link">Skatīt visus →</a>
                 </div>
                 <div class="table-container">
                     <table>
@@ -485,7 +486,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
             <div class="panel">
                 <div class="panel-header">
                     <h3><i class="fas fa-building"></i> Jaunākie sludinājumi</h3>
-                    <a href="sludinajumi.php" class="panel-link">Skatīt visus →</a>
+                    <a href="<?php echo admin_route('listings'); ?>" class="panel-link">Skatīt visus →</a>
                 </div>
                 <div class="table-container">
                     <table>
@@ -525,19 +526,19 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
                 <h3><i class="fas fa-bolt"></i> Ātrās darbības</h3>
             </div>
             <div class="quick-actions">
-                <a href="lietotaji.php" class="quick-action">
+                <a href="<?php echo admin_route('users'); ?>" class="quick-action">
                     <i class="fas fa-users"></i>
                     <span>Pārvaldīt lietotājus</span>
                 </a>
-                <a href="sludinajumi.php" class="quick-action">
+                <a href="<?php echo admin_route('listings'); ?>" class="quick-action">
                     <i class="fas fa-building"></i>
                     <span>Pārvaldīt sludinājumus</span>
                 </a>
-                <a href="register.php" class="quick-action">
+                <a href="<?php echo admin_route('register'); ?>" class="quick-action">
                     <i class="fas fa-user-plus"></i>
                     <span>Pievienot admin</span>
                 </a>
-                <a href="../index.php" class="quick-action">
+                <a href="<?php echo main_route('home'); ?>" class="quick-action">
                     <i class="fas fa-globe"></i>
                     <span>Publiskā lapa</span>
                 </a>

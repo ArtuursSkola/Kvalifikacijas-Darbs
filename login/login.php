@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/admin.php';
 
 // con_db.php atrodas viena līmeņa augstāk (blakus index.php)
 $configPath = dirname(__DIR__) . '/con_db.php';
@@ -42,7 +43,7 @@ if (isset($_POST['login_btn'])) {
             }
             
             // Pārsūtām uz sākumlapu (vienu līmeni augstāk)
-            header("Location: ../index.php");
+            header("Location: " . main_route('home'));
             exit();
         } else {
             $zinojums = "Nepareiza parole!";
@@ -182,7 +183,7 @@ if (isset($_POST['login_btn'])) {
     <nav class="navbar scrolled">
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
-            <li><a href="../index.php">Sākums</a></li>
+            <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
         </ul>
     </nav>
 
@@ -194,7 +195,7 @@ if (isset($_POST['login_btn'])) {
                 <p class="error-msg"><?php echo $zinojums; ?></p>
             <?php endif; ?>
 
-            <form action="login.php" method="POST">
+            <form action="<?php echo main_route('login'); ?>" method="POST">
                 <div class="form-group">
                     <label>Lietotājvārds</label>
                     <input type="text" name="username" required>
@@ -205,8 +206,8 @@ if (isset($_POST['login_btn'])) {
                 </div>
                 <button type="submit" name="login_btn" class="btn-submit login-btn-submit">Ielogoties</button>
             </form>
-            <div class="auth-footer">Nav konta? <a href="register.php">Reģistrēties</a></div>
-            <div class="auth-footer" style="margin-top:8px;">Admin/moderator? <a href="../Admin/login.php">Atvērt admin login</a></div>
+            <div class="auth-footer">Nav konta? <a href="<?php echo main_route('register'); ?>">Reģistrēties</a></div>
+            <div class="auth-footer" style="margin-top:8px;">Admin/moderator? <a href="<?php echo admin_route('login'); ?>">Atvērt admin login</a></div>
         </div>
     </div>
 

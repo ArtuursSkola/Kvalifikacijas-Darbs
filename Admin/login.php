@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/admin.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -57,7 +58,7 @@ if (isset($_POST['login_btn'])) {
 			$_SESSION['user_id'] = $user['admin_id'];
 				$_SESSION['username'] = $user['lietotajvards'];
 				$_SESSION['role'] = $user['loma'];
-				header('Location: index.php');
+				header('Location: ' . admin_route('dashboard'));
 				exit;
 			} else {
 				$errors[] = 'Nepareizs lietotājvārds vai parole (admin/moderator).';
@@ -100,7 +101,7 @@ if (isset($_POST['login_btn'])) {
 			<?php if ($errors): ?>
 				<div class="error"><?php echo implode('<br>', array_map('htmlspecialchars', $errors)); ?></div>
 			<?php endif; ?>
-			<form method="POST" action="login.php">
+			<form method="POST" action="<?php echo admin_route('login'); ?>">
 				<div class="form-group">
 					<label>Lietotājvārds</label>
 					<input type="text" name="username" required>
@@ -111,8 +112,8 @@ if (isset($_POST['login_btn'])) {
 				</div>
 				<button type="submit" name="login_btn" class="btn-submit">Pieslēgties</button>
 			</form>
-			<div class="switch">Nav konta? <a href="register.php">Reģistrē admin/mod</a></div>
-			<div class="switch"><a href="../login/login.php">Atpakaļ uz lietotāju login</a></div>
+			<div class="switch">Nav konta? <a href="<?php echo admin_route('register'); ?>">Reģistrē admin/mod</a></div>
+			<div class="switch"><a href="<?php echo main_route('login'); ?>">Atpakaļ uz lietotāju login</a></div>
 		</div>
 	</div>
 </body>

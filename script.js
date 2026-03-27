@@ -254,6 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const heroApply = document.getElementById('filter-hero');
         const filterShell = document.querySelector('.filter-shell');
         const emptyMsg = document.getElementById('homes-empty');
+        const homesApiUrl = document.body.dataset.homesApi || 'api/get_homes.php';
+        const propertyRoute = document.body.dataset.propertyRoute || 'home.php';
 
         const modal = document.getElementById('homes-modal');
         const modalClose = document.getElementById('homes-modal-close');
@@ -270,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fetch homes from database
         async function loadHomes() {
             try {
-                const response = await fetch('api/get_homes.php');
+                const response = await fetch(homesApiUrl);
                 if (!response.ok) throw new Error('Failed to fetch');
                 listingsData = await response.json();
                 populateCities();
@@ -339,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="property-footer">
                             <span class="property-price">${formatPrice(item)}${item.type === 'rent' ? '' : ''}</span>
-                            <a href="home.php?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
+                            <a href="${propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
                         </div>
                     </div>
                 `;

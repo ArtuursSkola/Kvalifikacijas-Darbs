@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../routes/admin.php';
 
 // con_db.php atrodas viena līmeņa augstāk (blakus index.php)
 $configPath = dirname(__DIR__) . '/con_db.php';
@@ -186,7 +187,7 @@ if (isset($_POST['register_btn'])) {
     <nav class="navbar scrolled">
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
-            <li><a href="../index.php">Sākums</a></li>
+            <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
         </ul>
     </nav>
 
@@ -200,7 +201,7 @@ if (isset($_POST['register_btn'])) {
                 </p>
             <?php endif; ?>
 
-            <form action="register.php" method="POST">
+            <form action="<?php echo main_route('register'); ?>" method="POST">
                 <div class="form-group">
                     <label>Lietotājvārds</label>
                     <input type="text" name="username" required>
@@ -233,8 +234,8 @@ if (isset($_POST['register_btn'])) {
                 </div>
                 <button type="submit" name="register_btn" class="btn-submit">Izveidot kontu</button>
             </form>
-            <div class="auth-footer">Jau ir konts? <a href="login.php">Ielogoties</a></div>
-            <div class="auth-footer" style="margin-top:8px;">Admin/moderator? <a href="../Admin/register.php">Izveidot admin/mod kontu</a></div>
+            <div class="auth-footer">Jau ir konts? <a href="<?php echo main_route('login'); ?>">Ielogoties</a></div>
+            <div class="auth-footer" style="margin-top:8px;">Admin/moderator? <a href="<?php echo admin_route('register'); ?>">Izveidot admin/mod kontu</a></div>
         </div>
     </div>
 
