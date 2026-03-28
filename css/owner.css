@@ -22,6 +22,8 @@
         body.owner-page {
             background: var(--light-bg);
             min-height: 100vh;
+            padding-top: 0;
+            padding-top: 0;
         }
 
         /* Hero Section */
@@ -30,6 +32,13 @@
             padding: 160px 24px 120px;
             position: relative;
             overflow: hidden;
+            margin-top: 0;
+        }
+
+        @media (max-width: 768px) {
+            body.owner-page {
+                padding-top: 0;
+            }
         }
 
         .owner-hero::before {

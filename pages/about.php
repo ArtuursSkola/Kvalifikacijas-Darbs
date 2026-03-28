@@ -1,51 +1,15 @@
-<?php session_start(); require_once __DIR__ . '/../routes/main.php'; ?>
-<?php 
+<?php
+session_start();
+require_once __DIR__ . '/../routes/main.php';
+
 $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plan'] ?? '';
 $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
+
+$pageTitle = 'Par mums - HomeEstate';
+$extraStyles = ['about'];
+include __DIR__ . '/../includes/header.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="lv">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Par mums - HomeEstate</title>
-    <link rel="icon" type="image/png" href="<?php echo asset_path('Images/Logo.png'); ?>">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo asset_path('style.css'); ?>">
-    <link rel="stylesheet" href="<?php echo asset_path('css/about.css'); ?>">
-</head>
-<body>
-
-    <nav class="navbar">
-        <div class="logo">Home<span>Estate</span></div>
-        <ul class="nav-links">
-            <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
-            <li><a href="<?php echo main_route('property.list'); ?>">Meklēt īpašumu</a></li>
-            <?php if ($isOwner): ?>
-                <li><a href="<?php echo main_route('owner'); ?>">Kļūsti par īpašnieku</a></li>
-            <?php endif; ?>
-            <?php if ($canCreate): ?>
-                <li><a href="<?php echo main_route('property.create'); ?>">Izveidot sludinājumu</a></li>
-            <?php endif; ?>
-            <li><a href="<?php echo main_route('about'); ?>" class="active">Par mums</a></li>
-        </ul>
-        <div class="auth-buttons">
-            <?php if (isset($_SESSION['user_id'])): ?>
-                <span style="font-weight: 600; color: inherit;">Sveiki, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
-                <a href="<?php echo main_route('logout'); ?>" class="btn-register" style="background: #e74c3c;">Iziet</a>
-            <?php else: ?>
-                <a href="<?php echo main_route('login'); ?>" class="btn-login" style="color: inherit;">Ielogoties</a>
-                <a href="<?php echo main_route('register'); ?>" class="btn-register">Reģistrēties</a>
-            <?php endif; ?>
-        </div>
-        <div class="hamburger">
-            <i class="fas fa-bars"></i>
-        </div>
-    </nav>
 
     <section class="hero">
         <div class="hero-shapes">
@@ -236,120 +200,40 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
         </div>
     </section>
 
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-col">
-                    <h3>Home<span>Estate</span></h3>
-                    <p>Mūsdienīga platforma nekustamā īpašuma īrei un pārdošanai. Mēs palīdzam atrast jūsu nākamās mājas.</p>
-                    <div class="footer-social">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                    </div>
-                </div>
-                <div class="footer-col">
-                    <h4>Navigācija</h4>
-                    <ul>
-                        <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
-                        <li><a href="<?php echo main_route('property.list'); ?>">Īpašumi</a></li>
-                        <li><a href="<?php echo main_route('about'); ?>">Par mums</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Juridiskā Info</h4>
-                    <ul>
-                        <li><a href="#">Lietošanas noteikumi</a></li>
-                        <li><a href="#">Privātuma politika</a></li>
-                        <li><a href="#">Sīkdatņu politika</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Kontakti</h4>
-                    <ul>
-                        <li><i class="fas fa-envelope" style="margin-right: 8px; color: var(--accent);"></i> info@homeestate.lv</li>
-                        <li><i class="fas fa-phone" style="margin-right: 8px; color: var(--accent);"></i> +371 20000000</li>
-                        <li><i class="fas fa-map-marker-alt" style="margin-right: 8px; color: var(--accent);"></i> Rīga, Latvija</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 HomeEstate. Visas tiesības aizsargātas.</p>
-            </div>
-        </div>
-    </footer>
+<?php include __DIR__ . '/../includes/footer.php'; ?>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Navbar scroll effect
-        const navbar = document.querySelector('.navbar');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Fade up animations
+    const fadeElements = document.querySelectorAll('.fade-up');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.classList.add('visible');
+                }, index * 100);
+                observer.unobserve(entry.target);
             }
         });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    
+    fadeElements.forEach(el => observer.observe(el));
 
-        // Fade up animations
-        const fadeElements = document.querySelectorAll('.fade-up');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry, index) => {
-                if (entry.isIntersecting) {
-                    setTimeout(() => {
-                        entry.target.classList.add('visible');
-                    }, index * 100);
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-        
-        fadeElements.forEach(el => observer.observe(el));
-
-        // Counter animation
-        const counters = document.querySelectorAll('.counter');
-        const counterObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const counter = entry.target;
-                    const target = parseInt(counter.getAttribute('data-target'));
-                    const duration = 2000;
-                    const step = target / (duration / 16);
-                    let current = 0;
-                    
-                    const updateCounter = () => {
-                        current += step;
-                        if (current < target) {
-                            counter.textContent = Math.floor(current).toLocaleString('lv-LV');
-                            requestAnimationFrame(updateCounter);
-                        } else {
-                            counter.textContent = target.toLocaleString('lv-LV');
-                        }
-                    };
-                    
-                    updateCounter();
-                    counterObserver.unobserve(counter);
-                }
-            });
-        }, { threshold: 0.5 });
-        
-        counters.forEach(counter => counterObserver.observe(counter));
-
-        // Card tilt effect
-        const cards = document.querySelectorAll('.mission-card, .value-card');
-        cards.forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
-                const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
-                card.style.transform = `translateY(-8px) perspective(1000px) rotateX(${y * -5}deg) rotateY(${x * 5}deg)`;
-            });
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = '';
-            });
+    // Counter animation is already handled in script.js for .counter class
+    
+    // Card tilt effect
+    const cards = document.querySelectorAll('.mission-card, .value-card');
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
+            const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
+            card.style.transform = `translateY(-8px) perspective(1000px) rotateX(${y * -5}deg) rotateY(${x * 5}deg)`;
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
         });
     });
-    </script>
-</body>
-</html>
+});
+</script>
+

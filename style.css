@@ -139,6 +139,14 @@ ul {
     gap: 12px;
 }
 
+.auth-buttons > span {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.navbar.scrolled .auth-buttons > span {
+    color: var(--primary);
+}
+
 .btn-login {
     color: var(--white);
     font-weight: 500;
@@ -1228,6 +1236,7 @@ body.property-page {
    ================================ */
 body.owner-page {
     background: var(--light-bg);
+    padding-top: 0;
 }
 
 .owner-hero {

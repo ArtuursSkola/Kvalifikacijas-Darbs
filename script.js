@@ -98,27 +98,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const isIndexPage = window.location.pathname.endsWith('index.php') || window.location.pathname === '/' || window.location.pathname.endsWith('/');
-    const isAboutPage = window.location.pathname.endsWith('about.php');
-    const isHomesPage = window.location.pathname.endsWith('homes.php');
-    const isOwnerPage = window.location.pathname.endsWith('owner.php');
-    const wantsTransparentOnTop = isIndexPage || isAboutPage || isHomesPage || isOwnerPage;
+    // Robust detection of pages that want a transparent navbar at the top (those with a HERO section)
+    const wantsTransparentOnTop = !!document.querySelector('.hero, .homes-hero, .owner-hero, .about-hero');
 
     if (navbar) {
-        // Initial state: transparent if page wants it
-        if (!wantsTransparentOnTop) {
-            navbar.classList.add('scrolled');
-        }
-
-        window.addEventListener('scroll', () => {
+        const syncNavbarState = () => {
+            // Ensure correct state on initial load and during scroll.
             if (window.scrollY > 50) {
                 navbar.classList.add('scrolled');
-            } else {
-                if (wantsTransparentOnTop) {
-                    navbar.classList.remove('scrolled');
-                }
+                return;
             }
-        });
+
+            if (wantsTransparentOnTop) {
+                navbar.classList.remove('scrolled');
+            } else {
+                navbar.classList.add('scrolled');
+            }
+        };
+
+        syncNavbarState();
+        window.addEventListener('scroll', syncNavbarState, { passive: true });
     }
 
     // --- Elementu "Fade-in" animācija ritinot uz leju (Ieskaitot Timeline) ---
