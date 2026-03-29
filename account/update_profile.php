@@ -4,6 +4,7 @@ session_start();
 require_once __DIR__ . '/../con_db.php';
 require_once __DIR__ . '/../routes/main.php';
 require_once __DIR__ . '/../includes/account.php';
+ensureUserPlanColumns($savienojums);
 
 if (empty($_SESSION['user_id'])) {
     header('Location: ' . main_route('login'));
@@ -16,6 +17,7 @@ $userId = (int)$_SESSION['user_id'];
 $username = trim((string)($_POST['username'] ?? ''));
 
 if ($username === '') {
+    $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Lietotājvārds nevar būt tukšs.'];
     header('Location: ' . $redirectTo);
     exit;
 }
@@ -33,13 +35,14 @@ if ($stmt) {
     $exists = $stmt->get_result();
     if ($exists && $exists->num_rows > 0) {
         $stmt->close();
+        $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Šāds lietotājvārds jau eksistē.'];
         header('Location: ' . $redirectTo);
         exit;
     }
     $stmt->close();
 }
 
-$profilePicture = $currentUser['profila_bilde'] ?? null;
+$profilePicture = (string)($currentUser['profila_bilde'] ?? '');
 if (isset($_FILES['profile_picture']) && is_array($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
     $uploadDir = dirname(__DIR__) . '/uploads';
     if (!is_dir($uploadDir)) {
@@ -68,5 +71,6 @@ if ($updatedUser) {
     storeUserSessionData($updatedUser);
 }
 
+$_SESSION['settings_flash'] = ['type' => 'success', 'message' => 'Profila dati atjaunoti.'];
 header('Location: ' . $redirectTo);
 exit;

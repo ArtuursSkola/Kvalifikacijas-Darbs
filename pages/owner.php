@@ -15,6 +15,22 @@ include __DIR__ . '/../includes/header.php';
 $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plan'] ?? '';
 $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
+
+$myHomes = [];
+if ($isOwner) {
+    $ownerId = (int)$_SESSION['user_id'];
+    $sql = "SELECT id, title, city, status, price, type, main_image FROM est_homes WHERE owner_id = ? ORDER BY created_at DESC";
+    $stmt = $savienojums->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param('i', $ownerId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $myHomes[] = $row;
+        }
+        $stmt->close();
+    }
+}
 ?><header class="owner-hero">
         <div class="owner-hero__content">
             <p class="badge-pill">Pay-to-List modelis</p>
@@ -52,6 +68,59 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
             </div>
         </div>
     </section>
+
+    <?php if ($isOwner): ?>
+    <section class="owner-listings">
+        <div class="container">
+            <div class="section-header-flex">
+                <div>
+                    <h2>Mani sludinājumi</h2>
+                    <p>Pārvaldi savus aktīvos un melnraksta sludinājumus.</p>
+                </div>
+                <?php if ($canCreate): ?>
+                    <a href="<?php echo main_route('property.create'); ?>" class="btn-owner-add"><i class="fas fa-plus"></i> Pievienot jaunu</a>
+                <?php endif; ?>
+            </div>
+
+            <?php if (empty($myHomes)): ?>
+                <div class="empty-owner-state">
+                    <i class="fas fa-home"></i>
+                    <p>Tev vēl nav neviena sludinājuma.</p>
+                    <a href="<?php echo $canCreate ? main_route('property.create') : '#plans'; ?>" class="btn-owner">Sākt publicēšanu</a>
+                </div>
+            <?php else: ?>
+                <div class="owner-grid">
+                    <?php foreach ($myHomes as $home): 
+                        $status = $home['status'] ?: 'draft';
+                        $statusLabels = [
+                            'active' => ['label' => 'Aktīvs', 'class' => 'status-active'],
+                            'draft' => ['label' => 'Melnraksts', 'class' => 'status-draft'],
+                            'rejected' => ['label' => 'Noraidīts', 'class' => 'status-rejected'],
+                            'inactive' => ['label' => 'Neaktīvs', 'class' => 'status-inactive']
+                        ];
+                        $st = $statusLabels[$status] ?? ['label' => $status, 'class' => ''];
+                        $img = $home['main_image'] ?: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=500&q=60';
+                    ?>
+                    <div class="owner-card">
+                        <div class="owner-card__img">
+                            <img src="<?php echo asset_path($img); ?>" alt="">
+                            <span class="owner-status <?php echo $st['class']; ?>"><?php echo $st['label']; ?></span>
+                        </div>
+                        <div class="owner-card__info">
+                            <h4><?php echo htmlspecialchars($home['title']); ?></h4>
+                            <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($home['city']); ?></p>
+                            <div class="owner-card__footer">
+                                <span class="price"><?php echo number_format($home['price'], 0, ',', ' '); ?> €</span>
+                                <a href="<?php echo main_route('property.show', ['id' => $home['id']]); ?>" class="btn-sm-view">Skatīt</a>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <section class="owner-plans" id="plans">
         <div class="container">

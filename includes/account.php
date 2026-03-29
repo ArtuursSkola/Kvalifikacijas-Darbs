@@ -21,6 +21,42 @@ function ensurePlanPurchasesTable(mysqli $conn): void
     $conn->query($sql);
 }
 
+function ensureUserPlanColumns(mysqli $conn): void
+{
+    // Lightweight safety-net: some environments may not yet have these columns.
+    // We use information_schema to avoid breaking on shared hosts.
+    $dbRes = $conn->query('SELECT DATABASE() as db');
+    $dbRow = $dbRes ? $dbRes->fetch_assoc() : null;
+    $db = $dbRow['db'] ?? '';
+    if ($db === '') {
+        return;
+    }
+
+    $cols = [
+        'plan_activated_at' => 'DATETIME NULL',
+        'plan_expires_at' => 'DATETIME NULL',
+        'profila_bilde' => 'VARCHAR(255) NULL',
+    ];
+
+    foreach ($cols as $col => $definition) {
+        $stmt = $conn->prepare('SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?');
+        if (!$stmt) {
+            return;
+        }
+        $table = 'est_lietotaji';
+        $stmt->bind_param('sss', $db, $table, $col);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : ['cnt' => 0];
+        $stmt->close();
+
+        if ((int)($row['cnt'] ?? 0) === 0) {
+            // Avoid escaping the definition; it's controlled by us.
+            $conn->query("ALTER TABLE `est_lietotaji` ADD COLUMN `$col` $definition");
+        }
+    }
+}
+
 function fetchUserById(mysqli $conn, int $userId): ?array
 {
     $stmt = $conn->prepare("SELECT * FROM est_lietotaji WHERE lietotaja_id = ? LIMIT 1");
@@ -187,4 +223,46 @@ function fetchUserPlanHistory(mysqli $conn, int $userId, ?array $currentUser = n
     }
 
     return $history;
+}
+
+function ensurePropertyTransactionsTable(mysqli $conn): void
+{
+    $sql = "CREATE TABLE IF NOT EXISTS est_property_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        home_id INT DEFAULT NULL,
+        transaction_type VARCHAR(20) NOT NULL,
+        amount DECIMAL(12,2) DEFAULT NULL,
+        currency VARCHAR(10) NOT NULL DEFAULT 'EUR',
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_id (user_id),
+        INDEX idx_created_at (created_at)
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+
+    $conn->query($sql);
+}
+
+function fetchUserPropertyTransactions(mysqli $conn, int $userId): array
+{
+    ensurePropertyTransactionsTable($conn);
+
+    $items = [];
+    $stmt = $conn->prepare("SELECT t.transaction_type, t.amount, t.currency, t.created_at, t.home_id,
+        h.title as home_title, h.city as home_city, h.type as home_type
+        FROM est_property_transactions t
+        LEFT JOIN est_homes h ON h.id = t.home_id
+        WHERE t.user_id = ?
+        ORDER BY t.created_at DESC");
+
+    if ($stmt) {
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($res && $row = $res->fetch_assoc()) {
+            $items[] = $row;
+        }
+        $stmt->close();
+    }
+
+    return $items;
 }

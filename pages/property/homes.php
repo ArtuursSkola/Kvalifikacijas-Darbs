@@ -8,13 +8,13 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
 
 $pageTitle = 'Meklēt īpašumus - HomeEstate';
 $extraStyles = ['homes'];
+$bodyClass = 'homes-page';
+$bodyData = [
+    'homes-api' => main_route('api.homes'),
+    'property-route' => main_route('property.show'),
+];
 include __DIR__ . '/../../includes/header.php';
 ?>
-
-<body
-    class="homes-page"
-    data-homes-api="<?php echo main_route('api.homes'); ?>"
-    data-property-route="<?php echo main_route('property.show'); ?>">
 
     <header class="homes-hero">
         <div class="homes-hero__inner">

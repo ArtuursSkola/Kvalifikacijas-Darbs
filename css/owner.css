@@ -668,3 +668,148 @@
             .owner-hero__bullets { flex-direction: column; gap: 16px; }
             .cta-strip__inner { flex-direction: column; text-align: center; }
         }
+
+        /* Owner Listings Dashboard */
+        .owner-listings {
+            padding: 80px 24px;
+            background: var(--white);
+        }
+        .owner-listings .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .section-header-flex h2 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .section-header-flex p {
+            color: var(--gray-600);
+        }
+        .btn-owner-add {
+            background: var(--accent);
+            color: var(--white);
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        .btn-owner-add:hover {
+            background: var(--accent-dark);
+            transform: translateY(-2px);
+        }
+
+        .owner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .owner-card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-200);
+            transition: all 0.3s;
+        }
+        .owner-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+        .owner-card__img {
+            height: 200px;
+            position: relative;
+        }
+        .owner-card__img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .owner-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(4px);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .status-active { background: rgba(48, 182, 7, 0.9); }
+        .status-draft { background: rgba(71, 85, 105, 0.9); }
+        .status-rejected { background: rgba(231, 76, 60, 0.9); }
+        .status-inactive { background: rgba(148, 163, 184, 0.9); }
+
+        .owner-card__info {
+            padding: 20px;
+        }
+        .owner-card__info h4 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .owner-card__info p {
+            color: var(--gray-600);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+        .owner-card__footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--gray-100);
+        }
+        .owner-card__footer .price {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+        .btn-sm-view {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .btn-sm-view:hover {
+            color: var(--accent);
+        }
+
+        .empty-owner-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--light-bg);
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--gray-200);
+        }
+        .empty-owner-state i {
+            font-size: 3rem;
+            color: var(--gray-400);
+            margin-bottom: 20px;
+            display: block;
+        }
+        .empty-owner-state p {
+            color: var(--gray-600);
+            margin-bottom: 24px;
+        }

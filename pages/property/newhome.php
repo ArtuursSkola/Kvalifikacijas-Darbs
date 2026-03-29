@@ -461,7 +461,7 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
         </form>
     </div>
 
-    <script src="script.js"></script>
+    <script src="<?php echo asset_path('script.js'); ?>"></script>
     <script>
     (function() {
         const steps = Array.from(document.querySelectorAll('.step'));

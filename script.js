@@ -98,6 +98,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Profile dropdown (header top-right when logged in) ---
+    // Handled natively via <details>/<summary> in the header markup (works without JS).
+
+    // --- Backwards compatibility: replace old "Sveiki, USER" + logout button with profile dropdown ---
+    // Some pages still render a hardcoded greeting in `.auth-buttons`. This normalizes it without requiring PHP edits.
+    const authArea = document.querySelector('.auth-buttons');
+    if (authArea && !authArea.querySelector('.profile-menu')) {
+        const greeting = authArea.querySelector('span');
+        const logout = authArea.querySelector('a[href*=\"logout.php\"]');
+
+        if (greeting && logout) {
+            const raw = (greeting.textContent || '').trim();
+            const username = raw.replace(/^Sveiki,?/i, '').replace(/!$/, '').trim() || 'Lietotajs';
+
+            let settingsHref = '';
+            try {
+                const logoutUrl = new URL(logout.getAttribute('href') || '', window.location.href);
+                const settingsUrl = new URL(logoutUrl.toString());
+                if (/(^|\\/)login\\/logout\\.php$/i.test(logoutUrl.pathname)) {
+                    settingsUrl.pathname = logoutUrl.pathname.replace(/login\\/logout\\.php$/i, 'pages/settings.php');
+                }
+                settingsHref = settingsUrl.toString();
+            } catch (_) {
+                const href = logout.getAttribute('href') || '';
+                settingsHref = href.replace(/login\\/logout\\.php(\\?.*)?$/i, 'pages/settings.php');
+            }
+
+            const profileMenu = document.createElement('details');
+            profileMenu.className = 'profile-menu';
+            profileMenu.innerHTML = `
+                <summary class="profile-trigger" aria-haspopup="true" aria-label="Atvert profila izvelni">
+                    <i class="fas fa-user profile-trigger__icon" aria-hidden="true"></i>
+                </summary>
+                <div class="profile-dropdown">
+                    <div class="profile-dropdown__summary">
+                        <div class="profile-dropdown__identity">
+                            <div class="profile-dropdown__avatar">
+                                <span class="profile-avatar-fallback">${username.slice(0, 1).toUpperCase()}</span>
+                            </div>
+                            <div><strong>${username}</strong></div>
+                        </div>
+                    </div>
+                    <a class="profile-dropdown__link" href="#settings-modal"><i class="fas fa-user-cog"></i>Iestatijumi</a>
+                    <a class="profile-dropdown__link" href="${logout.getAttribute('href')}"><i class="fas fa-sign-out-alt"></i>Iziet</a>
+                </div>
+            `;
+
+            authArea.innerHTML = '';
+            authArea.appendChild(profileMenu);
+
+            // No listeners needed; <details> toggles on click.
+        }
+    }
+
     // Robust detection of pages that want a transparent navbar at the top (those with a HERO section)
     const wantsTransparentOnTop = !!document.querySelector('.hero, .homes-hero, .owner-hero, .about-hero');
 
@@ -143,15 +197,15 @@ document.addEventListener('DOMContentLoaded', () => {
         appearOnScroll.observe(fader);
     });
 
-    // --- Fona attēlu automātiskā maiņa ar SLIDE efektu (Tikai index.php) ---
+    // --- Fona attēlu automātiskā maiņa ar SLIDE efektu (Tikai index.php hero gadījumā) ---
     function startBackgroundSlider() {
         const hero = document.querySelector('.hero');
         const heroContent = document.querySelector('.hero-content');
 
+        if (!hero || !heroContent) return;
+
         const images = ['bg-1', 'bg-2', 'bg-3'];
         let currentImageIndex = 0;
-
-        if (!hero || !heroContent) return;
 
         function changeBackground() {
             heroContent.style.transition = 'transform 0.5s ease-in, opacity 0.5s ease-in';
@@ -179,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(changeBackground, 8000);
     }
 
-    if (isIndexPage && document.querySelector('.hero')) {
+    if (document.querySelector('.hero')) {
         startBackgroundSlider();
     }
 
@@ -275,8 +329,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error('Failed to fetch');
                 listingsData = await response.json();
                 populateCities();
-                renderListings(listingsData);
-                updateResultsCount(listingsData.length);
+
+                // Apply URL parameters if present
+                const urlParams = new URLSearchParams(window.location.search);
+                const cityParam = urlParams.get('city');
+                const typeParam = urlParams.get('type');
+                const priceParam = urlParams.get('max_price');
+
+                if (cityParam || typeParam || priceParam) {
+                    if (cityParam && citySelect) citySelect.value = cityParam;
+                    if (typeParam && typeSelect) typeSelect.value = typeParam;
+                    if (priceParam && priceInput) priceInput.value = priceParam;
+                    applyFilters();
+                } else {
+                    renderListings(listingsData);
+                }
             } catch (error) {
                 console.error('Error loading homes:', error);
                 // Show empty state on error

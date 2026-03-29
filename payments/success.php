@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . '/../routes/main.php';
 require_once "../con_db.php";
 require_once "config.php";
+require_once __DIR__ . '/../includes/account.php';
 
 // Must be logged in
 if (!isset($_SESSION['username'])) {
@@ -12,6 +13,8 @@ if (!isset($_SESSION['username'])) {
 
 $username = $_SESSION['username'];
 $allowed_plans = ['Silver', 'Gold'];
+ensureUserPlanColumns($savienojums);
+ensurePlanPurchasesTable($savienojums);
 
 // Get Stripe session ID
 $session_id = $_GET['session_id'] ?? '';
@@ -63,19 +66,66 @@ try {
             $hasPlanCol = true;
         }
 
-        if ($hasPlanCol) {
-            $stmtUp = $savienojums->prepare("UPDATE est_lietotaji SET loma='ipasnieks', plan=? WHERE lietotajvards=?");
-            $stmtUp->bind_param("ss", $plan_name, $username);
-            $stmtUp->execute();
-            $stmtUp->close();
-        } else {
-            // Fallback: at least set role to owner
-            mysqli_query($savienojums, "UPDATE est_lietotaji SET loma='ipasnieks' WHERE lietotajvards='" . mysqli_real_escape_string($savienojums, $username) . "'");
-        }
+        $userId = (int)($user['lietotaja_id'] ?? 0);
+        $expiresAt = null;
 
-        $_SESSION['role'] = 'ipasnieks';
-        if ($hasPlanCol) {
-            $_SESSION['plan'] = $plan_name;
+        if ($userId > 0) {
+            // Always set owner role. If plan columns exist, also store activation + expiry (30 days).
+            // We keep the older fallback behavior for hosts without the plan column.
+            if ($hasPlanCol) {
+                $stmtUp = $savienojums->prepare("UPDATE est_lietotaji
+                    SET loma='ipasnieks', plan=?, plan_activated_at=NOW(), plan_expires_at=DATE_ADD(NOW(), INTERVAL 30 DAY)
+                    WHERE lietotajvards=?");
+                if ($stmtUp) {
+                    $stmtUp->bind_param("ss", $plan_name, $username);
+                    $stmtUp->execute();
+                    $stmtUp->close();
+                }
+
+                $expiresRes = $savienojums->prepare("SELECT plan_expires_at FROM est_lietotaji WHERE lietotaja_id=? LIMIT 1");
+                if ($expiresRes) {
+                    $expiresRes->bind_param('i', $userId);
+                    $expiresRes->execute();
+                    $r = $expiresRes->get_result();
+                    $row = $r ? $r->fetch_assoc() : null;
+                    $expiresAt = $row['plan_expires_at'] ?? null;
+                    $expiresRes->close();
+                }
+            } else {
+                // Fallback: at least set role to owner
+                $stmtUp = $savienojums->prepare("UPDATE est_lietotaji SET loma='ipasnieks' WHERE lietotajvards=?");
+                if ($stmtUp) {
+                    $stmtUp->bind_param("s", $username);
+                    $stmtUp->execute();
+                    $stmtUp->close();
+                }
+            }
+
+            // Record purchase for history (even if user table lacks plan cols).
+            $amountPaid = isset($payment_intent->amount_received) ? ((int)$payment_intent->amount_received / 100) : 0;
+            $currency = strtoupper((string)($payment_intent->currency ?? 'EUR'));
+            $paymentStatus = (string)($payment_intent->status ?? 'succeeded');
+
+            $ins = $savienojums->prepare("INSERT INTO est_plan_purchases
+                (user_id, plan_name, amount_paid, currency, purchased_at, expires_at, stripe_session_id, payment_intent_id, payment_status)
+                VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)");
+            if ($ins) {
+                $stripeSessionId = (string)$session_id;
+                $paymentIntentId = (string)($payment_intent->id ?? '');
+                $ins->bind_param('isdsssss', $userId, $plan_name, $amountPaid, $currency, $expiresAt, $stripeSessionId, $paymentIntentId, $paymentStatus);
+                $ins->execute();
+                $ins->close();
+            }
+
+            $updatedUser = fetchUserById($savienojums, $userId);
+            if ($updatedUser) {
+                storeUserSessionData($updatedUser);
+            } else {
+                $_SESSION['role'] = 'ipasnieks';
+                if ($hasPlanCol) {
+                    $_SESSION['plan'] = $plan_name;
+                }
+            }
         }
 
         $transaction_id = $payment_intent->id;
