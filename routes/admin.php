@@ -10,6 +10,7 @@ function admin_routes(): array
         'users_legacy' => 'Admin/lietotaji_new.php',
         'listings' => 'Admin/sludinajumi.php',
         'listings_legacy' => 'Admin/sludinajumi_new.php',
+        'moderators' => 'Admin/moderatori.php',
         'login' => 'Admin/login.php',
         'register' => 'Admin/register.php',
     ];
