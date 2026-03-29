@@ -70,6 +70,7 @@ function main_routes(): array
         'property.list' => 'pages/property/homes.php',
         'property.show' => 'pages/property/home.php',
         'property.create' => 'pages/property/newhome.php',
+        'property.myhomes' => 'pages/property/myhomes.php',
         'login' => 'login/login.php',
         'register' => 'login/register.php',
         'logout' => 'login/logout.php',

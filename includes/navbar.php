@@ -28,6 +28,7 @@ $propertyHistory = $currentUser ? fetchUserPropertyTransactions($savienojums, (i
 
 $renewPlanName = in_array($currentPlanLabel, ['Silver', 'Gold'], true) ? $currentPlanLabel : null;
 $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver' ? 999 : null);
+$myHomesUrl = main_route('property.myhomes');
 ?>
 
 <nav class="navbar<?php echo $navbarClass !== '' ? ' ' . htmlspecialchars($navbarClass) : ''; ?>" id="navbar">
@@ -36,7 +37,10 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
     <ul class="nav-links">
         <li><a href="<?php echo main_route('home'); ?>" class="<?php echo isActive('index.php'); ?>">Sākums</a></li>
         <li><a href="<?php echo main_route('property.list'); ?>" class="<?php echo isActive('homes.php'); ?>">Meklēt īpašumu</a></li>
-        <li><a href="<?php echo main_route('owner'); ?>" class="<?php echo isActive('owner.php'); ?>"><?php echo $isOwner ? 'Mani sludinājumi' : 'Kļūsti par īpašnieku'; ?></a></li>
+        <li><a href="<?php echo main_route('owner'); ?>" class="<?php echo isActive('owner.php'); ?>">Kļūsti par īpašnieku</a></li>
+        <?php if ($canCreate): ?>
+            <li><a href="<?php echo $myHomesUrl; ?>" class="<?php echo isActive('myhomes.php'); ?>">Mani sludinājumi</a></li>
+        <?php endif; ?>
         <?php if ($canCreate): ?>
             <li><a href="<?php echo main_route('property.create'); ?>" class="<?php echo isActive('newhome.php'); ?>">Izveidot sludinājumu</a></li>
         <?php endif; ?>
