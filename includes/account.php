@@ -184,11 +184,8 @@ function userProfileImageUrl(?string $path): string
         return '';
     }
 
-    if (preg_match('#^https?://#i', $path)) {
-        return $path;
-    }
-
-    return asset_path(ltrim($path, '/'));
+    // Uses shared resolver so absolute URLs remain untouched and relative uploads work from any page.
+    return media_url($path);
 }
 
 function fetchUserPlanHistory(mysqli $conn, int $userId, ?array $currentUser = null): array

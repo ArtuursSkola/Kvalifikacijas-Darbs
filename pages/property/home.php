@@ -45,11 +45,16 @@ if (!empty($home['amenities'])) {
     $amenities = array_map('trim', explode(',', $home['amenities']));
 }
 
-// Default images if not set
-$mainImage = $home['main_image'] ?: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';
-$thumb1 = $home['thumb1'] ?: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=70';
-$thumb2 = $home['thumb2'] ?: 'https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&w=600&q=70';
-$thumb3 = $home['thumb3'] ?: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=70';
+// Default images if not set (and normalize relative upload paths)
+$fallbackMain = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';
+$fallbackThumb1 = 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=70';
+$fallbackThumb2 = 'https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&w=600&q=70';
+$fallbackThumb3 = 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=70';
+
+$mainImage = media_url($home['main_image'] ?: $fallbackMain);
+$thumb1 = media_url($home['thumb1'] ?: $fallbackThumb1);
+$thumb2 = media_url($home['thumb2'] ?: $fallbackThumb2);
+$thumb3 = media_url($home['thumb3'] ?: $fallbackThumb3);
 
 // Price formatting
 $priceDisplay = $home['type'] === 'rent' 

@@ -61,6 +61,61 @@ function asset_path(string $path): string
     return app_url($path);
 }
 
+function app_is_external_url(string $value): bool
+{
+    $value = trim($value);
+    if ($value === '') {
+        return false;
+    }
+
+    // Absolute (https://...), scheme-relative (//...), or data: URLs should be passed through as-is.
+    if (preg_match('#^(?:[a-z][a-z0-9+.-]*:)?//#i', $value)) {
+        return true;
+    }
+    if (str_starts_with($value, 'data:')) {
+        return true;
+    }
+
+    return false;
+}
+
+function media_url(string $value): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+
+    if (app_is_external_url($value)) {
+        // Normalize scheme-relative URLs to explicit scheme so browsers behave consistently.
+        if (str_starts_with($value, '//')) {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https:' : 'http:';
+            return $scheme . $value;
+        }
+        return $value;
+    }
+
+    return asset_path(ltrim($value, '/'));
+}
+
+function media_absolute_url(string $value): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+
+    if (app_is_external_url($value)) {
+        if (str_starts_with($value, '//')) {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https:' : 'http:';
+            return $scheme . $value;
+        }
+        return $value;
+    }
+
+    return app_absolute_url(ltrim($value, '/'));
+}
+
 function main_routes(): array
 {
     static $routes = [

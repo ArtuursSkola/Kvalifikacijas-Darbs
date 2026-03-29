@@ -85,15 +85,21 @@ if ($ownerId > 0) {
                         'inactive' => ['label' => 'Neaktīvs', 'class' => 'status-inactive'],
                     ];
                     $st = $statusLabels[$status] ?? ['label' => (string)$status, 'class' => ''];
+                    $fallbackImg = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';
                     $img = trim((string)($home['main_image'] ?? ''));
                     if ($img === '') {
-                        $img = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';
+                        $img = $fallbackImg;
                     }
                     $price = isset($home['price']) ? number_format((float)$home['price'], 0, ',', ' ') . ' €' : '—';
                     ?>
                     <div class="owner-card">
                         <div class="owner-card__img">
-                            <img src="<?php echo htmlspecialchars(asset_path($img)); ?>" alt="">
+                            <img
+                                src="<?php echo htmlspecialchars(media_url($img)); ?>"
+                                alt=""
+                                loading="lazy"
+                                onerror="this.onerror=null;this.src='<?php echo htmlspecialchars($fallbackImg, ENT_QUOTES); ?>';"
+                            >
                             <span class="owner-status <?php echo htmlspecialchars($st['class']); ?>"><?php echo htmlspecialchars($st['label']); ?></span>
                         </div>
                         <div class="owner-card__info">
@@ -112,4 +118,3 @@ if ($ownerId > 0) {
 </section>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
-

@@ -14,6 +14,33 @@ $bodyData = [
     'property-route' => main_route('property.show'),
 ];
 include __DIR__ . '/../../includes/header.php';
+
+// Server-side fallback: render listings even if the JS/API fails on the hosting environment.
+$initialHomes = [];
+$currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+$sql = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image, status
+    FROM est_homes
+    WHERE status = 'active'"
+    . ($currentUserId > 0 ? " OR owner_id = ?" : "")
+    . " ORDER BY created_at DESC";
+
+if ($currentUserId > 0) {
+    $stmt = $savienojums->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param('i', $currentUserId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($res && $row = $res->fetch_assoc()) {
+            $initialHomes[] = $row;
+        }
+        $stmt->close();
+    }
+} else {
+    $res = $savienojums->query($sql);
+    while ($res && $row = $res->fetch_assoc()) {
+        $initialHomes[] = $row;
+    }
+}
 ?>
 
     <header class="homes-hero">
@@ -54,7 +81,7 @@ include __DIR__ . '/../../includes/header.php';
         <div class="filter-shell">
             <div class="filter-header">
                 <h3><i class="fas fa-sliders-h"></i> Filtrēt īpašumus</h3>
-                <span class="filter-count" id="results-count">0 rezultāti</span>
+                <span class="filter-count" id="results-count"><?php echo count($initialHomes); ?> rezultāti</span>
             </div>
             <div class="filters">
                 <div class="filter-group">
@@ -95,9 +122,54 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </div>
 
-        <div id="homes-results" class="listing-grid"></div>
+        <div id="homes-results" class="listing-grid">
+            <?php foreach ($initialHomes as $home): ?>
+                <?php
+                $fallbackImg = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';
+                $img = trim((string)($home['main_image'] ?? ''));
+                if ($img === '') {
+                    $img = $fallbackImg;
+                }
+                $type = (string)($home['type'] ?? '');
+                $badge = $type === 'rent' ? 'Izīrē' : 'Pārdod';
+                $badgeClass = $type === 'rent' ? 'rent' : 'sale';
+                $location = trim((string)($home['city'] ?? '')) . ', ' . trim((string)($home['location_text'] ?? ''));
+                $price = (float)($home['price'] ?? 0);
+                $priceLabel = $type === 'rent'
+                    ? number_format($price, 0, ',', ' ') . ' € / mēn'
+                    : number_format($price, 0, ',', ' ') . ' €';
+                ?>
+                <div class="property-card">
+                    <div class="property-image">
+                        <img
+                            src="<?php echo htmlspecialchars(media_url($img)); ?>"
+                            alt="<?php echo htmlspecialchars((string)($home['title'] ?? '')); ?>"
+                            loading="lazy"
+                            onerror="this.onerror=null;this.src='<?php echo htmlspecialchars($fallbackImg, ENT_QUOTES); ?>';"
+                        >
+                        <span class="property-badge <?php echo htmlspecialchars($badgeClass); ?>"><?php echo htmlspecialchars($badge); ?></span>
+                        <button class="property-favorite" title="Pievienot favorītiem" type="button">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                    <div class="property-details">
+                        <h3><?php echo htmlspecialchars((string)($home['title'] ?? '')); ?></h3>
+                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($location); ?></p>
+                        <div class="property-features">
+                            <span><i class="fas fa-bed"></i> <?php echo (int)($home['bedrooms'] ?? 0); ?> guļamist.</span>
+                            <span><i class="fas fa-ruler-combined"></i> <?php echo (int)($home['area'] ?? 0); ?> m²</span>
+                            <span><i class="fas fa-bath"></i> <?php echo (int)($home['bathrooms'] ?? 0); ?> vannas</span>
+                        </div>
+                        <div class="property-footer">
+                            <span class="property-price"><?php echo htmlspecialchars($priceLabel); ?></span>
+                            <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
         
-        <div id="homes-empty" class="search-empty" style="display:none;">
+        <div id="homes-empty" class="search-empty" style="<?php echo empty($initialHomes) ? '' : 'display:none;'; ?>">
             <i class="fas fa-home"></i>
             <h3>Nav atrasto īpašumu</h3>
             <p>Mēģiniet mainīt filtrus vai meklēt citā pilsētā.</p>

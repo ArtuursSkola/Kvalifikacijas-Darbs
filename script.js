@@ -152,10 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Robust detection of pages that want a transparent navbar at the top (those with a HERO section)
-    const wantsTransparentOnTop = !!document.querySelector('.hero, .homes-hero, .owner-hero, .about-hero');
-
     if (navbar) {
+        // Transparent header only on pages that have a hero section.
+        const hasHero = !!document.querySelector('.hero, .homes-hero, .owner-hero, .myhomes-hero');
+        if (hasHero) {
+            navbar.classList.add('navbar--hero');
+        }
+
         const syncNavbarState = () => {
             // Ensure correct state on initial load and during scroll.
             if (window.scrollY > 50) {
@@ -163,11 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (wantsTransparentOnTop) {
-                navbar.classList.remove('scrolled');
-            } else {
-                navbar.classList.add('scrolled');
-            }
+            navbar.classList.remove('scrolled');
         };
 
         syncNavbarState();
@@ -325,9 +324,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fetch homes from database
         async function loadHomes() {
             try {
-                const response = await fetch(homesApiUrl);
-                if (!response.ok) throw new Error('Failed to fetch');
-                listingsData = await response.json();
+                const response = await fetch(homesApiUrl, { cache: 'no-store' });
+                const text = await response.text();
+                if (!response.ok) {
+                    throw new Error(`Homes API error ${response.status}: ${text.slice(0, 200)}`);
+                }
+
+                try {
+                    listingsData = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(`Homes API returned non-JSON: ${text.slice(0, 200)}`);
+                }
+
+                if (!Array.isArray(listingsData)) {
+                    throw new Error(`Homes API returned unexpected payload: ${text.slice(0, 200)}`);
+                }
+
+                // If the server-side fallback already rendered listings, don't wipe it with an empty API response.
+                const hasFallback = resultsWrap && resultsWrap.children && resultsWrap.children.length > 0;
+                if (hasFallback && listingsData.length === 0) {
+                    updateResultsCount(resultsWrap.children.length);
+                    if (emptyMsg) emptyMsg.style.display = 'none';
+                    return;
+                }
                 populateCities();
 
                 // Apply URL parameters if present
@@ -346,9 +365,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (error) {
                 console.error('Error loading homes:', error);
-                // Show empty state on error
-                if (emptyMsg) emptyMsg.style.display = 'block';
-                updateResultsCount(0);
+                // If server-side fallback already rendered cards, keep them visible.
+                const hasFallback = resultsWrap && resultsWrap.children && resultsWrap.children.length > 0;
+                if (!hasFallback) {
+                    if (emptyMsg) emptyMsg.style.display = 'block';
+                    if (emptyMsg) {
+                        const msg = (error && error.message) ? error.message : 'Neizdevās ielādēt sludinājumus.';
+                        const p = emptyMsg.querySelector('p');
+                        if (p) p.textContent = msg;
+                    }
+                    updateResultsCount(0);
+                }
             }
         }
 
@@ -391,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.className = 'property-card';
                 card.innerHTML = `
                     <div class="property-image">
-                        <img src="${item.image}" alt="${item.title}">
+                        <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
                         <span class="property-badge ${item.type === 'rent' ? 'rent' : 'sale'}">${item.badge}</span>
                         <button class="property-favorite" title="Pievienot favorītiem">
                             <i class="far fa-heart"></i>
