@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/../../routes/main.php';
 require_once dirname(__DIR__, 2) . '/con_db.php';
+require_once dirname(__DIR__, 2) . '/includes/account.php';
 
 $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plan'] ?? '';
@@ -15,8 +16,12 @@ if ($homeId <= 0) {
     exit;
 }
 
-// Fetch property from database
-$stmt = $savienojums->prepare("SELECT * FROM est_homes WHERE id = ?");
+// Fetch property + owner info from database
+$stmt = $savienojums->prepare("SELECT h.*, u.lietotajvards as owner_username, u.epasts as owner_email, u.profila_bilde as owner_avatar
+    FROM est_homes h
+    LEFT JOIN est_lietotaji u ON u.lietotaja_id = h.owner_id
+    WHERE h.id = ?
+    LIMIT 1");
 $stmt->bind_param('i', $homeId);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -28,6 +33,11 @@ if ($result->num_rows === 0) {
 
 $home = $result->fetch_assoc();
 $stmt->close();
+
+$ownerName = trim((string)($home['owner_username'] ?? ''));
+$ownerEmail = trim((string)($home['owner_email'] ?? ''));
+$ownerAvatarUrl = userProfileImageUrl($home['owner_avatar'] ?? '');
+$ownerInitial = strtoupper(substr($ownerName !== '' ? $ownerName : 'U', 0, 1));
 
 // Parse amenities
 $amenities = [];
@@ -181,6 +191,30 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
         </main>
 
         <aside class="property-sidebar">
+            <div class="sidebar-widget sidebar-owner">
+                <h4>Kontaktpersona</h4>
+                <div class="agent-info">
+                    <?php if ($ownerAvatarUrl !== ''): ?>
+                        <img src="<?php echo htmlspecialchars($ownerAvatarUrl); ?>" alt="Profila bilde" class="agent-photo">
+                    <?php else: ?>
+                        <div class="agent-photo-fallback" aria-hidden="true"><?php echo htmlspecialchars($ownerInitial); ?></div>
+                    <?php endif; ?>
+                    <div>
+                        <strong><?php echo htmlspecialchars($ownerName !== '' ? $ownerName : 'Īpašnieks'); ?></strong>
+                        <span>Īpašnieks</span>
+                    </div>
+                </div>
+                <?php if ($ownerEmail !== ''): ?>
+                    <a href="mailto:<?php echo htmlspecialchars($ownerEmail); ?>?subject=Interese%20par%20<?php echo urlencode($home['title']); ?>" class="agent-contact">
+                        <i class="fas fa-envelope"></i> Sazināties
+                    </a>
+                <?php else: ?>
+                    <a href="mailto:info@homeestate.lv?subject=Interese%20par%20<?php echo urlencode($home['title']); ?>" class="agent-contact">
+                        <i class="fas fa-envelope"></i> Sazināties
+                    </a>
+                <?php endif; ?>
+            </div>
+
             <div class="sidebar-widget sidebar-price">
                 <span class="price"><?php echo $priceDisplay; ?></span>
                 <a href="mailto:info@homeestate.lv?subject=Interese%20par%20<?php echo urlencode($home['title']); ?>" class="btn-primary">

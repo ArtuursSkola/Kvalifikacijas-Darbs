@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+session_start();
 require_once '../con_db.php';
 
 // Check connection
@@ -8,14 +9,32 @@ if (!$savienojums) {
     exit;
 }
 
-$sql = "SELECT id, title, city, address, location_text, type, price, area, bedrooms, bathrooms, 
-               floor_info, description, main_image, thumb1, thumb2, thumb3, 
+$userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+
+if ($userId > 0) {
+    $stmt = $savienojums->prepare("SELECT id, owner_id, title, city, address, location_text, type, price, area, bedrooms, bathrooms,
+            floor_info, description, main_image, thumb1, thumb2, thumb3,
+            rent_price, utilities_price, total_price, status, property_category
+        FROM est_homes
+        WHERE status = 'active' OR owner_id = ?
+        ORDER BY created_at DESC");
+    if ($stmt) {
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        $result = false;
+    }
+} else {
+    $sql = "SELECT id, owner_id, title, city, address, location_text, type, price, area, bedrooms, bathrooms,
+               floor_info, description, main_image, thumb1, thumb2, thumb3,
                rent_price, utilities_price, total_price, status, property_category
-        FROM est_homes 
+        FROM est_homes
         WHERE status = 'active'
         ORDER BY created_at DESC";
 
-$result = $savienojums->query($sql);
+    $result = $savienojums->query($sql);
+}
 
 $homes = [];
 
@@ -23,6 +42,8 @@ if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $homes[] = [
             'id' => (int)$row['id'],
+            'status' => $row['status'],
+            'is_own' => $userId > 0 && (int)($row['owner_id'] ?? 0) === $userId,
             'title' => $row['title'],
             'city' => $row['city'],
             'location' => $row['city'] . ', ' . $row['location_text'],
@@ -42,6 +63,9 @@ if ($result && $result->num_rows > 0) {
     }
 }
 
+if (isset($stmt) && $stmt instanceof mysqli_stmt) {
+    $stmt->close();
+}
 $savienojums->close();
 
 echo json_encode($homes, JSON_UNESCAPED_UNICODE);
