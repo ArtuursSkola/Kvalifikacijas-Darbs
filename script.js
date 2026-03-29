@@ -154,7 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (navbar) {
         // Transparent header only on pages that have a hero section.
-        const hasHero = !!document.querySelector('.hero, .homes-hero, .owner-hero, .myhomes-hero');
+        // We include common hero classes used across the project.
+        const hasHero = !!document.querySelector('.hero, .homes-hero, .owner-hero, .myhomes-hero, .property-hero, .property-hero-v2, .newhome-hero');
         if (hasHero) {
             navbar.classList.add('navbar--hero');
         }
@@ -166,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // At the top of the page, remove scrolled class.
             navbar.classList.remove('scrolled');
         };
 

@@ -219,10 +219,23 @@ $bodyClass = 'owner-page newhome-page';
 include __DIR__ . '/../../includes/header.php';
 ?>
 
-<div class="newhome-shell">
-    <h1>Izveidot sludinājumu</h1>
-    <p class="sub">Pievieno informāciju pa soļiem. Sludinājums tiks saglabāts kā melnraksts.</p>
+<header class="newhome-hero">
+    <div class="hero-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+    <div class="newhome-hero__inner">
+        <div class="hero-badge">
+            <i class="fas fa-plus-circle"></i>
+            Jauns sludinājums
+        </div>
+        <h1>Izveidot <span class="highlight">sludinājumu</span></h1>
+        <p>Pievieno informāciju pa soļiem. Sludinājums tiks saglabāts kā melnraksts.</p>
+    </div>
+</header>
 
+<div class="newhome-shell">
     <?php if ($success): ?>
         <div class="notice success"><?php echo htmlspecialchars($success); ?></div>
     <?php endif; ?>

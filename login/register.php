@@ -184,7 +184,7 @@ if (isset($_POST['register_btn'])) {
 </head>
 <body class="auth-page">
     
-    <nav class="navbar scrolled">
+    <nav class="navbar">
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
             <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>

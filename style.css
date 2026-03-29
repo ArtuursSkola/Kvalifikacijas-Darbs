@@ -63,7 +63,7 @@ ul {
     justify-content: space-between;
     align-items: center;
     padding: 24px 48px;
-    background-color: var(--white);
+    background-color: var(--white) !important;
     position: fixed;
     top: 0;
     left: 0;
@@ -74,21 +74,70 @@ ul {
     backdrop-filter: blur(20px);
 }
 
-.navbar.scrolled {
-    padding: 12px 48px;
-    background-color: var(--white);
-}
-
+/* Transparent version for hero pages at the top */
 .navbar.navbar--hero:not(.scrolled) {
-    background-color: transparent;
+    background-color: transparent !important;
     box-shadow: none;
     backdrop-filter: none;
 }
 
-.navbar.navbar--hero.scrolled {
-    background-color: var(--white);
-    box-shadow: var(--shadow-md);
-    backdrop-filter: blur(20px);
+/* Ensure text is white at top on hero pages */
+.navbar.navbar--hero:not(.scrolled) .logo,
+.navbar.navbar--hero:not(.scrolled) .nav-links a,
+.navbar.navbar--hero:not(.scrolled) .hamburger,
+.navbar.navbar--hero:not(.scrolled) .hamburger i,
+.navbar.navbar--hero:not(.scrolled) .auth-buttons > span,
+.navbar.navbar--hero:not(.scrolled) .btn-login {
+    color: var(--white) !important;
+}
+
+/* Specific overrides for hover and active at top */
+.navbar.navbar--hero:not(.scrolled) .nav-links a:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--white) !important;
+}
+
+.navbar.navbar--hero:not(.scrolled) .nav-links a.active {
+    background: rgba(48, 182, 7, 0.15) !important;
+    color: var(--accent) !important;
+}
+
+/* Fix for Estate span in logo at top */
+.navbar.navbar--hero:not(.scrolled) .logo span {
+    color: var(--white) !important;
+}
+
+.navbar.scrolled {
+    padding: 12px 48px !important;
+    background-color: var(--white) !important;
+    box-shadow: var(--shadow-md) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+/* Reset text colors when scrolled */
+.navbar.scrolled .logo,
+.navbar.scrolled .nav-links a,
+.navbar.scrolled .hamburger,
+.navbar.scrolled .hamburger i,
+.navbar.scrolled .auth-buttons > span,
+.navbar.scrolled .btn-login {
+    color: var(--primary) !important;
+}
+
+/* Restore Estate span color when scrolled */
+.navbar.scrolled .logo span {
+    color: var(--accent) !important;
+}
+
+/* Specific overrides for hover and active when scrolled */
+.navbar.scrolled .nav-links a:hover {
+    color: var(--accent) !important;
+    background: rgba(48, 182, 7, 0.08) !important;
+}
+
+.navbar.scrolled .nav-links a.active {
+    color: var(--accent) !important;
+    background: rgba(48, 182, 7, 0.1) !important;
 }
 
 .logo {

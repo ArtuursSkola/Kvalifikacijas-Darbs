@@ -78,7 +78,7 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
     <link rel="stylesheet" href="<?php echo asset_path('css/home.css'); ?>">
 </head>
 <body class="property-detail-page">
-    <nav class="navbar scrolled">
+    <nav class="navbar">
         <div class="logo">Home<span>Estate</span></div>
         <ul class="nav-links">
             <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
