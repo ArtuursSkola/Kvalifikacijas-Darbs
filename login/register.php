@@ -49,7 +49,12 @@ if (isset($_POST['register_btn'])) {
             }
             
             if (mysqli_query($savienojums, $sql)) {
-                $zinojums = "Reģistrācija veiksmīga! Vari ielogoties.";
+                $_SESSION['user_id'] = mysqli_insert_id($savienojums);
+                $_SESSION['username'] = $lietotajvards;
+                $_SESSION['role'] = $atlasita_loma;
+                
+                header('Location: ' . main_route('home'));
+                exit;
             } else {
                 $zinojums = "Kļūda sistēmā: " . mysqli_error($savienojums);
             }
