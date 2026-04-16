@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/../../routes/main.php';
 
-// Only logged-in owners with paid plan can create listings.
+
 $plan = $_SESSION['plan'] ?? '';
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'ipasnieks' || !in_array($plan, ['Silver', 'Gold'], true)) {
     header('Location: ' . main_route('owner') . '#plans');
@@ -14,65 +14,9 @@ require_once dirname(__DIR__, 2) . '/con_db.php';
 $errors = [];
 $success = '';
 
-// Ensure the table has the columns we expect (avoids Unknown column errors on shared hosts).
-ensureColumns($savienojums, 'est_homes', $errors);
 
-// Ensure required columns exist (shared hosting safety net).
-function ensureColumns(mysqli $conn, string $table, array &$errors): void
-{
-    $dbRes = $conn->query('SELECT DATABASE() as db');
-    if (!$dbRes) {
-        $errors[] = 'Neizdevās noteikt datubāzi: ' . $conn->error;
-        return;
-    }
-    $dbRow = $dbRes->fetch_assoc();
-    $db = $dbRow['db'] ?? '';
-    if ($db === '') {
-        $errors[] = 'Datubāzes nosaukums nav pieejams.';
-        return;
-    }
 
-    $defs = [
-        'owner_id' => 'INT NOT NULL DEFAULT 0',
-        'property_category' => "VARCHAR(50) NOT NULL DEFAULT 'apartment'",
-        'address' => 'VARCHAR(255) DEFAULT NULL',
-        'location_text' => 'TEXT',
-        'layout_text' => 'TEXT',
-        'map_text' => 'TEXT',
-        'amenities' => 'TEXT',
-        'main_image' => 'VARCHAR(255) NOT NULL',
-        'thumb1' => 'VARCHAR(255) DEFAULT NULL',
-        'thumb2' => 'VARCHAR(255) DEFAULT NULL',
-        'thumb3' => 'VARCHAR(255) DEFAULT NULL',
-        'floor_info' => 'VARCHAR(20) DEFAULT NULL',
-        'rent_price' => 'DECIMAL(12,2) DEFAULT 0',
-        'utilities_price' => 'DECIMAL(12,2) DEFAULT 0',
-        'total_price' => 'DECIMAL(12,2) DEFAULT 0',
-    ];
 
-    foreach ($defs as $col => $definition) {
-        $stmt = $conn->prepare('SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?');
-        if (!$stmt) {
-            $errors[] = 'Kolonnu pārbaude neizdevās: ' . $conn->error;
-            return;
-        }
-        $stmt->bind_param('sss', $db, $table, $col);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_assoc() : ['cnt' => 0];
-        $stmt->close();
-
-        if ((int)($row['cnt'] ?? 0) === 0) {
-            $alterSql = "ALTER TABLE `" . $conn->real_escape_string($table) . "` ADD COLUMN `$col` $definition";
-            if (!$conn->query($alterSql)) {
-                $errors[] = "Neizdevās pievienot kolonnu $col: " . $conn->error;
-                return;
-            }
-        }
-    }
-}
-
-// Upload helper for image inputs (file preferred, URL as fallback).
 $uploadDir = dirname(__DIR__, 2) . '/uploads';
 if (!is_dir($uploadDir)) {
     @mkdir($uploadDir, 0775, true);
@@ -98,16 +42,25 @@ function handleUploadOrUrl(string $fileKey, string $fallbackUrl, string $uploadD
     return trim((string)$fallbackUrl);
 }
 
-// Initialize form fields to avoid undefined notices on first load.
+
 $title = $city = $address = $location_text = $price = $area = $bedrooms = $bathrooms = '';
 $floor = $total_floors = '';
 $description = $layout_text = $map_text = $amenities = '';
 $property_category = 'apartment';
 $type = 'rent';
-$main_image = $thumb1 = $thumb2 = $thumb3 = '';
-$main_image_url = $thumb1_url = $thumb2_url = $thumb3_url = '';
+$main_image = '';
+$main_image_url = '';
+$gallery_json = '[]';
 $rent_price = $utilities_price = $total_price = '';
 $price_label = 'Cena (EUR / men.) *';
+
+
+$galleryLimit = 2;
+if ($plan === 'Silver') {
+    $galleryLimit = 9;
+} elseif ($plan === 'Gold') {
+    $galleryLimit = 50;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim((string)($_POST['title'] ?? ''));
@@ -129,33 +82,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $amenities = trim((string)($_POST['amenities'] ?? ''));
 
     $main_image_url = trim((string)($_POST['main_image_url'] ?? ''));
-    $thumb1_url = trim((string)($_POST['thumb1_url'] ?? ''));
-    $thumb2_url = trim((string)($_POST['thumb2_url'] ?? ''));
-    $thumb3_url = trim((string)($_POST['thumb3_url'] ?? ''));
+    
 
-    $rent_price = trim((string)($_POST['rent_price'] ?? ''));
-    $utilities_price = trim((string)($_POST['utilities_price'] ?? ''));
-    $total_price = trim((string)($_POST['total_price'] ?? ''));
+    $rent_price = $price;
+    $utilities_price = trim((string)($_POST['utilities_price'] ?? '0'));
+    
+    if ($type === 'rent') {
+        $total_price = (float)str_replace(',', '.', $rent_price) + (float)str_replace(',', '.', $utilities_price);
+    } else {
+        $total_price = (float)str_replace(',', '.', $price);
+    }
 
     if ($title === '' || $city === '' || $location_text === '' || $price === '') {
         $errors[] = 'Lūdzu aizpildi obligātos laukus (nosaukums, pilsēta, atrašanās vieta, cena).';
     }
 
     $main_image = handleUploadOrUrl('main_image_file', $main_image_url, $uploadDir);
-    $thumb1 = handleUploadOrUrl('thumb1_file', $thumb1_url, $uploadDir);
-    $thumb2 = handleUploadOrUrl('thumb2_file', $thumb2_url, $uploadDir);
-    $thumb3 = handleUploadOrUrl('thumb3_file', $thumb3_url, $uploadDir);
 
     if ($main_image === '') {
         $errors[] = 'Lūdzu pievieno galveno attēlu (fails vai URL).';
     }
 
+
+    $gallery_paths = [];
+    if (isset($_FILES['gallery_files']) && is_array($_FILES['gallery_files']['name'])) {
+        $count = count($_FILES['gallery_files']['name']);
+        // Respect plan limits
+        for ($i = 0; $i < min($count, $galleryLimit); $i++) {
+            if ($_FILES['gallery_files']['error'][$i] === UPLOAD_ERR_OK) {
+                $tmpName = $_FILES['gallery_files']['tmp_name'][$i];
+                $origName = basename((string)$_FILES['gallery_files']['name'][$i]);
+                $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+                if (in_array($ext, $allowed, true)) {
+                    $safeName = uniqid('gallery_', true) . '.' . $ext;
+                    $targetPath = $uploadDir . '/' . $safeName;
+                    if (move_uploaded_file($tmpName, $targetPath)) {
+                        $gallery_paths[] = 'uploads/' . $safeName;
+                    }
+                }
+            }
+        }
+    }
+    $gallery_json = json_encode($gallery_paths);
+
     if ($errors === []) {
         $ownerId = (int)$_SESSION['user_id'];
 
         $floorInfo = '';
-        if ($floor !== '' || $total_floors !== '') {
-            $floorInfo = trim($floor . '/' . $total_floors, '/');
+        if ($property_category === 'house') {
+            $floorInfo = $total_floors !== '' ? $total_floors . ' stāvu māja' : '';
+        } else {
+            if ($floor !== '' || $total_floors !== '') {
+                $floorInfo = trim($floor . '/' . $total_floors, '/');
+            }
         }
 
         $priceVal = (float)str_replace(',', '.', $price);
@@ -165,14 +145,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $floorVal = (int)$floor;
         $rentVal = (float)str_replace(',', '.', $rent_price);
         $utilVal = (float)str_replace(',', '.', $utilities_price);
-        $totalVal = (float)str_replace(',', '.', $total_price);
+        $totalVal = (float)$total_price;
+
 
         $stmt = $savienojums->prepare("INSERT INTO est_homes
-            (owner_id, title, city, address, location_text, property_category, type, price, area, bedrooms, bathrooms, floor, floor_info, description, layout_text, map_text, amenities, main_image, thumb1, thumb2, thumb3, rent_price, utilities_price, total_price, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')");
+            (owner_id, title, city, address, location_text, property_category, type, price, area, bedrooms, bathrooms, floor, floor_info, description, layout_text, map_text, amenities, main_image, gallery, rent_price, utilities_price, total_price, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')");
 
         if ($stmt) {
-            $bindTypes = 'issssssdiiiisssssssssddd';
+            $bindTypes = 'issssssdiiiisssssssddd';
             $stmt->bind_param(
                 $bindTypes,
                 $ownerId,
@@ -193,9 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $map_text,
                 $amenities,
                 $main_image,
-                $thumb1,
-                $thumb2,
-                $thumb3,
+                $gallery_json,
                 $rentVal,
                 $utilVal,
                 $totalVal
@@ -208,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $stmt->close();
         } else {
-            $errors[] = 'Neizdevās sagatavot pieprasījumu.';
+            $errors[] = 'Neizdevās sagatavot pieprasījumu. Pārliecinies, ka esi izpildījis SQL komandu gallery kolonnas pievienošanai.';
         }
     }
 }
@@ -234,6 +213,70 @@ include __DIR__ . '/../../includes/header.php';
         <p>Pievieno informāciju pa soļiem. Sludinājums tiks saglabāts kā melnraksts.</p>
     </div>
 </header>
+
+<style>
+    .image-preview-container {
+        margin-top: 15px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .preview-item {
+        width: 120px;
+        height: 120px;
+        position: relative;
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        border: 2px solid var(--gray-200);
+        transition: transform 0.2s;
+    }
+    .preview-item:hover {
+        border-color: var(--accent);
+    }
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        cursor: pointer;
+    }
+    .preview-item .remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(231, 76, 60, 0.9);
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.2s;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .preview-item .remove-btn:hover {
+        background: #c0392b;
+        transform: scale(1.1);
+    }
+    .main-preview-item {
+        width: 100%;
+        max-width: 300px;
+        height: 180px;
+    }
+    .gallery-counter {
+        margin-top: 8px;
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 0.9rem;
+    }
+    .gallery-counter span {
+        color: var(--accent);
+    }
+</style>
 
 <div class="newhome-shell">
     <?php if ($success): ?>
@@ -283,7 +326,7 @@ include __DIR__ . '/../../includes/header.php';
 
                 <div>
                     <label id="price-label"><?php echo htmlspecialchars($price_label); ?></label>
-                    <input type="number" step="0.01" min="0" name="price" value="<?php echo htmlspecialchars($price); ?>" data-required="1" placeholder="520">
+                    <input type="number" step="0.01" min="0" name="price" id="main-price" value="<?php echo htmlspecialchars($price); ?>" data-required="1" placeholder="520">
                 </div>
                 <div>
                     <label>Platība (m2)</label>
@@ -293,9 +336,9 @@ include __DIR__ . '/../../includes/header.php';
                     <label>Stāvs</label>
                     <input type="number" min="0" name="floor" value="<?php echo htmlspecialchars($floor); ?>" placeholder="3">
                 </div>
-                <div class="apartment-only">
-                    <label>Stāvu skaits</label>
-                    <input type="number" min="0" name="total_floors" value="<?php echo htmlspecialchars($total_floors); ?>" placeholder="9">
+                <div class="floor-info-block">
+                    <label id="floor-total-label">Stāvu skaits</label>
+                    <input type="number" min="0" name="total_floors" value="<?php echo htmlspecialchars($total_floors); ?>" placeholder="2">
                 </div>
                 <div>
                     <label>Guļamistabas</label>
@@ -351,23 +394,18 @@ include __DIR__ . '/../../includes/header.php';
             <div class="form-grid">
                 <div>
                     <label>Galvenais attēls *</label>
-                    <input type="file" name="main_image_file" accept="image/*">
-                    <input type="url" name="main_image_url" placeholder="URL (ja nav faila)" value="<?php echo htmlspecialchars($main_image_url); ?>">
+                    <input type="file" name="main_image_file" accept="image/*" id="main-image-input">
+                    <input type="url" name="main_image_url" placeholder="URL (ja nav faila)" value="<?php echo htmlspecialchars($main_image_url); ?>" id="main-image-url">
+                    <div id="main-preview" class="image-preview-container"></div>
                 </div>
-                <div>
-                    <label>Attēls 1</label>
-                    <input type="file" name="thumb1_file" accept="image/*">
-                    <input type="url" name="thumb1_url" placeholder="URL" value="<?php echo htmlspecialchars($thumb1_url); ?>">
-                </div>
-                <div>
-                    <label>Attēls 2</label>
-                    <input type="file" name="thumb2_file" accept="image/*">
-                    <input type="url" name="thumb2_url" placeholder="URL" value="<?php echo htmlspecialchars($thumb2_url); ?>">
-                </div>
-                <div>
-                    <label>Attēls 3</label>
-                    <input type="file" name="thumb3_file" accept="image/*">
-                    <input type="url" name="thumb3_url" placeholder="URL" value="<?php echo htmlspecialchars($thumb3_url); ?>">
+                <div class="full">
+                    <label>Galerija (Max <?php echo $galleryLimit; ?> attēli)</label>
+                    <div class="gallery-upload-zone">
+                        <input type="file" name="gallery_files[]" accept="image/*" multiple id="gallery-input">
+                        <div id="gallery-counter-text" class="gallery-counter">Izvēlēti <span>0</span> no <?php echo $galleryLimit; ?> attēliem</div>
+                        <p class="muted">Vari pievienot attēlus pa vienam vai vairākus kopā. Tie tiks pievienoti esošajai izvēlei.</p>
+                    </div>
+                    <div id="gallery-preview" class="image-preview-container"></div>
                 </div>
             </div>
 
@@ -380,16 +418,21 @@ include __DIR__ . '/../../includes/header.php';
         <div class="step" data-step="5">
             <div class="form-grid pricing-grid">
                 <div class="rent-only">
-                    <label>Īres maksa (EUR / men.) *</label>
-                    <input type="number" step="0.01" min="0" name="rent_price" value="<?php echo htmlspecialchars($rent_price); ?>" data-required-rent="1" placeholder="520">
+                    <label>Īres maksa (EUR / men.)</label>
+                    <input type="number" id="rent-price-display" value="<?php echo htmlspecialchars($price); ?>" disabled>
+                    <p class="muted small">Tiek ņemta no pamatinformācijas.</p>
                 </div>
                 <div class="rent-only">
                     <label>Komunālie (apt., EUR)</label>
-                    <input type="number" step="0.01" min="0" name="utilities_price" value="<?php echo htmlspecialchars($utilities_price); ?>" placeholder="150">
+                    <input type="number" step="0.01" min="0" name="utilities_price" id="utilities-price" value="<?php echo htmlspecialchars($utilities_price); ?>" placeholder="150">
                 </div>
                 <div class="rent-only">
                     <label>Kopā mēnesī (EUR)</label>
-                    <input type="number" step="0.01" min="0" name="total_price" value="<?php echo htmlspecialchars($total_price); ?>" placeholder="670">
+                    <input type="number" step="0.01" min="0" name="total_price_calc" id="total-price-calc" value="<?php echo htmlspecialchars($total_price); ?>" readonly>
+                </div>
+                <div class="buy-only hidden">
+                    <label>Pārdošanas cena (EUR)</label>
+                    <input type="text" id="buy-price-display" value="<?php echo htmlspecialchars($price); ?>" disabled>
                 </div>
             </div>
 
@@ -403,18 +446,38 @@ include __DIR__ . '/../../includes/header.php';
 
 <script>
 (function() {
+    const form = document.getElementById('newhome-form');
     const steps = Array.from(document.querySelectorAll('.step'));
     const status = document.getElementById('step-status');
     const dealType = document.getElementById('deal-type');
     const priceLabel = document.getElementById('price-label');
     const propertyCategory = document.getElementById('property-category');
     const rentBlocks = document.querySelectorAll('.rent-only');
+    const buyBlocks = document.querySelectorAll('.buy-only');
     const aptBlocks = document.querySelectorAll('.apartment-only');
+    const floorTotalLabel = document.getElementById('floor-total-label');
     const nextBtns = document.querySelectorAll('.btn-next');
     const backBtns = document.querySelectorAll('.btn-back');
-    let currentStep = 0;
+    
+    const mainPriceInput = document.getElementById('main-price');
+    const rentDisplay = document.getElementById('rent-price-display');
+    const buyDisplay = document.getElementById('buy-price-display');
+    const utilitiesInput = document.getElementById('utilities-price');
+    const totalCalcInput = document.getElementById('total-price-calc');
+    
+    const mainImageInput = document.getElementById('main-image-input');
+    const mainImageUrlInput = document.getElementById('main-image-url');
+    const mainPreview = document.getElementById('main-preview');
+    const galleryInput = document.getElementById('gallery-input');
+    const galleryPreview = document.getElementById('gallery-preview');
+    const galleryCounterText = document.getElementById('gallery-counter-text');
+    const galleryLimit = <?php echo $galleryLimit; ?>;
 
+    let currentStep = 0;
     const stepNames = ['Pamatinformācija', 'Apraksti', 'Priekšrocības', 'Mediji', 'Cenas'];
+
+
+    let galleryFiles = [];
 
     const setStep = (idx) => {
         steps.forEach((step, i) => step.classList.toggle('active', i === idx));
@@ -426,12 +489,9 @@ include __DIR__ . '/../../includes/header.php';
     const validateStep = (idx) => {
         const step = steps[idx];
         if (!step) return true;
-        const isRent = dealType && dealType.value === 'rent';
         let ok = true;
-        const selectors = ['[data-required="1"]'];
-        if (isRent) selectors.push('[data-required-rent="1"]');
-        step.querySelectorAll(selectors.join(',')).forEach(el => {
-            const visible = !el.closest('.rent-only.hidden') && !el.closest('.apartment-only.hidden');
+        step.querySelectorAll('[data-required="1"]').forEach(el => {
+            const visible = el.offsetParent !== null;
             if (!visible) return;
             if (!String(el.value || '').trim()) {
                 ok = false;
@@ -443,16 +503,116 @@ include __DIR__ . '/../../includes/header.php';
         return ok;
     };
 
+    const calculateTotal = () => {
+        const p = parseFloat(mainPriceInput.value) || 0;
+        const u = parseFloat(utilitiesInput.value) || 0;
+        if (dealType.value === 'rent') {
+            totalCalcInput.value = (p + u).toFixed(2);
+        } else {
+            totalCalcInput.value = p.toFixed(2);
+        }
+        if (rentDisplay) rentDisplay.value = p;
+        if (buyDisplay) buyDisplay.value = p;
+    };
+
     const toggleDealFields = () => {
         const isRent = dealType.value === 'rent';
         if (priceLabel) priceLabel.textContent = isRent ? 'Cena (EUR / men.) *' : 'Cena (EUR) *';
         rentBlocks.forEach(block => block.classList.toggle('hidden', !isRent));
+        buyBlocks.forEach(block => block.classList.toggle('hidden', isRent));
+        calculateTotal();
     };
 
     const toggleCategoryFields = () => {
-        const isApartment = propertyCategory.value === 'apartment';
-        aptBlocks.forEach(block => block.classList.toggle('hidden', !isApartment));
+        const cat = propertyCategory.value;
+        const isApt = cat === 'apartment';
+        const isHouse = cat === 'house';
+        aptBlocks.forEach(block => block.classList.toggle('hidden', !isApt));
+        if (isHouse) {
+            floorTotalLabel.textContent = 'Stāvu skaits mājā';
+        } else if (isApt) {
+            floorTotalLabel.textContent = 'Stāvu skaits ēkā';
+        } else {
+            floorTotalLabel.textContent = 'Stāvu skaits';
+        }
     };
+
+    const renderGallery = () => {
+        galleryPreview.innerHTML = '';
+        galleryFiles.forEach((file, index) => {
+            const div = document.createElement('div');
+            div.className = 'preview-item';
+            
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.onclick = () => window.open(img.src, '_blank');
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.type = 'button';
+            removeBtn.onclick = (e) => {
+                e.stopPropagation();
+                galleryFiles.splice(index, 1);
+                renderGallery();
+            };
+            
+            div.appendChild(img);
+            div.appendChild(removeBtn);
+            galleryPreview.appendChild(div);
+        });
+        galleryCounterText.querySelector('span').textContent = galleryFiles.length;
+    };
+
+    mainImageInput.addEventListener('change', () => {
+        mainPreview.innerHTML = '';
+        if (mainImageInput.files && mainImageInput.files[0]) {
+            const file = mainImageInput.files[0];
+            const div = document.createElement('div');
+            div.className = 'preview-item main-preview-item';
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.onclick = () => window.open(img.src, '_blank');
+            div.appendChild(img);
+            mainPreview.appendChild(div);
+        }
+    });
+
+    mainImageUrlInput.addEventListener('input', () => {
+        if (mainImageUrlInput.value.trim() !== '') {
+            mainPreview.innerHTML = `<div class="preview-item main-preview-item"><img src="${mainImageUrlInput.value}" onerror="this.src='https://via.placeholder.com/300x180?text=Invalid+URL'"></div>`;
+        }
+    });
+
+    galleryInput.addEventListener('change', () => {
+        const newFiles = Array.from(galleryInput.files);
+        newFiles.forEach(file => {
+            if (galleryFiles.length < galleryLimit) {
+                // Optional: Check for duplicates by name and size
+                const exists = galleryFiles.some(f => f.name === file.name && f.size === file.size);
+                if (!exists) galleryFiles.push(file);
+            }
+        });
+        
+        if (galleryFiles.length >= galleryLimit && newFiles.length > 0) {
+            if (galleryFiles.length === galleryLimit) {
+            }
+        }
+
+        galleryInput.value = '';
+        renderGallery();
+    });
+
+    form.addEventListener('submit', (e) => {
+        if (galleryFiles.length > 0) {
+            const dt = new DataTransfer();
+            galleryFiles.forEach(file => dt.items.add(file));
+            galleryInput.files = dt.files;
+        }
+    });
+
+    mainPriceInput.addEventListener('input', calculateTotal);
+    utilitiesInput.addEventListener('input', calculateTotal);
 
     nextBtns.forEach(btn => btn.addEventListener('click', () => {
         const target = parseInt(btn.dataset.next, 10) - 1;

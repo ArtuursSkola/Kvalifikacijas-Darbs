@@ -45,16 +45,22 @@ if (!empty($home['amenities'])) {
     $amenities = array_map('trim', explode(',', $home['amenities']));
 }
 
-// Default images if not set (and normalize relative upload paths)
-$fallbackMain = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';
-$fallbackThumb1 = 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=70';
-$fallbackThumb2 = 'https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&w=600&q=70';
-$fallbackThumb3 = 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=70';
+// Parse gallery
+$gallery = [];
+if (!empty($home['gallery'])) {
+    $gallery = json_decode($home['gallery'], true) ?: [];
+}
 
+// Ensure at least one image is shown if gallery exists (fallback to thumbs logic if needed, but here we assume migration happened)
 $mainImage = media_url($home['main_image'] ?: $fallbackMain);
-$thumb1 = media_url($home['thumb1'] ?: $fallbackThumb1);
-$thumb2 = media_url($home['thumb2'] ?: $fallbackThumb2);
-$thumb3 = media_url($home['thumb3'] ?: $fallbackThumb3);
+
+// Floor info display refinement
+// Floor info display refinement
+$floorDisplay = htmlspecialchars($home['floor_info'] ?: $home['floor']);
+if ($home['property_category'] === 'house' && !empty($home['floor_info'])) {
+    // If it's a house and we have floor_info (which we saved as "X stāvu māja" in newhome.php)
+    $floorDisplay = htmlspecialchars($home['floor_info']);
+}
 
 // Price formatting
 $priceDisplay = $home['type'] === 'rent' 
@@ -124,7 +130,13 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
                     <span class="chip"><i class="fas fa-bed"></i> <?php echo $home['bedrooms']; ?> guļamist.</span>
                     <span class="chip"><i class="fas fa-ruler-combined"></i> <?php echo $home['area']; ?> m²</span>
                     <?php if ($home['property_category']): ?>
-                    <span class="chip"><i class="fas fa-home"></i> <?php echo htmlspecialchars($home['property_category']); ?></span>
+                    <span class="chip">
+                        <i class="fas <?php echo $home['property_category'] === 'house' ? 'fa-home' : 'fa-building'; ?>"></i> 
+                        <?php 
+                            $catLabels = ['apartment' => 'Dzīvoklis', 'house' => 'Māja', 'land' => 'Zeme'];
+                            echo htmlspecialchars($catLabels[$home['property_category']] ?? $home['property_category']); 
+                        ?>
+                    </span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -134,9 +146,10 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
                     <img id="gallery-main" src="<?php echo htmlspecialchars($mainImage); ?>" alt="<?php echo htmlspecialchars($home['title']); ?>">
                 </div>
                 <div class="thumb-images">
-                    <img src="<?php echo htmlspecialchars($thumb1); ?>" alt="Attēls 1" class="active" onclick="changeImage(this)">
-                    <img src="<?php echo htmlspecialchars($thumb2); ?>" alt="Attēls 2" onclick="changeImage(this)">
-                    <img src="<?php echo htmlspecialchars($thumb3); ?>" alt="Attēls 3" onclick="changeImage(this)">
+                    <img src="<?php echo htmlspecialchars($mainImage); ?>" alt="Galvenais attēls" class="active" onclick="changeImage(this)">
+                    <?php foreach ($gallery as $idx => $imgUrl): ?>
+                        <img src="<?php echo htmlspecialchars(media_url($imgUrl)); ?>" alt="Attēls <?php echo $idx + 1; ?>" onclick="changeImage(this)">
+                    <?php endforeach; ?>
                 </div>
             </div>
 
@@ -175,8 +188,8 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
                             <span><?php echo $home['bedrooms']; ?></span>
                         </div>
                         <div class="spec-card">
-                            <strong>Stāvs</strong>
-                            <span><?php echo htmlspecialchars($home['floor_info'] ?: $home['floor']); ?></span>
+                            <strong><?php echo $home['property_category'] === 'house' ? 'Stāvi' : 'Stāvs'; ?></strong>
+                            <span><?php echo $floorDisplay; ?></span>
                         </div>
                         <div class="spec-card">
                             <strong>Vannasistabas</strong>
