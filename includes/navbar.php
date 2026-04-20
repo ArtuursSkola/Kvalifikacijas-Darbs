@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/account.php';
 require_once __DIR__ . '/../routes/main.php';
+require_once __DIR__ . '/../routes/admin.php';
 
 if (!isset($savienojums) || !$savienojums instanceof mysqli) {
     require_once __DIR__ . '/../con_db.php';
@@ -61,6 +62,9 @@ $myHomesUrl = main_route('property.myhomes');
 
     <div class="auth-buttons">
         <?php if ($currentUser): ?>
+            <?php if (in_array(($currentUser['loma'] ?? ''), ['admin', 'moderator'], true)): ?>
+                <a href="<?php echo admin_route('dashboard'); ?>" class="btn-login" style="margin-right: 12px; background: #1d2733; color: #fff; border: none; font-size: 0.9rem; padding: 10px 16px;">Admin panelis</a>
+            <?php endif; ?>
             <details class="profile-menu">
                 <summary
                     class="profile-trigger"
