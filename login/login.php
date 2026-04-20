@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/../routes/admin.php';
 
-// con_db.php atrodas viena līmeņa augstāk (blakus index.php)
+
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
     die('Nav atrasts con_db.php. Pārliecinies, ka fails atrodas tajā pašā mapē kā login.php.');
@@ -12,7 +12,7 @@ require $configPath;
 
 $zinojums = "";
 
-// Pārbaudām, vai tabulā ir kolonna 'loma', lai varētu salīdzināt lomas
+
 $roleColumnExists = false;
 $roleColumnCheck = mysqli_query($savienojums, "SHOW COLUMNS FROM est_lietotaji LIKE 'loma'");
 if ($roleColumnCheck && mysqli_num_rows($roleColumnCheck) > 0) {
@@ -23,7 +23,7 @@ if (isset($_POST['login_btn'])) {
     $lietotajvards = mysqli_real_escape_string($savienojums, $_POST['username']);
     $parole_raw = $_POST['password'];
 
-    // Meklējam lietotāju
+    // Šeit pārbauda, vai lietotājs jau eksistē sistēma
     $sql = "SELECT * FROM est_lietotaji WHERE lietotajvards='$lietotajvards'";
     $result = mysqli_query($savienojums, $sql);
 
@@ -31,18 +31,16 @@ if (isset($_POST['login_btn'])) {
         $row = mysqli_fetch_assoc($result);
         $loma_no_db = ($roleColumnExists && isset($row['loma'])) ? $row['loma'] : 'lietotajs';
         $plan_no_db = isset($row['plan']) ? $row['plan'] : null;
-        
-        // Pārbaudām paroli (Verify hash)
+
         if (password_verify($parole_raw, $row['parole'])) {
-            // Veiksmīga ielogošanās -> saglabājam sesijā
+            // Veiksmīga ielogošanās to saglabā sesijā
             $_SESSION['user_id'] = $row['lietotaja_id'];
             $_SESSION['username'] = $row['lietotajvards'];
             $_SESSION['role'] = $loma_no_db;
             if ($plan_no_db !== null) {
                 $_SESSION['plan'] = $plan_no_db;
             }
-            
-            // Pārsūtām uz sākumlapu (vienu līmeni augstāk)
+
             header("Location: " . main_route('home'));
             exit();
         } else {

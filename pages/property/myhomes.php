@@ -107,7 +107,10 @@ if ($ownerId > 0) {
                             <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars((string)($home['city'] ?? '')); ?></p>
                             <div class="owner-card__footer">
                                 <span class="price"><?php echo htmlspecialchars($price); ?></span>
-                                <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-sm-view">Skatīt</a>
+                                <div class="owner-card__actions">
+                                    <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-sm-view">Skatīt</a>
+                                    <a href="<?php echo main_route('property.create', ['id' => (int)$home['id']]); ?>" class="btn-sm-view btn-sm-edit">Rediģēt</a>
+                                </div>
                             </div>
                         </div>
                     </div>

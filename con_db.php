@@ -10,6 +10,6 @@ if (!$savienojums) {
     die("Pieslēgties neizdevās: " . mysqli_connect_error());
 }
 
-// Iestatām kodējumu
+
 mysqli_set_charset($savienojums, "utf8mb4");
 ?>

@@ -8,7 +8,7 @@ $pageTitle = 'HomeEstate - Tavs mājoklis';
 $extraStyles = ['index'];
 include 'includes/header.php';
 
-// Fetch 3 newest ACTIVE homes from database (drafts need admin approval)
+
 $newestHomes = [];
 $sql = "SELECT id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image 
         FROM est_homes WHERE status = 'active' ORDER BY created_at DESC LIMIT 3";

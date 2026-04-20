@@ -2,7 +2,6 @@
 session_start();
 require_once __DIR__ . '/../routes/admin.php';
 
-// con_db.php atrodas viena līmeņa augstāk (blakus index.php)
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
     die('Nav atrasts con_db.php. Pārliecinies, ka fails atrodas tajā pašā mapē kā register.php.');
@@ -13,7 +12,7 @@ require $configPath;
 $zinojums = "";
 $atlasita_loma = 'lietotajs';
 
-// Pārbaudām, vai tabulā eksistē kolonna 'loma'
+// Pārbaudām, vai tabulā ir 'loma'
 $roleColumnExists = false;
 $roleColumnCheck = mysqli_query($savienojums, "SHOW COLUMNS FROM est_lietotaji LIKE 'loma'");
 if ($roleColumnCheck && mysqli_num_rows($roleColumnCheck) > 0) {
@@ -31,17 +30,17 @@ if (isset($_POST['register_btn'])) {
     if ($parole_raw !== $parole_repeat) {
         $zinojums = "Paroles nesakrīt!";
     } else {
-        // Pārbaudām, vai lietotājs jau eksistē
+        // Pārbauda, vai lietotājs jau eksistē
         $check_query = "SELECT * FROM est_lietotaji WHERE lietotajvards='$lietotajvards' OR epasts='$epasts'";
         $result = mysqli_query($savienojums, $check_query);
 
         if (mysqli_num_rows($result) > 0) {
             $zinojums = "Lietotājvārds vai e-pasts jau eksistē!";
         } else {
-            // Šifrējam paroli
+            // Parole tiek šifrēta
             $parole_hash = password_hash($parole_raw, PASSWORD_DEFAULT);
 
-            // Ievietojam datubāzē
+            // Tiek sūtīts datubāzē
             if ($roleColumnExists) {
                 $sql = "INSERT INTO est_lietotaji (lietotajvards, epasts, parole, loma) VALUES ('$lietotajvards', '$epasts', '$parole_hash', '$atlasita_loma')";
             } else {

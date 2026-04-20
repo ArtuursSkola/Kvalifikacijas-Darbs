@@ -68,7 +68,7 @@ function app_is_external_url(string $value): bool
         return false;
     }
 
-    // Absolute (https://...), scheme-relative (//...), or data: URLs should be passed through as-is.
+
     if (preg_match('#^(?:[a-z][a-z0-9+.-]*:)?//#i', $value)) {
         return true;
     }
@@ -87,7 +87,6 @@ function media_url(string $value): string
     }
 
     if (app_is_external_url($value)) {
-        // Normalize scheme-relative URLs to explicit scheme so browsers behave consistently.
         if (str_starts_with($value, '//')) {
             $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https:' : 'http:';
             return $scheme . $value;

@@ -43,16 +43,65 @@ function handleUploadOrUrl(string $fileKey, string $fallbackUrl, string $uploadD
 }
 
 
-$title = $city = $address = $location_text = $price = $area = $bedrooms = $bathrooms = '';
-$floor = $total_floors = '';
-$description = $layout_text = $map_text = $amenities = '';
-$property_category = 'apartment';
-$type = 'rent';
-$main_image = '';
+// Check if we are in Edit Mode
+$editId = (int)($_GET['id'] ?? $_POST['edit_id'] ?? 0);
+$isEdit = $editId > 0;
+$existingHome = null;
+
+if ($isEdit) {
+    $stmt = $savienojums->prepare("SELECT * FROM est_homes WHERE id = ? LIMIT 1");
+    $stmt->bind_param('i', $editId);
+    $stmt->execute();
+    $existingHome = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$existingHome) {
+        header('Location: ' . main_route('property.list'));
+        exit;
+    }
+
+    // Security: Only the owner can edit
+    if ((int)$existingHome['owner_id'] !== (int)$_SESSION['user_id']) {
+        header('Location: ' . main_route('property.list'));
+        exit;
+    }
+}
+
+// Initialize form fields
+$title = $existingHome['title'] ?? '';
+$city = $existingHome['city'] ?? '';
+$address = $existingHome['address'] ?? '';
+$location_text = $existingHome['location_text'] ?? '';
+$price = $existingHome['price'] ?? '';
+$area = $existingHome['area'] ?? '';
+$bedrooms = $existingHome['bedrooms'] ?? '';
+$bathrooms = $existingHome['bathrooms'] ?? '';
+$floor = $existingHome['floor'] ?? '';
+$total_floors = ''; // Needs parsing or separate field if exists
+if ($existingHome && $existingHome['floor_info']) {
+    // Basic effort to parse floor_info if it's "X/Y"
+    if (strpos($existingHome['floor_info'], '/') !== false) {
+        list($f, $tf) = explode('/', $existingHome['floor_info']);
+        $floor = $f;
+        $total_floors = $tf;
+    } elseif (strpos($existingHome['floor_info'], 'stāvu māja') !== false) {
+        $total_floors = (int)$existingHome['floor_info'];
+    }
+}
+
+$description = $existingHome['description'] ?? '';
+$layout_text = $existingHome['layout_text'] ?? '';
+$map_text = $existingHome['map_text'] ?? '';
+$amenities = $existingHome['amenities'] ?? '';
+$property_category = $existingHome['property_category'] ?? 'apartment';
+$type = $existingHome['type'] ?? 'rent';
+$main_image = $existingHome['main_image'] ?? '';
 $main_image_url = '';
-$gallery_json = '[]';
-$rent_price = $utilities_price = $total_price = '';
-$price_label = 'Cena (EUR / men.) *';
+$gallery_json = $existingHome['gallery'] ?? '[]';
+$rent_price = $existingHome['rent_price'] ?? '';
+$utilities_price = $existingHome['utilities_price'] ?? '';
+$total_price = $existingHome['total_price'] ?? '';
+$price_label = $type === 'rent' ? 'Cena (EUR / men.) *' : 'Cena (EUR) *';
 
 
 $galleryLimit = 2;
@@ -83,7 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $main_image_url = trim((string)($_POST['main_image_url'] ?? ''));
     
-
     $rent_price = $price;
     $utilities_price = trim((string)($_POST['utilities_price'] ?? '0'));
     
@@ -97,7 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Lūdzu aizpildi obligātos laukus (nosaukums, pilsēta, atrašanās vieta, cena).';
     }
 
-    $main_image = handleUploadOrUrl('main_image_file', $main_image_url, $uploadDir);
+    // In edit mode, fallback to existing image if no new one provided
+    $main_image = handleUploadOrUrl('main_image_file', $main_image_url !== '' ? $main_image_url : ($existingHome['main_image'] ?? ''), $uploadDir);
 
     if ($main_image === '') {
         $errors[] = 'Lūdzu pievieno galveno attēlu (fails vai URL).';
@@ -105,9 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
     $gallery_paths = [];
-    if (isset($_FILES['gallery_files']) && is_array($_FILES['gallery_files']['name'])) {
+    if (isset($_FILES['gallery_files']) && is_array($_FILES['gallery_files']['name']) && $_FILES['gallery_files']['name'][0] !== '') {
         $count = count($_FILES['gallery_files']['name']);
-        // Respect plan limits
         for ($i = 0; $i < min($count, $galleryLimit); $i++) {
             if ($_FILES['gallery_files']['error'][$i] === UPLOAD_ERR_OK) {
                 $tmpName = $_FILES['gallery_files']['tmp_name'][$i];
@@ -123,8 +171,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+        $gallery_json = json_encode($gallery_paths);
+    } elseif ($isEdit) {
+        // Keep existing gallery if no new files uploaded
+        $gallery_json = $existingHome['gallery'];
     }
-    $gallery_json = json_encode($gallery_paths);
 
     if ($errors === []) {
         $ownerId = (int)$_SESSION['user_id'];
@@ -147,52 +198,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $utilVal = (float)str_replace(',', '.', $utilities_price);
         $totalVal = (float)$total_price;
 
-
-        $stmt = $savienojums->prepare("INSERT INTO est_homes
-            (owner_id, title, city, address, location_text, property_category, type, price, area, bedrooms, bathrooms, floor, floor_info, description, layout_text, map_text, amenities, main_image, gallery, rent_price, utilities_price, total_price, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')");
+        if ($isEdit) {
+            $sql = "UPDATE est_homes SET 
+                title=?, city=?, address=?, location_text=?, property_category=?, type=?, 
+                price=?, area=?, bedrooms=?, bathrooms=?, floor=?, floor_info=?, 
+                description=?, layout_text=?, map_text=?, amenities=?, 
+                main_image=?, gallery=?, rent_price=?, utilities_price=?, total_price=?, status='draft'
+                WHERE id=? AND owner_id=?";
+            $stmt = $savienojums->prepare($sql);
+            if ($stmt) {
+                $stmt->bind_param(
+                    'sssssssdiiiisssssssddii',
+                    $title, $city, $address, $location_text, $property_category, $type,
+                    $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
+                    $description, $layout_text, $map_text, $amenities,
+                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal,
+                    $editId, $ownerId
+                );
+            }
+        } else {
+            $sql = "INSERT INTO est_homes
+                (owner_id, title, city, address, location_text, property_category, type, price, area, bedrooms, bathrooms, floor, floor_info, description, layout_text, map_text, amenities, main_image, gallery, rent_price, utilities_price, total_price, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')";
+            $stmt = $savienojums->prepare($sql);
+            if ($stmt) {
+                $stmt->bind_param(
+                    'issssssdiiiisssssssddd',
+                    $ownerId, $title, $city, $address, $location_text, $property_category, $type,
+                    $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
+                    $description, $layout_text, $map_text, $amenities,
+                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal
+                );
+            }
+        }
 
         if ($stmt) {
-            $bindTypes = 'issssssdiiiisssssssddd';
-            $stmt->bind_param(
-                $bindTypes,
-                $ownerId,
-                $title,
-                $city,
-                $address,
-                $location_text,
-                $property_category,
-                $type,
-                $priceVal,
-                $areaVal,
-                $bedsVal,
-                $bathsVal,
-                $floorVal,
-                $floorInfo,
-                $description,
-                $layout_text,
-                $map_text,
-                $amenities,
-                $main_image,
-                $gallery_json,
-                $rentVal,
-                $utilVal,
-                $totalVal
-            );
-
             if ($stmt->execute()) {
-                $success = 'Sludinājums saglabāts kā melnraksts. Vari to vēlāk publicēt.';
+                main_redirect('property.myhomes');
             } else {
                 $errors[] = 'Neizdevās saglabāt sludinājumu: ' . $stmt->error;
             }
             $stmt->close();
         } else {
-            $errors[] = 'Neizdevās sagatavot pieprasījumu. Pārliecinies, ka esi izpildījis SQL komandu gallery kolonnas pievienošanai.';
+            $errors[] = 'Neizdevās sagatavot pieprasījumu.';
         }
     }
 }
 
-$pageTitle = 'Izveidot sludinājumu - HomeEstate';
+$pageTitle = ($isEdit ? 'Rediģēt sludinājumu' : 'Izveidot sludinājumu') . ' - HomeEstate';
 $extraStyles = ['newhome'];
 $bodyClass = 'owner-page newhome-page';
 include __DIR__ . '/../../includes/header.php';
@@ -206,11 +259,11 @@ include __DIR__ . '/../../includes/header.php';
     </div>
     <div class="newhome-hero__inner">
         <div class="hero-badge">
-            <i class="fas fa-plus-circle"></i>
-            Jauns sludinājums
+            <i class="fas <?php echo $isEdit ? 'fa-edit' : 'fa-plus-circle'; ?>"></i>
+            <?php echo $isEdit ? 'Rediģēt sludinājumu' : 'Jauns sludinājums'; ?>
         </div>
-        <h1>Izveidot <span class="highlight">sludinājumu</span></h1>
-        <p>Pievieno informāciju pa soļiem. Sludinājums tiks saglabāts kā melnraksts.</p>
+        <h1><?php echo $isEdit ? 'Rediģēt' : 'Izveidot'; ?> <span class="highlight">sludinājumu</span></h1>
+        <p><?php echo $isEdit ? 'Veic nepieciešamās izmaiņas savā sludinājumā.' : 'Pievieno informāciju pa soļiem. Sludinājums tiks saglabāts kā melnraksts.'; ?></p>
     </div>
 </header>
 
