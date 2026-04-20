@@ -43,7 +43,7 @@ function handleUploadOrUrl(string $fileKey, string $fallbackUrl, string $uploadD
 }
 
 
-// Check if we are in Edit Mode
+
 $editId = (int)($_GET['id'] ?? $_POST['edit_id'] ?? 0);
 $isEdit = $editId > 0;
 $existingHome = null;
@@ -60,14 +60,14 @@ if ($isEdit) {
         exit;
     }
 
-    // Security: Only the owner can edit
+
     if ((int)$existingHome['owner_id'] !== (int)$_SESSION['user_id']) {
         header('Location: ' . main_route('property.list'));
         exit;
     }
 }
 
-// Initialize form fields
+
 $title = $existingHome['title'] ?? '';
 $city = $existingHome['city'] ?? '';
 $address = $existingHome['address'] ?? '';
@@ -77,9 +77,9 @@ $area = $existingHome['area'] ?? '';
 $bedrooms = $existingHome['bedrooms'] ?? '';
 $bathrooms = $existingHome['bathrooms'] ?? '';
 $floor = $existingHome['floor'] ?? '';
-$total_floors = ''; // Needs parsing or separate field if exists
+$total_floors = ''; 
 if ($existingHome && $existingHome['floor_info']) {
-    // Basic effort to parse floor_info if it's "X/Y"
+   
     if (strpos($existingHome['floor_info'], '/') !== false) {
         list($f, $tf) = explode('/', $existingHome['floor_info']);
         $floor = $f;
@@ -145,18 +145,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Lūdzu aizpildi obligātos laukus (nosaukums, pilsēta, atrašanās vieta, cena).';
     }
 
-    // In edit mode, fallback to existing image if no new one provided
-    $main_image = handleUploadOrUrl('main_image_file', $main_image_url !== '' ? $main_image_url : ($existingHome['main_image'] ?? ''), $uploadDir);
+    $currentOldMain = $existingHome['main_image'] ?? '';
+    $mainImageFallback = ($main_image_url !== '') ? $main_image_url : $currentOldMain;
+    $main_image = handleUploadOrUrl('main_image_file', $mainImageFallback, $uploadDir);
 
-    if ($main_image === '') {
+    if (empty($main_image)) {
         $errors[] = 'Lūdzu pievieno galveno attēlu (fails vai URL).';
     }
 
-
     $gallery_paths = [];
+
     if (isset($_FILES['gallery_files']) && is_array($_FILES['gallery_files']['name']) && $_FILES['gallery_files']['name'][0] !== '') {
         $count = count($_FILES['gallery_files']['name']);
-        for ($i = 0; $i < min($count, $galleryLimit); $i++) {
+        for ($i = 0; $i < $count; $i++) {
             if ($_FILES['gallery_files']['error'][$i] === UPLOAD_ERR_OK) {
                 $tmpName = $_FILES['gallery_files']['tmp_name'][$i];
                 $origName = basename((string)$_FILES['gallery_files']['name'][$i]);
@@ -171,11 +172,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-        $gallery_json = json_encode($gallery_paths);
-    } elseif ($isEdit) {
-        // Keep existing gallery if no new files uploaded
-        $gallery_json = $existingHome['gallery'];
     }
+
+    $kept_existing = [];
+    $raw_keep = $_POST['existing_gallery_keep'] ?? '';
+    if ($raw_keep !== '') {
+        $kept_existing = json_decode($raw_keep, true) ?: [];
+    } elseif ($isEdit && !isset($_POST['existing_gallery_keep'])) {
+        $kept_existing = json_decode($existingHome['gallery'] ?? '[]', true) ?: [];
+    }
+
+    $combined_gallery = array_merge($kept_existing, $gallery_paths);
+    $gallery_json = json_encode(array_slice($combined_gallery, 0, $galleryLimit));
 
     if ($errors === []) {
         $ownerId = (int)$_SESSION['user_id'];
@@ -342,6 +350,7 @@ include __DIR__ . '/../../includes/header.php';
     <div class="step-status" id="step-status">1/5: Pamatinformācija</div>
 
     <form method="POST" action="<?php echo main_route('property.create'); ?>" enctype="multipart/form-data" id="newhome-form">
+        <input type="hidden" name="edit_id" value="<?php echo $editId; ?>">
         <div class="step active" data-step="1">
             <div class="form-grid">
                 <div>
@@ -449,14 +458,25 @@ include __DIR__ . '/../../includes/header.php';
                     <label>Galvenais attēls *</label>
                     <input type="file" name="main_image_file" accept="image/*" id="main-image-input">
                     <input type="url" name="main_image_url" placeholder="URL (ja nav faila)" value="<?php echo htmlspecialchars($main_image_url); ?>" id="main-image-url">
-                    <div id="main-preview" class="image-preview-container"></div>
+                    <div id="main-preview" class="image-preview-container">
+                        <?php if ($main_image): ?>
+                            <div class="preview-item main-preview-item">
+                                <img src="<?php echo htmlspecialchars(media_url($main_image)); ?>" alt="Esošais attēls" onclick="window.open(this.src, '_blank')">
+                                <div style="position:absolute; bottom:0; background:rgba(0,0,0,0.5); color:white; width:100%; font-size:10px; text-align:center; padding:2px;">Esošais attēls</div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div class="full">
                     <label>Galerija (Max <?php echo $galleryLimit; ?> attēli)</label>
                     <div class="gallery-upload-zone">
                         <input type="file" name="gallery_files[]" accept="image/*" multiple id="gallery-input">
+                        <input type="hidden" name="existing_gallery_keep" id="existing-gallery-keep">
                         <div id="gallery-counter-text" class="gallery-counter">Izvēlēti <span>0</span> no <?php echo $galleryLimit; ?> attēliem</div>
                         <p class="muted">Vari pievienot attēlus pa vienam vai vairākus kopā. Tie tiks pievienoti esošajai izvēlei.</p>
+                        <?php if ($isEdit && !empty($gallery_json) && $gallery_json !== '[]'): ?>
+                            <p class="muted small" style="color: var(--accent);">Piezīme: Esošie attēli ir saglabāti. Vari tos dzēst pa vienam.</p>
+                        <?php endif; ?>
                     </div>
                     <div id="gallery-preview" class="image-preview-container"></div>
                 </div>
@@ -529,8 +549,9 @@ include __DIR__ . '/../../includes/header.php';
     let currentStep = 0;
     const stepNames = ['Pamatinformācija', 'Apraksti', 'Priekšrocības', 'Mediji', 'Cenas'];
 
-
     let galleryFiles = [];
+    let existingGallery = <?php echo $gallery_json; ?>;
+    const existingKeepInput = document.getElementById('existing-gallery-keep');
 
     const setStep = (idx) => {
         steps.forEach((step, i) => step.classList.toggle('active', i === idx));
@@ -592,6 +613,35 @@ include __DIR__ . '/../../includes/header.php';
 
     const renderGallery = () => {
         galleryPreview.innerHTML = '';
+
+        existingGallery.forEach((url, index) => {
+            const div = document.createElement('div');
+            div.className = 'preview-item';
+            
+            const img = document.createElement('img');
+            img.src = '<?php echo app_url(""); ?>' + '/' + url;
+            img.onclick = () => window.open(img.src, '_blank');
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.type = 'button';
+            removeBtn.onclick = (e) => {
+                e.stopPropagation();
+                existingGallery.splice(index, 1);
+                renderGallery();
+            };
+            
+            const badge = document.createElement('div');
+            badge.style = "position:absolute; bottom:0; background:rgba(0,0,0,0.5); color:white; width:100%; font-size:9px; text-align:center; padding:2px;";
+            badge.textContent = "Saglabāts";
+
+            div.appendChild(img);
+            div.appendChild(removeBtn);
+            div.appendChild(badge);
+            galleryPreview.appendChild(div);
+        });
+
         galleryFiles.forEach((file, index) => {
             const div = document.createElement('div');
             div.className = 'preview-item';
@@ -614,7 +664,8 @@ include __DIR__ . '/../../includes/header.php';
             div.appendChild(removeBtn);
             galleryPreview.appendChild(div);
         });
-        galleryCounterText.querySelector('span').textContent = galleryFiles.length;
+        
+        galleryCounterText.querySelector('span').textContent = existingGallery.length + galleryFiles.length;
     };
 
     mainImageInput.addEventListener('change', () => {
@@ -640,18 +691,12 @@ include __DIR__ . '/../../includes/header.php';
     galleryInput.addEventListener('change', () => {
         const newFiles = Array.from(galleryInput.files);
         newFiles.forEach(file => {
-            if (galleryFiles.length < galleryLimit) {
-                // Optional: Check for duplicates by name and size
+            if ((existingGallery.length + galleryFiles.length) < galleryLimit) {
                 const exists = galleryFiles.some(f => f.name === file.name && f.size === file.size);
                 if (!exists) galleryFiles.push(file);
             }
         });
         
-        if (galleryFiles.length >= galleryLimit && newFiles.length > 0) {
-            if (galleryFiles.length === galleryLimit) {
-            }
-        }
-
         galleryInput.value = '';
         renderGallery();
     });
@@ -661,6 +706,9 @@ include __DIR__ . '/../../includes/header.php';
             const dt = new DataTransfer();
             galleryFiles.forEach(file => dt.items.add(file));
             galleryInput.files = dt.files;
+        }
+        if (existingKeepInput) {
+            existingKeepInput.value = JSON.stringify(existingGallery);
         }
     });
 
@@ -687,6 +735,7 @@ include __DIR__ . '/../../includes/header.php';
 
     toggleDealFields();
     toggleCategoryFields();
+    renderGallery();
     setStep(0);
 })();
 </script>
