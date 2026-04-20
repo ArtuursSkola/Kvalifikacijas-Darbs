@@ -29,7 +29,6 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     }
 }
 
-// Handle create
 if (isset($_POST['create_listing'])) {
     $title = trim($_POST['title'] ?? '');
     $city = trim($_POST['city'] ?? '');
@@ -48,7 +47,6 @@ if (isset($_POST['create_listing'])) {
     }
 }
 
-// Handle edit
 if (isset($_POST['edit_listing'])) {
     $id = (int)($_POST['listing_id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
@@ -68,7 +66,6 @@ if (isset($_POST['edit_listing'])) {
     }
 }
 
-// Pagination & filters
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
@@ -100,7 +97,6 @@ if ($filterStatus !== '') {
 
 $whereClause = $whereConditions ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
 
-// Count
 $countSql = "SELECT COUNT(*) FROM est_homes $whereClause";
 if ($params) {
     $stmt = $savienojums->prepare($countSql);
@@ -113,7 +109,6 @@ if ($params) {
 }
 $totalPages = max(1, ceil($totalHomes / $perPage));
 
-// Get listings
 $homes = [];
 $sql = "SELECT h.*, u.lietotajvards as owner_name FROM est_homes h LEFT JOIN est_lietotaji u ON h.owner_id = u.lietotaja_id $whereClause ORDER BY h.created_at DESC LIMIT ? OFFSET ?";
 if ($params) {
@@ -130,7 +125,6 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// Stats
 $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_homes")->fetch_row()[0];
 $activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='active'")->fetch_row()[0];
 $draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='draft'")->fetch_row()[0];

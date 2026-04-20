@@ -1,65 +1,13 @@
 <?php
 
-function ensurePlanPurchasesTable(mysqli $conn): void
+
+
+function fetchUserById(mysqli $conn, int $userId, string $type = 'user'): ?array
 {
-    $sql = "CREATE TABLE IF NOT EXISTS est_plan_purchases (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        plan_name VARCHAR(50) NOT NULL,
-        amount_paid DECIMAL(10,2) NOT NULL DEFAULT 0,
-        currency VARCHAR(10) NOT NULL DEFAULT 'EUR',
-        purchased_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        expires_at DATETIME DEFAULT NULL,
-        stripe_session_id VARCHAR(255) DEFAULT NULL,
-        payment_intent_id VARCHAR(255) DEFAULT NULL,
-        payment_status VARCHAR(50) NOT NULL DEFAULT 'succeeded',
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_user_id (user_id),
-        INDEX idx_purchased_at (purchased_at)
-    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+    $table = ($type === 'admin') ? 'est_admin' : 'est_lietotaji';
+    $idCol = ($type === 'admin') ? 'admin_id' : 'lietotaja_id';
 
-    $conn->query($sql);
-}
-
-function ensureUserPlanColumns(mysqli $conn): void
-{
-    // Lightweight safety-net: some environments may not yet have these columns.
-    // We use information_schema to avoid breaking on shared hosts.
-    $dbRes = $conn->query('SELECT DATABASE() as db');
-    $dbRow = $dbRes ? $dbRes->fetch_assoc() : null;
-    $db = $dbRow['db'] ?? '';
-    if ($db === '') {
-        return;
-    }
-
-    $cols = [
-        'plan_activated_at' => 'DATETIME NULL',
-        'plan_expires_at' => 'DATETIME NULL',
-        'profila_bilde' => 'VARCHAR(255) NULL',
-    ];
-
-    foreach ($cols as $col => $definition) {
-        $stmt = $conn->prepare('SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?');
-        if (!$stmt) {
-            return;
-        }
-        $table = 'est_lietotaji';
-        $stmt->bind_param('sss', $db, $table, $col);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_assoc() : ['cnt' => 0];
-        $stmt->close();
-
-        if ((int)($row['cnt'] ?? 0) === 0) {
-            // Avoid escaping the definition; it's controlled by us.
-            $conn->query("ALTER TABLE `est_lietotaji` ADD COLUMN `$col` $definition");
-        }
-    }
-}
-
-function fetchUserById(mysqli $conn, int $userId): ?array
-{
-    $stmt = $conn->prepare("SELECT * FROM est_lietotaji WHERE lietotaja_id = ? LIMIT 1");
+    $stmt = $conn->prepare("SELECT * FROM $table WHERE $idCol = ? LIMIT 1");
     if (!$stmt) {
         return null;
     }
@@ -69,6 +17,10 @@ function fetchUserById(mysqli $conn, int $userId): ?array
     $result = $stmt->get_result();
     $user = $result ? $result->fetch_assoc() : null;
     $stmt->close();
+
+    if ($user && $type === 'admin') {
+        $user['lietotaja_id'] = $user['admin_id'];
+    }
 
     return $user ?: null;
 }
@@ -119,7 +71,7 @@ function loadCurrentUserContext(mysqli $conn): ?array
         return null;
     }
 
-    $user = fetchUserById($conn, (int)$_SESSION['user_id']);
+    $user = fetchUserById($conn, (int)$_SESSION['user_id'], $_SESSION['user_type'] ?? 'user');
     if (!$user) {
         return null;
     }
@@ -190,7 +142,6 @@ function userProfileImageUrl(?string $path): string
 
 function fetchUserPlanHistory(mysqli $conn, int $userId, ?array $currentUser = null): array
 {
-    ensurePlanPurchasesTable($conn);
 
     $history = [];
     $stmt = $conn->prepare("SELECT plan_name, amount_paid, currency, purchased_at, expires_at, payment_status
@@ -222,26 +173,9 @@ function fetchUserPlanHistory(mysqli $conn, int $userId, ?array $currentUser = n
     return $history;
 }
 
-function ensurePropertyTransactionsTable(mysqli $conn): void
-{
-    $sql = "CREATE TABLE IF NOT EXISTS est_property_transactions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        home_id INT DEFAULT NULL,
-        transaction_type VARCHAR(20) NOT NULL,
-        amount DECIMAL(12,2) DEFAULT NULL,
-        currency VARCHAR(10) NOT NULL DEFAULT 'EUR',
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_user_id (user_id),
-        INDEX idx_created_at (created_at)
-    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-
-    $conn->query($sql);
-}
 
 function fetchUserPropertyTransactions(mysqli $conn, int $userId): array
 {
-    ensurePropertyTransactionsTable($conn);
 
     $items = [];
     $stmt = $conn->prepare("SELECT t.transaction_type, t.amount, t.currency, t.created_at, t.home_id,

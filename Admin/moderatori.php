@@ -8,7 +8,7 @@ if (!file_exists($configPath)) {
 }
 require $configPath;
 
-// Stingra piekļuves kontrole - tikai admin loma var piekļūt šai lapai
+// Stingra piekļuves kontrole, tikai admin loma var piekļūt šai lapai
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header('Location: ' . admin_route('dashboard'));
     exit;
@@ -17,7 +17,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 $errors = [];
 $success = '';
 
-// Handle delete action (admin only)
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
     $stmt = $savienojums->prepare("DELETE FROM est_admin WHERE admin_id = ?");
@@ -31,8 +30,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
         $stmt->close();
     }
 }
-
-// Handle create new moderator
+//Jauna moderatora izveide
 if (isset($_POST['create_mod'])) {
     $newUsername = trim($_POST['new_username'] ?? '');
     $newEmail = trim($_POST['new_email'] ?? '');
@@ -48,7 +46,7 @@ if (isset($_POST['create_mod'])) {
         if ($chk->get_result()->num_rows > 0) {
             $errors[] = 'Lietotājvārds vai e-pasts jau eksistē.';
         } else {
-            // Pārbaude, vai parole jau ir šifrēta (piemēram, ja tiek kopēta), bet jauna lietotāja gadījumā vienmēr šifrējam
+            // Pārbaude, vai parole jau ir šifrēta, bet jauna lietotāja gadījumā vienmēr šifrējam
             $hash = password_hash($newPassword, PASSWORD_DEFAULT);
             $ins = $savienojums->prepare("INSERT INTO est_admin (lietotajvards, epasts, parole, loma) VALUES (?, ?, ?, ?)");
             $ins->bind_param('ssss', $newUsername, $newEmail, $hash, $newRole);
@@ -63,7 +61,6 @@ if (isset($_POST['create_mod'])) {
     }
 }
 
-// Handle moderator edit
 if (isset($_POST['edit_mod'])) {
     $editId = (int)($_POST['edit_id'] ?? 0);
     $editUsername = trim($_POST['edit_username'] ?? '');
@@ -98,14 +95,12 @@ if (isset($_POST['edit_mod'])) {
     }
 }
 
-// Get all moderators from est_admin
 $mods = [];
 $res = $savienojums->query("SELECT admin_id, lietotajvards, epasts, loma, created_at FROM est_admin ORDER BY created_at DESC");
 while ($row = $res->fetch_assoc()) {
     $mods[] = $row;
 }
 
-// Stats
 $totalMods = count($mods);
 $adminCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma='admin'")->fetch_row()[0];
 $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma='moderator'")->fetch_row()[0];
@@ -119,7 +114,6 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Kopēti stili no lietotaji.php konsistencei */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Poppins', sans-serif; background: #f0f4f8; min-height: 100vh; }
         .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: linear-gradient(180deg, #1d2733 0%, #2c3e50 100%); padding: 24px 0; overflow-y: auto; }
@@ -282,7 +276,6 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
         </div>
     </main>
 
-    <!-- Create Modal -->
     <div id="createModal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
@@ -319,7 +312,6 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
         </div>
     </div>
 
-    <!-- Edit Modal -->
     <div id="editModal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
@@ -369,7 +361,6 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
             openModal('editModal');
         }
 
-        // Aizvērt modālo logu, noklikšķinot ārpus tā
         window.onclick = function(event) {
             if (event.target.classList.contains('modal-overlay')) {
                 event.target.classList.remove('active');

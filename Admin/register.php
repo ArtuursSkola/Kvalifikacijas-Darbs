@@ -10,29 +10,6 @@ require $configPath;
 
 $msg = '';
 
-function ensureAdminTable(mysqli $conn): void {
-	$createSql = "CREATE TABLE IF NOT EXISTS est_admin (
-		admin_id INT AUTO_INCREMENT PRIMARY KEY,
-		lietotajvards VARCHAR(150) NOT NULL UNIQUE,
-		epasts VARCHAR(255) NOT NULL UNIQUE,
-		parole VARCHAR(255) NOT NULL,
-		loma VARCHAR(50) NOT NULL DEFAULT 'moderator',
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-	$conn->query($createSql);
-	$needs = [
-		'loma' => "ALTER TABLE est_admin ADD COLUMN loma VARCHAR(50) NOT NULL DEFAULT 'moderator'",
-		'created_at' => "ALTER TABLE est_admin ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
-	];
-	foreach ($needs as $col => $sql) {
-		$res = $conn->query("SHOW COLUMNS FROM est_admin LIKE '" . $conn->real_escape_string($col) . "'");
-		if ($res && $res->num_rows === 0) {
-			$conn->query($sql);
-		}
-	}
-}
-
-ensureAdminTable($savienojums);
 
 if (isset($_POST['register_btn'])) {
 	$username = trim($_POST['username'] ?? '');

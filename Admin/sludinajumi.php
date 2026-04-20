@@ -29,7 +29,6 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     }
 }
 
-// Handle approve (change draft/melnraksts to active)
 if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
     $approveId = (int)$_GET['approve'];
     $stmt = $savienojums->prepare("UPDATE est_homes SET status = 'active' WHERE id = ?");
@@ -42,7 +41,6 @@ if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
     }
 }
 
-// Handle reject (set to rejected status)
 if (isset($_GET['reject']) && is_numeric($_GET['reject'])) {
     $rejectId = (int)$_GET['reject'];
     $stmt = $savienojums->prepare("UPDATE est_homes SET status = 'rejected' WHERE id = ?");
@@ -55,7 +53,6 @@ if (isset($_GET['reject']) && is_numeric($_GET['reject'])) {
     }
 }
 
-// Handle create
 if (isset($_POST['create_listing'])) {
     $title = trim($_POST['title'] ?? '');
     $city = trim($_POST['city'] ?? '');
@@ -74,7 +71,6 @@ if (isset($_POST['create_listing'])) {
     }
 }
 
-// Handle edit
 if (isset($_POST['edit_listing'])) {
     $id = (int)($_POST['listing_id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
@@ -94,7 +90,6 @@ if (isset($_POST['edit_listing'])) {
     }
 }
 
-// Pagination & filters
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
@@ -126,7 +121,6 @@ if ($filterStatus !== '') {
 
 $whereClause = $whereConditions ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
 
-// Count
 $countSql = "SELECT COUNT(*) FROM est_homes $whereClause";
 if ($params) {
     $stmt = $savienojums->prepare($countSql);
@@ -139,7 +133,6 @@ if ($params) {
 }
 $totalPages = max(1, ceil($totalHomes / $perPage));
 
-// Get listings
 $homes = [];
 $sql = "SELECT h.*, u.lietotajvards as owner_name FROM est_homes h LEFT JOIN est_lietotaji u ON h.owner_id = u.lietotaja_id $whereClause ORDER BY h.created_at DESC LIMIT ? OFFSET ?";
 if ($params) {
@@ -156,7 +149,6 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// Stats
 $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_homes")->fetch_row()[0];
 $activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='active'")->fetch_row()[0];
 $draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='draft' OR status='melnraksts' OR status='' OR status IS NULL")->fetch_row()[0];
@@ -187,8 +179,7 @@ function buildUrl($overrides = []) {
             background: #f0f4f8;
             min-height: 100vh;
         }
-        
-        /* Sidebar */
+
         .sidebar {
             position: fixed;
             left: 0;
@@ -247,14 +238,12 @@ function buildUrl($overrides = []) {
         }
         .sidebar-user-name { font-weight: 600; }
         .sidebar-user-role { font-size: 0.8rem; color: rgba(255,255,255,0.6); }
-        
-        /* Main Content */
+
         .main-content {
             margin-left: 260px;
             padding: 24px 32px;
         }
-        
-        /* Header */
+
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -281,7 +270,7 @@ function buildUrl($overrides = []) {
             font-family: inherit;
         }
         
-        /* Stats Row */
+
         .stats-row {
             display: flex;
             gap: 16px;
@@ -307,7 +296,7 @@ function buildUrl($overrides = []) {
         .stat-card .val { font-size: 1.4rem; font-weight: 700; color: #1d2733; }
         .stat-card .lbl { font-size: 0.8rem; color: #6b7a8f; }
         
-        /* Alerts */
+
         .alert {
             padding: 14px 18px;
             border-radius: 10px;
@@ -316,7 +305,7 @@ function buildUrl($overrides = []) {
         .alert.success { background: #e8f8ed; color: #1f7a35; border: 1px solid #c5e8d0; }
         .alert.error { background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
         
-        /* Table Panel */
+
         .panel {
             background: #fff;
             border-radius: 16px;
@@ -360,8 +349,7 @@ function buildUrl($overrides = []) {
             text-decoration: none;
             font-size: 0.85rem;
         }
-        
-        /* Table */
+
         .table-container { overflow-x: auto; }
         table {
             width: 100%;
@@ -382,8 +370,7 @@ function buildUrl($overrides = []) {
         tbody tr:hover { background: #f8fafc; }
         tbody tr:last-child td { border-bottom: none; }
         .price { font-weight: 600; color: #30b607; }
-        
-        /* Badges */
+
         .badge {
             display: inline-block;
             padding: 4px 12px;
@@ -396,8 +383,7 @@ function buildUrl($overrides = []) {
         .badge.green { background: rgba(39,174,96,0.12); color: #27ae60; }
         .badge.gray { background: #edf2f7; color: #6b7a8f; }
         .badge.red { background: rgba(231,76,60,0.12); color: #e74c3c; }
-        
-        /* Actions */
+
         .actions { display: flex; gap: 6px; flex-wrap: wrap; }
         .btn-sm {
             padding: 6px 10px;
@@ -417,8 +403,7 @@ function buildUrl($overrides = []) {
         .btn-sm:hover { transform: scale(1.1); }
         .btn-sm.approve:hover { background: #27ae60; color: #fff; }
         .btn-sm.reject:hover { background: #e74c3c; color: #fff; }
-        
-        /* Pagination */
+
         .pagination {
             display: flex;
             justify-content: center;
@@ -433,8 +418,7 @@ function buildUrl($overrides = []) {
         }
         .pagination a { background: #f8fafc; color: #1d2733; border: 1px solid #e2e8f0; }
         .pagination span.current { background: #30b607; color: #fff; }
-        
-        /* Modal */
+
         .modal-overlay {
             display: none;
             position: fixed;

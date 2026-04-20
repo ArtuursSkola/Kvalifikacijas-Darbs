@@ -10,34 +10,6 @@ require $configPath;
 
 $errors = [];
 
-// Ensure admin table exists with needed columns
-function ensureAdminTable(mysqli $conn, array &$errors): void {
-	$createSql = "CREATE TABLE IF NOT EXISTS est_admin (
-		admin_id INT AUTO_INCREMENT PRIMARY KEY,
-		lietotajvards VARCHAR(150) NOT NULL UNIQUE,
-		epasts VARCHAR(255) NOT NULL UNIQUE,
-		parole VARCHAR(255) NOT NULL,
-		loma VARCHAR(50) NOT NULL DEFAULT 'moderator',
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-	if (!$conn->query($createSql)) {
-		$errors[] = 'Neizdevās izveidot est_admin: ' . $conn->error;
-		return;
-	}
-	// Backfill columns if table existed without them
-	$needs = [
-		'loma' => "ALTER TABLE est_admin ADD COLUMN loma VARCHAR(50) NOT NULL DEFAULT 'moderator'",
-		'created_at' => "ALTER TABLE est_admin ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
-	];
-	foreach ($needs as $col => $sql) {
-		$res = $conn->query("SHOW COLUMNS FROM est_admin LIKE '" . $conn->real_escape_string($col) . "'");
-		if ($res && $res->num_rows === 0) {
-			$conn->query($sql);
-		}
-	}
-}
-
-ensureAdminTable($savienojums, $errors);
 
 if (isset($_POST['login_btn'])) {
 	$username = trim($_POST['username'] ?? '');
@@ -58,6 +30,7 @@ if (isset($_POST['login_btn'])) {
 			$_SESSION['user_id'] = $user['admin_id'];
 				$_SESSION['username'] = $user['lietotajvards'];
 				$_SESSION['role'] = $user['loma'];
+				$_SESSION['user_type'] = 'admin';
 				header('Location: ' . admin_route('dashboard'));
 				exit;
 			} else {

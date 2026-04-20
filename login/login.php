@@ -37,6 +37,7 @@ if (isset($_POST['login_btn'])) {
             $_SESSION['user_id'] = $row['lietotaja_id'];
             $_SESSION['username'] = $row['lietotajvards'];
             $_SESSION['role'] = $loma_no_db;
+            $_SESSION['user_type'] = 'user';
             if ($plan_no_db !== null) {
                 $_SESSION['plan'] = $plan_no_db;
             }

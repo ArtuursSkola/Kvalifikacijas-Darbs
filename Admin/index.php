@@ -68,7 +68,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
             min-height: 100vh;
         }
         
-        /* Sidebar */
+
         .sidebar {
             position: fixed;
             left: 0;
@@ -130,13 +130,13 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
         .sidebar-user-name { font-weight: 600; }
         .sidebar-user-role { font-size: 0.8rem; color: rgba(255,255,255,0.6); text-transform: capitalize; }
         
-        /* Main Content */
+
         .main-content {
             margin-left: 260px;
             padding: 24px 32px;
         }
         
-        /* Header */
+
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -178,7 +178,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
             color: #30b607;
         }
         
-        /* Stats Grid */
+
         .stats-grid {
             display: flex;
             gap: 16px;
@@ -247,7 +247,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
             margin-top: 6px;
         }
         
-        /* Content Grid */
+
         .content-grid {
             display: flex;
             gap: 24px;
@@ -257,7 +257,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
             flex: 1;
         }
         
-        /* Panels */
+
         .panel {
             background: #fff;
             border-radius: 16px;
@@ -287,7 +287,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
         }
         .panel-link:hover { text-decoration: underline; }
         
-        /* Tables */
+
         .table-container { overflow-x: auto; }
         table {
             width: 100%;
@@ -308,7 +308,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
         tbody tr:hover { background: #f8fafc; }
         tbody tr:last-child td { border-bottom: none; }
         
-        /* Badges */
+
         .badge {
             display: inline-block;
             padding: 4px 10px;
@@ -322,7 +322,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
         .badge.gray { background: #edf2f7; color: #6b7a8f; }
         .price { font-weight: 600; color: #30b607; }
         
-        /* Quick Actions */
+
         .quick-actions {
             display: flex;
             gap: 12px;

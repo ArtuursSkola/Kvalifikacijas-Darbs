@@ -15,7 +15,6 @@ $bodyData = [
 ];
 include __DIR__ . '/../../includes/header.php';
 
-// Server-side fallback: render listings even if the JS/API fails on the hosting environment.
 $initialHomes = [];
 $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 $sql = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image, status
