@@ -51,20 +51,7 @@ if (isset($_POST['login_btn'])) {
 	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 	<link rel="stylesheet" href="../style.css">
-	<style>
-		body { background: #f5f8fb; }
-		.auth-wrapper { min-height: 100vh; display:flex; align-items:center; justify-content:center; padding: 120px 16px 60px; }
-		.auth-card { width: min(480px, 100%); background:#fff; border:1px solid #e5ebf1; border-radius: 14px; padding: 26px; box-shadow:0 14px 32px rgba(0,0,0,0.08); }
-		h2 { margin: 0 0 6px; color: var(--primary-color); }
-		.auth-sub { margin: 0 0 14px; color: var(--text-light); }
-		.form-group { margin-bottom: 12px; }
-		.form-group label { font-weight: 700; color: var(--primary-color); display:block; margin-bottom:6px; }
-		.form-group input { width:100%; padding:12px; border-radius: 10px; border:1px solid #dfe5eb; background:#f9fbfd; }
-		.form-group input:focus { outline:2px solid rgba(48,182,7,0.25); border-color: rgba(48,182,7,0.35); background:#fff; }
-		.btn-submit { width:100%; border-radius:12px; }
-		.error { background:#ffe8e6; color:#c0392b; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid #f1c1bd; }
-		.switch { margin-top: 12px; text-align:center; }
-	</style>
+	<link rel="stylesheet" href="../css/admin.css">
 </head>
 <body>
 	<div class="auth-wrapper">

@@ -1,5 +1,5 @@
 <?php
-// includes/header.php
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../con_db.php';
 require_once __DIR__ . '/../routes/main.php';
 
-// Helper to determine active link
+
 if (!function_exists('isActive')) {
     function isActive($pageName) {
         $current = basename($_SERVER['PHP_SELF']);
@@ -35,9 +35,6 @@ if (!function_exists('isActive')) {
 <?php
 $resolvedBodyClass = trim((string)($bodyClass ?? ''));
 
-// Optional: pass extra attributes into the <body> tag from pages that include this header.
-// - $bodyAttributes: raw attribute string (already escaped/quoted as needed)
-// - $bodyData: associative array of data-* attributes, e.g. ['homes-api' => '/api/get_homes.php']
 $resolvedBodyAttributes = '';
 if (isset($bodyData) && is_array($bodyData)) {
     foreach ($bodyData as $dataKey => $dataValue) {
