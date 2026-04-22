@@ -54,6 +54,12 @@ if (isset($_POST['login_btn'])) {
 	<link rel="stylesheet" href="../css/admin.css">
 </head>
 <body>
+<nav class="navbar">
+    <div class="logo">Home<span>Estate</span></div>
+    <ul class="nav-links">
+        <li><a href="<?php echo main_route('home'); ?>">Sākums</a></li>
+    </ul>
+</nav>
 	<div class="auth-wrapper">
 		<div class="auth-card">
 			<h2>Admin / Moderators</h2>
@@ -72,8 +78,6 @@ if (isset($_POST['login_btn'])) {
 				</div>
 				<button type="submit" name="login_btn" class="btn-submit">Pieslēgties</button>
 			</form>
-			<div class="switch">Nav konta? <a href="<?php echo admin_route('register'); ?>">Reģistrē admin/mod</a></div>
-			<div class="switch"><a href="<?php echo main_route('login'); ?>">Atpakaļ uz lietotāju login</a></div>
 		</div>
 	</div>
 </body>

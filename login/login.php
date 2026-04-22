@@ -206,7 +206,6 @@ if (isset($_POST['login_btn'])) {
                 <button type="submit" name="login_btn" class="btn-submit login-btn-submit">Ielogoties</button>
             </form>
             <div class="auth-footer">Nav konta? <a href="<?php echo main_route('register'); ?>">Reģistrēties</a></div>
-            <div class="auth-footer" style="margin-top:8px;">Admin/moderator? <a href="<?php echo admin_route('login'); ?>">Atvērt admin login</a></div>
         </div>
     </div>
 

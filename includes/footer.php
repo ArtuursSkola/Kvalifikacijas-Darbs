@@ -21,6 +21,7 @@ require_once __DIR__ . '/../routes/main.php';
                     <li><a href="<?php echo main_route('property.list'); ?>">Meklēt īpašumu</a></li>
                     <li><a href="<?php echo main_route('about'); ?>">Par mums</a></li>
                     <li><a href="<?php echo main_route('owner'); ?>">Īpašniekiem</a></li>
+                    <li><a href="<?php echo admin_route('login'); ?>">Administrācija</a></li>
                 </ul>
             </div>
             <div class="footer-col">

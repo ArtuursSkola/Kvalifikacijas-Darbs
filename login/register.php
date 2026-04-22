@@ -239,7 +239,6 @@ if (isset($_POST['register_btn'])) {
                 <button type="submit" name="register_btn" class="btn-submit">Izveidot kontu</button>
             </form>
             <div class="auth-footer">Jau ir konts? <a href="<?php echo main_route('login'); ?>">Ielogoties</a></div>
-            <div class="auth-footer" style="margin-top:8px;">Admin/moderator? <a href="<?php echo admin_route('register'); ?>">Izveidot admin/mod kontu</a></div>
         </div>
     </div>
 
