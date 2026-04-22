@@ -151,6 +151,15 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
             </div>
         </div>
     </section>
+
+    <section class ="help-section">
+    <h2>Vai ir kādi jautājumi, vai vajadzīga palīdzība?</h2>
+        <p>Mēs atbildam uz visiem jūsu dotajiem jautājumiem un jums ir iespēja apskatīt biežāk uzdotos jautājumus</p>
+        <a href="" class="btn-cta">
+            <i class="fa-solid fa-question"></i>
+                Palīdzības centrs
+        </a>
+    </section>
     
     <section class="cta-section">
         <h2>Gatavs sākt savu meklēšanu?</h2>
@@ -160,5 +169,6 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
             Sākt meklēšanu
         </a>
     </section>
+
 
     <?php include 'includes/footer.php'; ?>

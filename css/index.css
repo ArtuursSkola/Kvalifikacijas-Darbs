@@ -376,7 +376,6 @@
 /* Enhanced Features Section */
 .features-section {
     padding: 56px 20px;
-    background: linear-gradient(180deg, #fff, #f8fafc);
 }
 
 .features-section .container {
@@ -435,7 +434,25 @@
     line-height: 1.7;
 }
 
-/* CTA Section */
+.help-section{
+    background: #f8fafc;
+    padding: 56px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.help-section h2{
+    font-weight: 800;
+    color: #000000;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+}
+.help-section p{
+    margin-bottom: 16px;
+}
+
 .cta-section {
     background: linear-gradient(135deg, #30b607, #259106);
     padding: 56px 20px;

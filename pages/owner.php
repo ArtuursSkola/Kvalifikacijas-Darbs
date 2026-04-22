@@ -105,17 +105,6 @@ include __DIR__ . '/../includes/header.php';
     </div>
 </section>
 
-<section class="cta-strip">
-    <div class="container">
-        <div class="cta-strip__inner">
-            <div>
-                <h3>Esi gatavs publicēt?</h3>
-                <p>Aktivizē plānu un pievieno sludinājumu minūtēs.</p>
-            </div>
-            <a class="btn-owner" href="#plans">Izvēlēties plānu</a>
-        </div>
-    </div>
-</section>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
 

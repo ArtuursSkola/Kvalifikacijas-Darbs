@@ -153,7 +153,7 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
             <div class="timeline">
                 <div class="timeline-item fade-up">
                     <div class="timeline-content">
-                        <span class="timeline-year">2024 Sākums</span>
+                        <span class="timeline-year">2025 Vidus</span>
                         <h3>Idejas Dzimšana</h3>
                         <p>Veikta tirgus izpēte un definētas galvenās problēmas, kuras HomeEstate atrisinās nekustamā īpašuma nozarē.</p>
                     </div>
@@ -161,7 +161,7 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                 </div>
                 <div class="timeline-item fade-up">
                     <div class="timeline-content">
-                        <span class="timeline-year">2024 Vidus</span>
+                        <span class="timeline-year">2025 Beigas</span>
                         <h3>MVP Izstrāde</h3>
                         <p>Izveidota pamata platformas arhitektūra, ieviešot reģistrācijas un sludinājumu apskates funkcijas.</p>
                     </div>
@@ -169,15 +169,15 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                 </div>
                 <div class="timeline-item fade-up">
                     <div class="timeline-content">
-                        <span class="timeline-year">2024 Rudens</span>
-                        <h3>Beta Testēšana</h3>
-                        <p>100 atlasīti lietotāji uzsāk platformas testēšanu, ieviešot pirmās atsauksmju funkcijas.</p>
+                        <span class="timeline-year">2026 Sākums</span>
+                        <h3>Pilvērtīgā izveide</h3>
+                        <p>Platforma ir izveidota un sākas lapas testēšana un pielabošana un gatavošana palaišanai.</p>
                     </div>
                     <div class="timeline-dot"></div>
                 </div>
                 <div class="timeline-item fade-up">
                     <div class="timeline-content">
-                        <span class="timeline-year">2025</span>
+                        <span class="timeline-year">2026 Vidus</span>
                         <h3>Oficiālā Palaišana</h3>
                         <p>Platforma tiek atvērta plašākai publikai ar drošu maksājumu sistēmu un jaudīgiem filtriem.</p>
                     </div>
@@ -186,8 +186,8 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                 <div class="timeline-item fade-up">
                     <div class="timeline-content">
                         <span class="timeline-year">Nākotne</span>
-                        <h3>AI Integrācija</h3>
-                        <p>Plānots integrēt mākslīgo intelektu, lai personalizētu meklēšanas pieredzi un sniegtu labākos ieteikumus.</p>
+                        <h3>Popularizēšana</h3>
+                        <p>Sākt veidot reklāmas un materiālus, kas pierādīs, ka esam paši labākie un visuzticamākie Latvijā.</p>
                     </div>
                     <div class="timeline-dot"></div>
                 </div>
