@@ -126,8 +126,8 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_homes")->fetch_row()[0];
-$activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='active'")->fetch_row()[0];
-$draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='draft'")->fetch_row()[0];
+$activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='Aktivs'")->fetch_row()[0];
+$draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='Melnraksts'")->fetch_row()[0];
 $rentCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE type='rent'")->fetch_row()[0];
 $buyCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE type='buy'")->fetch_row()[0];
 
@@ -233,10 +233,10 @@ function buildUrl($overrides = []) {
                     </select>
                     <select name="status">
                         <option value="">Visi statusi</option>
-                        <option value="active" <?php echo $filterStatus === 'active' ? 'selected' : ''; ?>>Aktīvs</option>
-                        <option value="draft" <?php echo $filterStatus === 'draft' ? 'selected' : ''; ?>>Melnraksts</option>
-                        <option value="inactive" <?php echo $filterStatus === 'inactive' ? 'selected' : ''; ?>>Neaktīvs</option>
-                        <option value="sold" <?php echo $filterStatus === 'sold' ? 'selected' : ''; ?>>Pārdots</option>
+                        <option value="Aktivs" <?php echo $filterStatus === 'Aktivs' ? 'selected' : ''; ?>>Aktīvs</option>
+                        <option value="Melnraksts" <?php echo $filterStatus === 'Melnraksts' ? 'selected' : ''; ?>>Melnraksts</option>
+                        <option value="Noraidīts" <?php echo $filterStatus === 'Noraidīts' ? 'selected' : ''; ?>>Noraidīts</option>
+                        <option value="Pardots" <?php echo $filterStatus === 'Pardots' ? 'selected' : ''; ?>>Pārdots</option>
                     </select>
                     <button type="submit"><i class="fas fa-filter"></i></button>
                     <?php if ($search || $filterType || $filterStatus): ?>
@@ -277,8 +277,8 @@ function buildUrl($overrides = []) {
                                     <td><?php echo htmlspecialchars($h['owner_name'] ?? '—'); ?></td>
                                     <td>
                                         <?php
-                                        $statusClass = ['active' => 'green', 'draft' => 'gray', 'inactive' => 'red', 'sold' => 'blue'];
-                                        $statusLabel = ['active' => 'Aktīvs', 'draft' => 'Melnraksts', 'inactive' => 'Neaktīvs', 'sold' => 'Pārdots'];
+                                        $statusClass = ['Aktivs' => 'green', 'Melnraksts' => 'gray', 'Noraidīts' => 'red', 'Pardots' => 'blue'];
+                                        $statusLabel = ['Aktivs' => 'Aktīvs', 'Melnraksts' => 'Melnraksts', 'Noraidīts' => 'Noraidīts', 'Pardots' => 'Pārdots'];
                                         ?>
                                         <span class="badge <?php echo $statusClass[$h['status']] ?? 'gray'; ?>">
                                             <?php echo $statusLabel[$h['status']] ?? $h['status']; ?>
@@ -318,7 +318,7 @@ function buildUrl($overrides = []) {
         </div>
     </main>
 
-    <!-- Create Modal -->
+
     <div class="modal-overlay" id="createModal">
         <div class="modal">
             <div class="modal-header">
@@ -352,8 +352,8 @@ function buildUrl($overrides = []) {
                         <div class="form-group">
                             <label>Statuss</label>
                             <select name="status">
-                                <option value="draft">Melnraksts</option>
-                                <option value="active">Aktīvs</option>
+                                <option value="Melnraksts">Melnraksts</option>
+                                <option value="Aktivs">Aktīvs</option>
                             </select>
                         </div>
                     </div>
@@ -370,7 +370,7 @@ function buildUrl($overrides = []) {
         </div>
     </div>
 
-    <!-- Edit Modal -->
+
     <div class="modal-overlay" id="editModal">
         <div class="modal">
             <div class="modal-header">
@@ -405,10 +405,10 @@ function buildUrl($overrides = []) {
                         <div class="form-group">
                             <label>Statuss</label>
                             <select name="status" id="edit_status">
-                                <option value="draft">Melnraksts</option>
-                                <option value="active">Aktīvs</option>
-                                <option value="inactive">Neaktīvs</option>
-                                <option value="sold">Pārdots</option>
+                                <option value="Melnraksts">Melnraksts</option>
+                                <option value="Aktivs">Aktīvs</option>
+                                <option value="Noraidīts">Noraidīts</option>
+                                <option value="Pardots">Pārdots</option>
                             </select>
                         </div>
                     </div>

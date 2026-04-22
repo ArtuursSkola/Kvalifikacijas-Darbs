@@ -37,8 +37,8 @@ require_once __DIR__ . '/../routes/main.php';
                 <h4>Kontakti</h4>
                 <ul>
                     <li><i class="fas fa-envelope"></i> info@homeestate.lv</li>
-                    <li><i class="fas fa-phone"></i> +371 2000 0000</li>
-                    <li><i class="fas fa-map-marker-alt"></i> Rīga, Latvija</li>
+                    <li><i class="fas fa-phone"></i> +371 2897 2765</li>
+                    <li><i class="fas fa-map-marker-alt"></i> Liepāja, Latvija</li>
                 </ul>
             </div>
         </div>

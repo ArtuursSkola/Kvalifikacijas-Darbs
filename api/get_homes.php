@@ -23,7 +23,7 @@ $selectMin = "SELECT id, owner_id, title, city, location_text, type, price, area
         description, main_image, status
     FROM est_homes";
 
-$where = $userId > 0 ? " WHERE status = 'active' OR owner_id = ?" : " WHERE status = 'active'";
+$where = $userId > 0 ? " WHERE status = 'Aktivs' OR owner_id = ?" : " WHERE status = 'Aktivs'";
 $order = " ORDER BY created_at DESC";
 
 $stmt = null;

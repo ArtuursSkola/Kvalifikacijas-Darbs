@@ -27,7 +27,7 @@ $todayHomes = fetchCount($savienojums, "SELECT COUNT(*) FROM est_homes WHERE DAT
 $totalUsers = fetchCount($savienojums, "SELECT COUNT(*) FROM est_lietotaji");
 $totalHomes = fetchCount($savienojums, "SELECT COUNT(*) FROM est_homes");
 $totalAdmins = fetchCount($savienojums, "SELECT COUNT(*) FROM est_admin");
-$activeHomes = fetchCount($savienojums, "SELECT COUNT(*) FROM est_homes WHERE status = 'active'");
+$activeHomes = fetchCount($savienojums, "SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
 $ownersCount = fetchCount($savienojums, "SELECT COUNT(*) FROM est_lietotaji WHERE loma = 'ipasnieks'");
 $weekUsers = fetchCount($savienojums, "SELECT COUNT(*) FROM est_lietotaji WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
 
@@ -204,8 +204,13 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
                                         <td><?php echo htmlspecialchars($h['city']); ?></td>
                                         <td class="price">€<?php echo number_format($h['price'], 0, ',', ' '); ?></td>
                                         <td>
-                                            <span class="badge <?php echo $h['status'] === 'active' ? 'green' : 'gray'; ?>">
-                                                <?php echo $h['status'] === 'active' ? 'Aktīvs' : ucfirst($h['status']); ?>
+                                            <?php
+                                                $statusClass = ['Aktivs' => 'green', 'Melnraksts' => 'gray', 'Noraidīts' => 'red', 'Pardots' => 'blue'];
+                                                $label = $statusLabel[$h['status']] ?? $h['status'];
+                                                if ($h['status'] === 'Aktivs') $label = 'Aktīvs';
+                                            ?>
+                                            <span class="badge <?php echo $statusClass[$h['status']] ?? 'gray'; ?>">
+                                                <?php echo htmlspecialchars($label); ?>
                                             </span>
                                         </td>
                                     </tr>

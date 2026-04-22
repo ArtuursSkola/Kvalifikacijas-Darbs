@@ -19,7 +19,7 @@ $initialHomes = [];
 $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 $sql = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image, status
     FROM est_homes
-    WHERE status = 'active'"
+    WHERE status = 'Aktivs'"
     . ($currentUserId > 0 ? " OR owner_id = ?" : "")
     . " ORDER BY created_at DESC";
 
@@ -40,6 +40,17 @@ if ($currentUserId > 0) {
         $initialHomes[] = $row;
     }
 }
+$activeHomesCount = 0;
+$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
+if ($resActive && $row = $resActive->fetch_row()) $activeHomesCount = (int)$row[0];
+
+$citiesCount = 0;
+$resCities = $savienojums->query("SELECT COUNT(DISTINCT city) FROM est_homes WHERE status = 'Aktivs'");
+if ($resCities && $row = $resCities->fetch_row()) $citiesCount = (int)$row[0];
+
+$dealsCount = 0;
+$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Pardots'");
+if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
 ?>
 
     <header class="homes-hero">
@@ -59,17 +70,17 @@ if ($currentUserId > 0) {
             <div class="homes-hero__card">
                 <div class="hero-metric">
                     <span class="metric-label">Pārbaudīti sludinājumi</span>
-                    <span class="metric-value">1,250+</span>
+                    <span class="metric-value"><?php echo number_format($activeHomesCount, 0, ',', ' '); ?>+</span>
                     <span class="metric-sub">Aktīvi piedāvājumi</span>
                 </div>
                 <div class="hero-metric">
                     <span class="metric-label">Pilsētas</span>
-                    <span class="metric-value">15+</span>
+                    <span class="metric-value"><?php echo number_format($citiesCount, 0, ',', ' '); ?>+</span>
                     <span class="metric-sub">Visā Latvijā</span>
                 </div>
                 <div class="hero-metric">
                     <span class="metric-label">Veiksmīgi darījumi</span>
-                    <span class="metric-value">380+</span>
+                    <span class="metric-value"><?php echo number_format($dealsCount, 0, ',', ' '); ?>+</span>
                     <span class="metric-sub">Apmierināti klienti</span>
                 </div>
             </div>

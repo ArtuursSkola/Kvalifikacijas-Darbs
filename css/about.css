@@ -356,7 +356,7 @@
         /* Stats Section */
         .stats-section {
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            position: relative;
+            justify-content: center;
             overflow: hidden;
         }
 
@@ -379,7 +379,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 32px;
             position: relative;
             z-index: 2;

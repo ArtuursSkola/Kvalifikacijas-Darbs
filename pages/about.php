@@ -9,6 +9,18 @@ $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
 $pageTitle = 'Par mums - HomeEstate';
 $extraStyles = ['about'];
 include __DIR__ . '/../includes/header.php';
+
+$activeHomesCount = 0;
+$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
+if ($resActive && $row = $resActive->fetch_row()) $activeHomesCount = (int)$row[0];
+
+$totalUsersCount = 0;
+$resUsers = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji");
+if ($resUsers && $row = $resUsers->fetch_row()) $totalUsersCount = (int)$row[0];
+
+$dealsCount = 0;
+$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Pardots'");
+if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
 ?>
 
     <section class="hero">
@@ -116,20 +128,16 @@ include __DIR__ . '/../includes/header.php';
             </div>
             <div class="stats-grid">
                 <div class="stat-card fade-up">
-                    <div class="stat-number"><span class="counter" data-target="1250">0</span></div>
+                    <div class="stat-number"><?php echo number_format($activeHomesCount, 0, ',', ' '); ?></div>
                     <div class="stat-label">Aktīvie Sludinājumi</div>
                 </div>
                 <div class="stat-card fade-up">
-                    <div class="stat-number"><span class="counter" data-target="380">0</span><span class="stat-suffix">+</span></div>
+                    <div class="stat-number"><?php echo number_format($dealsCount, 0, ',', ' '); ?><span class="stat-suffix">+</span></div>
                     <div class="stat-label">Veiksmīgi Darījumi</div>
                 </div>
                 <div class="stat-card fade-up">
-                    <div class="stat-number"><span class="counter" data-target="2700">0</span></div>
+                    <div class="stat-number"><?php echo number_format($totalUsersCount, 0, ',', ' '); ?></div>
                     <div class="stat-label">Reģistrētie Lietotāji</div>
-                </div>
-                <div class="stat-card fade-up">
-                    <div class="stat-number"><span class="counter" data-target="49">0</span></div>
-                    <div class="stat-label">Partneru Aģentūras</div>
                 </div>
             </div>
         </div>
@@ -204,7 +212,7 @@ include __DIR__ . '/../includes/header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Fade up animations
+
     const fadeElements = document.querySelectorAll('.fade-up');
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry, index) => {
@@ -219,9 +227,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     fadeElements.forEach(el => observer.observe(el));
 
-    // Counter animation is already handled in script.js for .counter class
-    
-    // Card tilt effect
     const cards = document.querySelectorAll('.mission-card, .value-card');
     cards.forEach(card => {
         card.addEventListener('mousemove', (e) => {

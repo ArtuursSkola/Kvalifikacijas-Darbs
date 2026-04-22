@@ -31,7 +31,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 
 if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
     $approveId = (int)$_GET['approve'];
-    $stmt = $savienojums->prepare("UPDATE est_homes SET status = 'active' WHERE id = ?");
+    $stmt = $savienojums->prepare("UPDATE est_homes SET status = 'Aktivs' WHERE id = ?");
     if ($stmt) {
         $stmt->bind_param('i', $approveId);
         if ($stmt->execute()) {
@@ -43,7 +43,7 @@ if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
 
 if (isset($_GET['reject']) && is_numeric($_GET['reject'])) {
     $rejectId = (int)$_GET['reject'];
-    $stmt = $savienojums->prepare("UPDATE est_homes SET status = 'rejected' WHERE id = ?");
+    $stmt = $savienojums->prepare("UPDATE est_homes SET status = 'Noraidīts' WHERE id = ?");
     if ($stmt) {
         $stmt->bind_param('i', $rejectId);
         if ($stmt->execute()) {
@@ -58,7 +58,7 @@ if (isset($_POST['create_listing'])) {
     $city = trim($_POST['city'] ?? '');
     $type = $_POST['type'] ?? 'rent';
     $price = (float)($_POST['price'] ?? 0);
-    $status = $_POST['status'] ?? 'draft';
+    $status = $_POST['status'] ?? 'Melnraksts';
     $description = trim($_POST['description'] ?? '');
     
     if ($title !== '' && $city !== '') {
@@ -77,7 +77,7 @@ if (isset($_POST['edit_listing'])) {
     $city = trim($_POST['city'] ?? '');
     $type = $_POST['type'] ?? 'rent';
     $price = (float)($_POST['price'] ?? 0);
-    $status = $_POST['status'] ?? 'draft';
+    $status = $_POST['status'] ?? 'Melnraksts';
     $description = trim($_POST['description'] ?? '');
     
     if ($id > 0 && $title !== '') {
@@ -150,12 +150,12 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_homes")->fetch_row()[0];
-$activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='active'")->fetch_row()[0];
-$draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='draft' OR status='melnraksts' OR status='' OR status IS NULL")->fetch_row()[0];
-$pendingCount = $draftCount; // Drafts awaiting approval
+$activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='Aktivs'")->fetch_row()[0];
+$draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='Melnraksts' OR status='' OR status IS NULL")->fetch_row()[0];
+$pendingCount = $draftCount; 
 $rentCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE type='rent'")->fetch_row()[0];
 $buyCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE type='buy'")->fetch_row()[0];
-$rejectedCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='rejected'")->fetch_row()[0];
+$rejectedCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='Noraidīts'")->fetch_row()[0];
 
 function buildUrl($overrides = []) {
     $params = array_merge($_GET, $overrides);
@@ -269,10 +269,10 @@ function buildUrl($overrides = []) {
                     </select>
                     <select name="status">
                         <option value="">Visi statusi</option>
-                        <option value="active" <?php echo $filterStatus === 'active' ? 'selected' : ''; ?>>Aktīvs</option>
-                        <option value="draft" <?php echo $filterStatus === 'draft' ? 'selected' : ''; ?>>Melnraksts</option>
-                        <option value="inactive" <?php echo $filterStatus === 'inactive' ? 'selected' : ''; ?>>Neaktīvs</option>
-                        <option value="sold" <?php echo $filterStatus === 'sold' ? 'selected' : ''; ?>>Pārdots</option>
+                        <option value="Aktivs" <?php echo $filterStatus === 'Aktivs' ? 'selected' : ''; ?>>Aktīvs</option>
+                        <option value="Melnraksts" <?php echo $filterStatus === 'Melnraksts' ? 'selected' : ''; ?>>Melnraksts</option>
+                        <option value="Noraidīts" <?php echo $filterStatus === 'Noraidīts' ? 'selected' : ''; ?>>Noraidīts</option>
+                        <option value="Pardots" <?php echo $filterStatus === 'Pardots' ? 'selected' : ''; ?>>Pārdots</option>
                     </select>
                     <button type="submit"><i class="fas fa-filter"></i></button>
                     <?php if ($search || $filterType || $filterStatus): ?>
@@ -313,9 +313,9 @@ function buildUrl($overrides = []) {
                                     <td><?php echo htmlspecialchars($h['owner_name'] ?? '—'); ?></td>
                                     <td>
                                         <?php
-                                        $statusClass = ['active' => 'green', 'draft' => 'gray', 'melnraksts' => 'gray', 'inactive' => 'red', 'sold' => 'blue', 'rejected' => 'red'];
-                                        $statusLabel = ['active' => 'Aktīvs', 'draft' => 'Gaida apstiprinājumu', 'melnraksts' => 'Gaida apstiprinājumu', 'inactive' => 'Neaktīvs', 'sold' => 'Pārdots', 'rejected' => 'Noraidīts'];
-                                        $st = $h['status'] ?: 'draft';
+                                        $statusClass = ['Aktivs' => 'green', 'Melnraksts' => 'gray', 'Noraidīts' => 'red', 'Pardots' => 'blue'];
+                                        $statusLabel = ['Aktivs' => 'Aktīvs', 'Melnraksts' => 'Gaida apstiprinājumu', 'Noraidīts' => 'Noraidīts', 'Pardots' => 'Pārdots'];
+                                        $st = $h['status'] ?: 'Melnraksts';
                                         ?>
                                         <span class="badge <?php echo $statusClass[$st] ?? 'gray'; ?>">
                                             <?php echo $statusLabel[$st] ?? $st; ?>
@@ -324,7 +324,7 @@ function buildUrl($overrides = []) {
                                     <td><?php echo $h['created_at'] ? date('d.m.Y', strtotime($h['created_at'])) : '—'; ?></td>
                                     <td>
                                         <div class="actions">
-                                            <?php if (in_array($h['status'], ['draft', 'melnraksts', '', null])): ?>
+                                            <?php if (in_array($h['status'], ['Melnraksts', '', null])): ?>
                                                 <a href="<?php echo buildUrl(['approve' => $h['id']]); ?>" class="btn-sm approve" onclick="return confirm('Apstiprināt šo sludinājumu?')" title="Apstiprināt"><i class="fas fa-check"></i></a>
                                                 <a href="<?php echo buildUrl(['reject' => $h['id']]); ?>" class="btn-sm reject" onclick="return confirm('Noraidīt šo sludinājumu?')" title="Noraidīt"><i class="fas fa-times"></i></a>
                                             <?php endif; ?>
@@ -393,8 +393,8 @@ function buildUrl($overrides = []) {
                         <div class="form-group">
                             <label>Statuss</label>
                             <select name="status">
-                                <option value="draft">Melnraksts</option>
-                                <option value="active">Aktīvs</option>
+                                <option value="Melnraksts">Melnraksts</option>
+                                <option value="Aktivs">Aktīvs</option>
                             </select>
                         </div>
                     </div>
@@ -446,10 +446,10 @@ function buildUrl($overrides = []) {
                         <div class="form-group">
                             <label>Statuss</label>
                             <select name="status" id="edit_status">
-                                <option value="draft">Melnraksts</option>
-                                <option value="active">Aktīvs</option>
-                                <option value="inactive">Neaktīvs</option>
-                                <option value="sold">Pārdots</option>
+                                <option value="Melnraksts">Melnraksts</option>
+                                <option value="Aktivs">Aktīvs</option>
+                                <option value="Noraidīts">Noraidīts</option>
+                                <option value="Pardots">Pārdots</option>
                             </select>
                         </div>
                     </div>
@@ -479,7 +479,7 @@ function buildUrl($overrides = []) {
         document.getElementById('edit_city').value = listing.city || '';
         document.getElementById('edit_price').value = listing.price || '';
         document.getElementById('edit_type').value = listing.type || 'rent';
-        document.getElementById('edit_status').value = listing.status || 'draft';
+        document.getElementById('edit_status').value = listing.status || 'Melnraksts';
         document.getElementById('edit_description').value = listing.description || '';
         openModal('editModal');
     }

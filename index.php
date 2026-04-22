@@ -11,13 +11,24 @@ include 'includes/header.php';
 
 $newestHomes = [];
 $sql = "SELECT id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image 
-        FROM est_homes WHERE status = 'active' ORDER BY created_at DESC LIMIT 3";
+        FROM est_homes WHERE status = 'Aktivs' ORDER BY created_at DESC LIMIT 3";
 $result = $savienojums->query($sql);
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $newestHomes[] = $row;
     }
 }
+$activeHomesCount = 0;
+$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
+if ($resActive && $row = $resActive->fetch_row()) $activeHomesCount = (int)$row[0];
+
+$totalUsersCount = 0;
+$resUsers = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji");
+if ($resUsers && $row = $resUsers->fetch_row()) $totalUsersCount = (int)$row[0];
+
+$dealsCount = 0;
+$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Pardots'");
+if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
 ?>
 
     <header class="hero">
@@ -54,15 +65,15 @@ if ($result && $result->num_rows > 0) {
             
             <div class="stats-bar">
                 <div class="stat-item">
-                    <div class="number">1,250<span>+</span></div>
+                    <div class="number"><?php echo number_format($activeHomesCount, 0, ',', ' '); ?><span>+</span></div>
                     <div class="label">Aktīvi sludinājumi</div>
                 </div>
                 <div class="stat-item">
-                    <div class="number">2,700<span>+</span></div>
+                    <div class="number"><?php echo number_format($totalUsersCount, 0, ',', ' '); ?><span>+</span></div>
                     <div class="label">Apmierināti klienti</div>
                 </div>
                 <div class="stat-item">
-                    <div class="number">380<span>+</span></div>
+                    <div class="number"><?php echo number_format($dealsCount, 0, ',', ' '); ?><span>+</span></div>
                     <div class="label">Veiksmīgi darījumi</div>
                 </div>
             </div>
