@@ -38,7 +38,7 @@ $myHomesUrl = main_route('property.myhomes');
     <ul class="nav-links">
         <li><a href="<?php echo main_route('home'); ?>" class="<?php echo isActive('index.php'); ?>">Sākums</a></li>
         <li><a href="<?php echo main_route('property.list'); ?>" class="<?php echo isActive('homes.php'); ?>">Meklēt īpašumu</a></li>
-        <?php if ($isOwner): ?>
+        <?php if (!$isOwner): ?>
             <li><a href="<?php echo main_route('owner'); ?>" class="<?php echo isActive('owner.php'); ?>">Kļūsti par īpašnieku</a></li>
         <?php endif; ?>
         <?php if ($canCreate): ?>
@@ -93,12 +93,14 @@ $myHomesUrl = main_route('property.myhomes');
                                 <span class="profile-dropdown__badge"><?php echo htmlspecialchars($profileBadge); ?></span>
                             </div>
                         </div>
+                        <?php if ($isOwner): ?>
                         <div class="profile-dropdown__plan">
                             <span>Plāns</span>
                             <strong><?php echo htmlspecialchars($currentPlanLabel); ?></strong>
                         </div>
                         <?php if ($planDaysLeft !== null): ?>
                             <div class="profile-dropdown__meta"><?php echo (int)$planDaysLeft; ?> dienas līdz termiņa beigām</div>
+                        <?php endif; ?>
                         <?php endif; ?>
                     </div>
 
@@ -180,6 +182,7 @@ $myHomesUrl = main_route('property.myhomes');
                     </form>
                 </section>
 
+                <?php if ($isOwner): ?>
                 <section class="settings-panel">
                     <h3>Plāns</h3>
                     <div class="settings-stat-list">
@@ -245,6 +248,18 @@ $myHomesUrl = main_route('property.myhomes');
                         </div>
                     <?php endif; ?>
                 </section>
+                <?php else: ?>
+                <section class="settings-panel">
+                    <h3>Kļūt par īpašnieku</h3>
+                    <p>Vai vēlaties kļūt par īpašnieku?</p>
+                    <form method="POST" action="<?php echo main_route('account.become_owner'); ?>">
+                        <button type="submit" class="btn-register">Kļūt par īpašnieku</button>
+                    </form>
+                    <div style="margin-top: 12px;">
+                        <a class="btn-login" href="<?php echo $settingsUrl; ?>">Atvērt iestatījumus</a>
+                    </div>
+                </section>
+                <?php endif; ?>
 
                 <section class="settings-panel settings-panel--wide">
                     <h3>Darījumu vēsture (īpašumi)</h3>

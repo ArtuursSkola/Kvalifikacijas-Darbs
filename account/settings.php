@@ -94,6 +94,7 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
         </form>
     </section>
 
+    <?php if ($currentUser['loma'] === 'ipasnieks'): ?>
     <section class="settings-card">
         <h2>Plāns</h2>
         <div class="settings-plan-grid">
@@ -162,6 +163,15 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
             </div>
         <?php endif; ?>
     </section>
+    <?php else: ?>
+    <section class="settings-card">
+        <h2>Kļūt par īpašnieku</h2>
+        <p>Vai vēlaties kļūt par īpašnieku?</p>
+        <form method="POST" action="<?php echo main_route('account.become_owner'); ?>">
+            <button type="submit" class="btn-register">Kļūt par īpašnieku</button>
+        </form>
+    </section>
+    <?php endif; ?>
 
     <section class="settings-card">
         <h2>Darījumu vēsture (īpašumi)</h2>

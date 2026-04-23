@@ -116,13 +116,13 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const logoutUrl = new URL(logout.getAttribute('href') || '', window.location.href);
                 const settingsUrl = new URL(logoutUrl.toString());
-                if (/(^|\\/)login\\/logout\\.php$/i.test(logoutUrl.pathname)) {
-                    settingsUrl.pathname = logoutUrl.pathname.replace(/login\\/logout\\.php$/i, 'pages/settings.php');
+                if (/(^|\/)login\/logout\.php$/i.test(logoutUrl.pathname)) {
+                    settingsUrl.pathname = logoutUrl.pathname.replace(/login\/logout\.php$/i, 'account/settings.php');
                 }
                 settingsHref = settingsUrl.toString();
             } catch (_) {
                 const href = logout.getAttribute('href') || '';
-                settingsHref = href.replace(/login\\/logout\\.php(\\?.*)?$/i, 'pages/settings.php');
+                settingsHref = href.replace(/login\/logout\.php(\?.*)?$/i, 'account/settings.php');
             }
 
             const profileMenu = document.createElement('details');
