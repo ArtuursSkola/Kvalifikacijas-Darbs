@@ -12,7 +12,6 @@ function admin_routes(): array
         'listings_legacy' => 'Admin/sludinajumi_new.php',
         'moderators' => 'Admin/moderatori.php',
         'login' => 'Admin/login.php',
-        'register' => 'Admin/register.php',
     ];
 
     return $routes;

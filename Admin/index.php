@@ -235,7 +235,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
                     <i class="fas fa-building"></i>
                     <span>Pārvaldīt sludinājumus</span>
                 </a>
-                <a href="<?php echo admin_route('register'); ?>" class="quick-action">
+                <a href="<?php echo admin_route('moderators'); ?>" class="quick-action">
                     <i class="fas fa-user-plus"></i>
                     <span>Pievienot admin</span>
                 </a>

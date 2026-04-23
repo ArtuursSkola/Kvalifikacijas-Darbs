@@ -12,7 +12,6 @@ require $configPath;
 $zinojums = "";
 $atlasita_loma = 'lietotajs';
 
-// Pārbaudām, vai tabulā ir 'loma'
 $roleColumnExists = false;
 $roleColumnCheck = mysqli_query($savienojums, "SHOW COLUMNS FROM est_lietotaji LIKE 'loma'");
 if ($roleColumnCheck && mysqli_num_rows($roleColumnCheck) > 0) {
@@ -26,21 +25,44 @@ if (isset($_POST['register_btn'])) {
     $parole_repeat = $_POST['password_repeat'];
     $atlasita_loma = isset($_POST['role']) && $_POST['role'] === 'ipasnieks' ? 'ipasnieks' : 'lietotajs';
 
-    // Pārbaudes
+    $errors = [];
+
+    if (preg_match('/[0-9]/', $lietotajvards)) {
+        $errors[] = "Lietotājvārds nevar saturēt skaitļus";
+    }
+    if (strlen($lietotajvards) < 5) {
+        $errors[] = "Lietotājvārdam jābūt vismaz 5 simbolus garam";
+    } elseif (strlen($lietotajvards) > 25) {
+        $errors[] = "Lietotājvārds nevar būt garāks par 25 simboliem";
+    }
+
+    if (strpos($epasts, '@') === false) {
+        $errors[] = "E-pastam jāsatur @ simbols";
+    }
+
+    if (strlen($parole_raw) < 8) {
+        $errors[] = "Parolei jābūt vismaz 8 simbolus garai";
+    }
+    if (!preg_match('/[0-9]/', $parole_raw)) {
+        $errors[] = "Parolei jāsatur vismaz viens skaitlis";
+    }
+    if (!preg_match('/[^a-zA-Z0-9]/', $parole_raw)) {
+        $errors[] = "Parolei jāsatur vismaz viens simbols";
+    }
+
     if ($parole_raw !== $parole_repeat) {
-        $zinojums = "Paroles nesakrīt!";
-    } else {
-        // Pārbauda, vai lietotājs jau eksistē
+        $errors[] = "Paroles nesakrīt!";
+    }
+
+    if (empty($errors)) {
         $check_query = "SELECT * FROM est_lietotaji WHERE lietotajvards='$lietotajvards' OR epasts='$epasts'";
         $result = mysqli_query($savienojums, $check_query);
 
         if (mysqli_num_rows($result) > 0) {
             $zinojums = "Lietotājvārds vai e-pasts jau eksistē!";
         } else {
-            // Parole tiek šifrēta
             $parole_hash = password_hash($parole_raw, PASSWORD_DEFAULT);
 
-            // Tiek sūtīts datubāzē
             if ($roleColumnExists) {
                 $sql = "INSERT INTO est_lietotaji (lietotajvards, epasts, parole, loma) VALUES ('$lietotajvards', '$epasts', '$parole_hash', '$atlasita_loma')";
             } else {
@@ -58,6 +80,8 @@ if (isset($_POST['register_btn'])) {
                 $zinojums = "Kļūda sistēmā: " . mysqli_error($savienojums);
             }
         }
+    } else {
+        $zinojums = implode("<br>", $errors);
     }
 }
 ?>

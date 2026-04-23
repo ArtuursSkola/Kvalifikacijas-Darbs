@@ -8,7 +8,6 @@ if (!file_exists($configPath)) {
 }
 require $configPath;
 
-// Stingra piekļuves kontrole, tikai admin loma var piekļūt šai lapai
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header('Location: ' . admin_route('dashboard'));
     exit;
@@ -16,6 +15,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 
 $errors = [];
 $success = '';
+$form_type = '';
 
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
@@ -30,23 +30,48 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
         $stmt->close();
     }
 }
-//Jauna moderatora izveide
+
 if (isset($_POST['create_mod'])) {
+    $form_type = 'create';
     $newUsername = trim($_POST['new_username'] ?? '');
     $newEmail = trim($_POST['new_email'] ?? '');
     $newPassword = $_POST['new_password'] ?? '';
     $newRole = $_POST['new_role'] ?? 'moderator';
     
+    if (preg_match('/[0-9]/', $newUsername)) {
+        $errors[] = "Lietotājvārds nevar saturēt skaitļus";
+    }
+    if (strlen($newUsername) < 5) {
+        $errors[] = "Lietotājvārdam jābūt vismaz 5 simbolus garam";
+    } elseif (strlen($newUsername) > 25) {
+        $errors[] = "Lietotājvārds nevar būt garāks par 25 simboliem";
+    }
+
+    if (strpos($newEmail, '@') === false) {
+        $errors[] = "E-pastam jāsatur @ simbols";
+    }
+
+    if (strlen($newPassword) < 8) {
+        $errors[] = "Parolei jābūt vismaz 8 simbolus garai";
+    }
+    if (!preg_match('/[0-9]/', $newPassword)) {
+        $errors[] = "Parolei jāsatur vismaz viens skaitlis";
+    }
+    if (!preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
+        $errors[] = "Parolei jāsatur vismaz viens simbols";
+    }
+
     if ($newUsername === '' || $newEmail === '' || $newPassword === '') {
         $errors[] = 'Aizpildi visus obligātos laukus.';
-    } else {
+    }
+
+    if (empty($errors)) {
         $chk = $savienojums->prepare("SELECT admin_id FROM est_admin WHERE lietotajvards=? OR epasts=? LIMIT 1");
         $chk->bind_param('ss', $newUsername, $newEmail);
         $chk->execute();
         if ($chk->get_result()->num_rows > 0) {
             $errors[] = 'Lietotājvārds vai e-pasts jau eksistē.';
         } else {
-            // Pārbaude, vai parole jau ir šifrēta, bet jauna lietotāja gadījumā vienmēr šifrējam
             $hash = password_hash($newPassword, PASSWORD_DEFAULT);
             $ins = $savienojums->prepare("INSERT INTO est_admin (lietotajvards, epasts, parole, loma) VALUES (?, ?, ?, ?)");
             $ins->bind_param('ssss', $newUsername, $newEmail, $hash, $newRole);
@@ -62,6 +87,7 @@ if (isset($_POST['create_mod'])) {
 }
 
 if (isset($_POST['edit_mod'])) {
+    $form_type = 'edit';
     $editId = (int)($_POST['edit_id'] ?? 0);
     $editUsername = trim($_POST['edit_username'] ?? '');
     $editEmail = trim($_POST['edit_email'] ?? '');
@@ -76,7 +102,6 @@ if (isset($_POST['edit_mod'])) {
             $errors[] = 'Lietotājvārds vai e-pasts jau aizņemts.';
         } else {
             if ($editPassword !== '') {
-                // Ja parole tiek mainīta, šifrējam to
                 $hash = password_hash($editPassword, PASSWORD_DEFAULT);
                 $upd = $savienojums->prepare("UPDATE est_admin SET lietotajvards=?, epasts=?, parole=?, loma=? WHERE admin_id=?");
                 $upd->bind_param('ssssi', $editUsername, $editEmail, $hash, $editRole, $editId);
@@ -145,7 +170,7 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
         <?php if ($success): ?>
             <div class="alert success"><?php echo htmlspecialchars($success); ?></div>
         <?php endif; ?>
-        <?php if ($errors): ?>
+        <?php if ($errors && $form_type === ''): ?>
             <div class="alert error"><?php echo implode('<br>', array_map('htmlspecialchars', $errors)); ?></div>
         <?php endif; ?>
 
@@ -205,7 +230,7 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
                                     <button class="btn-sm edit" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($m)); ?>)">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <?php if ($m['admin_id'] != $_SESSION['user_id']): // Neļaut dzēst sevi ?>
+                                    <?php if ($m['admin_id'] != $_SESSION['user_id']): ?>
                                         <a href="?delete=<?php echo $m['admin_id']; ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst šo administratoru?')">
                                             <i class="fas fa-trash"></i>
                                         </a>
@@ -225,6 +250,9 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
                 <h3>Pievienot personālu</h3>
                 <button class="modal-close" onclick="closeModal('createModal')">&times;</button>
             </div>
+            <?php if ($errors && $form_type === 'create'): ?>
+                <div class="alert error" style="margin: 10px 20px 0;"><?php echo implode('<br>', array_map('htmlspecialchars', $errors)); ?></div>
+            <?php endif; ?>
             <form method="POST">
                 <div class="modal-body">
                     <div class="form-group">
@@ -261,6 +289,9 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
                 <h3>Rediģēt personālu</h3>
                 <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
             </div>
+            <?php if ($errors && $form_type === 'edit'): ?>
+                <div class="alert error" style="margin: 10px 20px 0;"><?php echo implode('<br>', array_map('htmlspecialchars', $errors)); ?></div>
+            <?php endif; ?>
             <form method="POST">
                 <input type="hidden" name="edit_id" id="edit_id">
                 <div class="modal-body">
@@ -309,6 +340,10 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
                 event.target.classList.remove('active');
             }
         }
+
+        <?php if (!empty($errors) && $form_type === 'create'): ?>
+            openModal('createModal');
+        <?php endif; ?>
     </script>
 </body>
 </html>
