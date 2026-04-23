@@ -850,6 +850,48 @@ body.no-scroll {
     font-size: 0.9rem;
 }
 
+.property-owner-bar {
+    padding-top: 15px;
+    margin-bottom: 15px;
+    border-top: 1px solid var(--gray-100);
+}
+
+.property-owner-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.owner-mini-pfp {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--gray-200);
+}
+
+.owner-mini-initial {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--gray-100);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border: 1px solid var(--gray-200);
+}
+
+.owner-username {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+}
+
 .price-row {
     display: flex;
     justify-content: space-between;

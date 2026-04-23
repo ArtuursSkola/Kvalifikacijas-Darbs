@@ -8,7 +8,6 @@ $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plan'] ?? '';
 $canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
 
-// Get home ID from URL
 $homeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($homeId <= 0) {
@@ -16,33 +15,42 @@ if ($homeId <= 0) {
     exit;
 }
 
-// Fetch property + owner info from database
-$stmt = $savienojums->prepare("SELECT h.*, u.lietotajvards as owner_username, u.epasts as owner_email, u.profila_bilde as owner_avatar
-    FROM est_homes h
-    LEFT JOIN est_lietotaji u ON u.lietotaja_id = h.owner_id
-    WHERE h.id = ?
-    LIMIT 1");
-$stmt->bind_param('i', $homeId);
-$stmt->execute();
-$result = $stmt->get_result();
+$homeStmt = $savienojums->prepare("SELECT * FROM est_homes WHERE id = ? LIMIT 1");
+$homeStmt->bind_param('i', $homeId);
+$homeStmt->execute();
+$homeRes = $homeStmt->get_result();
 
-if ($result->num_rows === 0) {
+if ($homeRes->num_rows === 0) {
     header('Location: ' . main_route('property.list'));
     exit;
 }
 
-$home = $result->fetch_assoc();
-$stmt->close();
+$home = $homeRes->fetch_assoc();
+$homeStmt->close();
+
+$ownerId = (int)($home['owner_id'] ?? 0);
+$owner = null;
+if ($ownerId > 0) {
+    $ownStmt = $savienojums->prepare("SELECT lietotajvards, epasts, profila_bilde, plan FROM est_lietotaji WHERE lietotaja_id = ? LIMIT 1");
+    if ($ownStmt) {
+        $ownStmt->bind_param('i', $ownerId);
+        $ownStmt->execute();
+        $owner = $ownStmt->get_result()->fetch_assoc();
+        $ownStmt->close();
+    }
+}
 
 $pageTitle = htmlspecialchars($home['title']) . ' - HomeEstate';
 $extraStyles = ['home'];
 $bodyClass = 'property-detail-page';
 include __DIR__ . '/../../includes/header.php';
 
-$ownerName = trim((string)($home['owner_username'] ?? ''));
-$ownerEmail = trim((string)($home['owner_email'] ?? ''));
-$ownerAvatarUrl = userProfileImageUrl($home['owner_avatar'] ?? '');
+$ownerName = trim((string)($owner['lietotajvards'] ?? ''));
+$ownerEmail = trim((string)($owner['epasts'] ?? ''));
+$ownerAvatarUrl = userProfileImageUrl($owner['profila_bilde'] ?? '');
 $ownerInitial = strtoupper(substr($ownerName !== '' ? $ownerName : 'U', 0, 1));
+$ownerPlan = (string)($owner['plan'] ?? '');
+$hasShield = in_array($ownerPlan, ['Silver', 'Gold'], true);
 
 $amenities = [];
 if (!empty($home['amenities'])) {
@@ -176,7 +184,12 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
                         <div class="agent-photo-fallback" aria-hidden="true"><?php echo htmlspecialchars($ownerInitial); ?></div>
                     <?php endif; ?>
                     <div>
-                        <strong><?php echo htmlspecialchars($ownerName !== '' ? $ownerName : 'Īpašnieks'); ?></strong>
+                        <strong>
+                            <?php echo htmlspecialchars($ownerName !== '' ? $ownerName : 'Īpašnieks'); ?>
+                            <?php if ($hasShield): ?>
+                                <i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>
+                            <?php endif; ?>
+                        </strong>
                         <span>Īpašnieks</span>
                     </div>
                 </div>
@@ -278,7 +291,6 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
     </footer>
 
     <script>
-        // Tab functionality
         document.querySelectorAll('.tab-link').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-link').forEach(b => b.classList.remove('active'));
@@ -288,7 +300,6 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
             });
         });
 
-        // Gallery image change
         function changeImage(thumb) {
             document.getElementById('gallery-main').src = thumb.src.replace('w=600', 'w=1200');
             document.querySelectorAll('.thumb-images img').forEach(img => img.classList.remove('active'));

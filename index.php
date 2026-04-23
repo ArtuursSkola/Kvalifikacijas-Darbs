@@ -10,14 +10,40 @@ include 'includes/header.php';
 
 
 $newestHomes = [];
-$sql = "SELECT id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image 
+$sql = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image 
         FROM est_homes WHERE status = 'Aktivs' ORDER BY created_at DESC LIMIT 3";
 $result = $savienojums->query($sql);
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
+        $row['owner_data'] = null;
         $newestHomes[] = $row;
     }
 }
+
+if ($newestHomes !== []) {
+    $ownerIds = array_filter(array_unique(array_column($newestHomes, 'owner_id')));
+    if ($ownerIds !== []) {
+        $placeholders = implode(',', array_fill(0, count($ownerIds), '?'));
+        $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plan FROM est_lietotaji WHERE lietotaja_id IN ($placeholders)");
+        if ($ownerStmt) {
+            $ownerStmt->bind_param(str_repeat('i', count($ownerIds)), ...array_values($ownerIds));
+            $ownerStmt->execute();
+            $ownerRes = $ownerStmt->get_result();
+            $owners = [];
+            while ($o = $ownerRes->fetch_assoc()) {
+                $owners[$o['lietotaja_id']] = $o;
+            }
+            $ownerStmt->close();
+
+            foreach ($newestHomes as &$h) {
+                if (isset($owners[$h['owner_id']])) {
+                    $h['owner_data'] = $owners[$h['owner_id']];
+                }
+            }
+        }
+    }
+}
+
 $activeHomesCount = 0;
 $resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
 if ($resActive && $row = $resActive->fetch_row()) $activeHomesCount = (int)$row[0];
@@ -103,6 +129,11 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                         $badgeClass = $isRent ? 'rent' : 'sale';
                         $badgeText = $isRent ? 'Izīrē' : 'Pārdod';
                         $image = $home['main_image'] ?: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=500&q=60';
+                        $owner = $home['owner_data'];
+                        $ownerName = $owner['lietotajvards'] ?? 'Īpašnieks';
+                        $ownerPfp = userProfileImageUrl($owner['profila_bilde'] ?? '');
+                        $ownerInitial = strtoupper(substr($ownerName, 0, 1));
+                        $hasShield = in_array($owner['plan'] ?? '', ['Silver', 'Gold'], true);
                     ?>
                     <div class="card">
                         <div class="card-image">
@@ -118,6 +149,23 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                                 <span><i class="fas fa-ruler-combined"></i> <?php echo (int)$home['area']; ?> m²</span>
                                 <span><i class="fas fa-bath"></i> <?php echo (int)$home['bathrooms']; ?> vannas</span>
                             </div>
+
+                            <div class="property-owner-bar">
+                                <div class="property-owner-info">
+                                    <?php if ($ownerPfp !== ''): ?>
+                                        <img src="<?php echo htmlspecialchars($ownerPfp); ?>" alt="<?php echo htmlspecialchars($ownerName); ?>" class="owner-mini-pfp">
+                                    <?php else: ?>
+                                        <span class="owner-mini-initial"><?php echo htmlspecialchars($ownerInitial); ?></span>
+                                    <?php endif; ?>
+                                    <span class="owner-username">
+                                        <?php echo htmlspecialchars($ownerName); ?>
+                                        <?php if ($hasShield): ?>
+                                            <i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                            </div>
+
                             <div class="price-row">
                                 <span class="price"><?php echo $priceDisplay; ?></span>
                                 <a href="<?php echo main_route('property.show', ['id' => $home['id']]); ?>" class="btn-view">Skatīt <i class="fas fa-arrow-right"></i></a>

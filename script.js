@@ -416,6 +416,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (emptyMsg) emptyMsg.style.display = 'none';
 
             list.forEach(item => {
+                const shieldIcon = (item.owner_plan === 'Gold' || item.owner_plan === 'Silver') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
+                const ownerInitial = (item.owner_username || 'U').charAt(0).toUpperCase();
+                const ownerPfpHtml = item.owner_pfp 
+                    ? `<img src="${item.owner_pfp}" alt="${item.owner_username}" class="owner-mini-pfp">` 
+                    : `<span class="owner-mini-initial">${ownerInitial}</span>`;
+
                 const card = document.createElement('div');
                 card.className = 'property-card';
                 card.innerHTML = `
@@ -434,8 +440,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span><i class="fas fa-ruler-combined"></i> ${item.size} m²</span>
                             <span><i class="fas fa-bath"></i> ${item.baths || 1} vannas</span>
                         </div>
+                        <div class="property-owner-bar">
+                            <div class="property-owner-info">
+                                ${ownerPfpHtml}
+                                <span class="owner-username">${item.owner_username || 'Īpašnieks'}${shieldIcon}</span>
+                            </div>
+                        </div>
                         <div class="property-footer">
-                            <span class="property-price">${formatPrice(item)}${item.type === 'rent' ? '' : ''}</span>
+                            <span class="property-price">${formatPrice(item)}</span>
                             <a href="${propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
                         </div>
                     </div>
