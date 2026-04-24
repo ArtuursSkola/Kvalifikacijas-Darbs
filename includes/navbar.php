@@ -38,7 +38,7 @@ $myHomesUrl = main_route('property.myhomes');
     <ul class="nav-links">
         <li><a href="<?php echo main_route('home'); ?>" class="<?php echo isActive('index.php'); ?>">Sākums</a></li>
         <li><a href="<?php echo main_route('property.list'); ?>" class="<?php echo isActive('homes.php'); ?>">Meklēt īpašumu</a></li>
-        <?php if (!$isOwner): ?>
+        <?php if ($isOwner): ?>
             <li><a href="<?php echo main_route('owner'); ?>" class="<?php echo isActive('owner.php'); ?>">Kļūsti par īpašnieku</a></li>
         <?php endif; ?>
         <?php if ($canCreate): ?>

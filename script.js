@@ -1,50 +1,40 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // =========================================
-    // --- 1. Custom Cursor Loģika ---
-    // =========================================
     const cursor = document.querySelector('.custom-cursor');
 
     if (cursor) {
         document.addEventListener('mousemove', (e) => {
-            // Iestata kursora pozīciju
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
         });
 
-        // Efekts: Samazina apli, kad pele ir virs klikšķināma elementa
         const clickableElements = document.querySelectorAll('a, button, input[type="submit"], .btn-search, .btn-register, .btn-login, .mission-box, .value-item');
 
         clickableElements.forEach(el => {
             el.addEventListener('mouseenter', () => {
-                cursor.style.transform = 'translate(-50%, -50%) scale(0.6)'; // Samazinām apli
-                cursor.style.backgroundColor = '#2ecc71'; // Mainām krāsu uz zaļu
+                cursor.style.transform = 'translate(-50%, -50%) scale(0.6)';
+                cursor.style.backgroundColor = '#2ecc71';
             });
             el.addEventListener('mouseleave', () => {
-                cursor.style.transform = 'translate(-50%, -50%) scale(1)'; // Atjaunojam apli
-                cursor.style.backgroundColor = 'var(--accent-color)'; // Atjaunojam krāsu uz akcenta krāsu
+                cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+                cursor.style.backgroundColor = 'var(--accent-color)';
             });
         });
     }
 
-    // =========================================
-    // --- 2. H1 ANIME.JS Animācija (Tikai about.php) ---
-    // =========================================
-    // Pārliecina, ka animācija notiek tikai "Par mums" lapā
     if (document.querySelector('.ml6')) {
         var h1Wrapper = document.querySelector('.ml6 .letters');
         if (h1Wrapper) {
-            // Ietin katru burtu span elementā (kā pieprasīts)
+
             h1Wrapper.innerHTML = h1Wrapper.textContent.replace(/\S/g, "<span class='letter'>$&</span>");
 
-            // Animācijas laika josla: burti ieslīd no augšas un tad visa H1 pazūd (kā pieprasīts)
             anime.timeline({ loop: true })
                 .add({
                     targets: '.ml6 .letter',
                     translateY: ["1.1em", 0],
                     translateZ: 0,
                     duration: 750,
-                    delay: (el, i) => 50 * i // Lietojam 50*i kā pieprasīts
+                    delay: (el, i) => 50 * i
                 }).add({
                     targets: '.ml6',
                     opacity: 0,
@@ -52,8 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     easing: "easeOutExpo",
                     delay: 1000
                 });
-
-            // Pārliecināmies, ka p elements ir redzams, jo H1 tagad ir animācijas cilpā
             const pElement = document.querySelector('.header-p-anim');
             if (pElement) {
                 pElement.classList.add('visible');
@@ -61,18 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // =========================================
-    // --- 3. Pārējā Lapas Loģika ---
-    // =========================================
-
-    // --- Navbar maiņa ritinot (Sticky Navbar) ---
     const navbar = document.querySelector('.navbar');
     const hamburger = document.querySelector('.hamburger');
     const navLinks = document.querySelector('.nav-links');
     const authButtons = document.querySelector('.auth-buttons');
 
     if (hamburger && navLinks) {
-        // Clone auth buttons for mobile if not already present in navLinks
         if (authButtons && !navLinks.querySelector('.auth-buttons-mobile')) {
             const mobileAuth = authButtons.cloneNode(true);
             mobileAuth.classList.remove('auth-buttons');
@@ -87,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.toggle('no-scroll');
         });
 
-        // Close menu when clicking a link
         navLinks.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 navLinks.classList.remove('active');
@@ -97,12 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
-    // --- Profile dropdown (header top-right when logged in) ---
-    // Handled natively via <details>/<summary> in the header markup (works without JS).
-
-    // --- Backwards compatibility: replace old "Sveiki, USER" + logout button with profile dropdown ---
-    // Some pages still render a hardcoded greeting in `.auth-buttons`. This normalizes it without requiring PHP edits.
     const authArea = document.querySelector('.auth-buttons');
     if (authArea && !authArea.querySelector('.profile-menu')) {
         const greeting = authArea.querySelector('span');
@@ -148,26 +123,21 @@ document.addEventListener('DOMContentLoaded', () => {
             authArea.innerHTML = '';
             authArea.appendChild(profileMenu);
 
-            // No listeners needed; <details> toggles on click.
         }
     }
 
     if (navbar) {
-        // Transparent header only on pages that have a hero section.
-        // We include common hero classes used across the project.
         const hasHero = !!document.querySelector('.hero, .homes-hero, .owner-hero, .myhomes-hero, .property-hero, .property-hero-v2, .newhome-hero');
         if (hasHero) {
             navbar.classList.add('navbar--hero');
         }
 
         const syncNavbarState = () => {
-            // Ensure correct state on initial load and during scroll.
             if (window.scrollY > 50) {
                 navbar.classList.add('scrolled');
                 return;
             }
 
-            // At the top of the page, remove scrolled class.
             navbar.classList.remove('scrolled');
         };
 
@@ -175,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('scroll', syncNavbarState, { passive: true });
     }
 
-    // --- Elementu "Fade-in" animācija ritinot uz leju (Ieskaitot Timeline) ---
     const faders = document.querySelectorAll('.fade-in, .timeline-item');
 
     const appearOptions = {
@@ -198,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
         appearOnScroll.observe(fader);
     });
 
-    // --- Fona attēlu automātiskā maiņa ar SLIDE efektu (Tikai index.php hero gadījumā) ---
     function startBackgroundSlider() {
         const hero = document.querySelector('.hero');
         const heroContent = document.querySelector('.hero-content');
@@ -238,7 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startBackgroundSlider();
     }
 
-    // --- Statistiku skaitītāja animācija (Counter) ---
     function startCounterAnimation() {
         const counters = document.querySelectorAll('.counter');
         const speed = 200;
@@ -276,7 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
         statsObserver.observe(statsSection);
     }
 
-    // --- About page hero background slider (no background.jpg) ---
     (function () {
         const header = document.querySelector('.about-header');
         if (!header) return;
@@ -292,12 +258,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 8000);
     })();
 
-    // --- Homes page listings, filters, modal ---
+
     (function () {
         const resultsWrap = document.getElementById('homes-results');
-        if (!resultsWrap) return; // only run on homes.php
+        if (!resultsWrap) return;
 
-        let listingsData = []; // Will be loaded from database
+        let listingsData = [];
         const resultsCount = document.getElementById('results-count');
 
         const citySelect = document.getElementById('filter-city');
@@ -323,59 +289,59 @@ document.addEventListener('DOMContentLoaded', () => {
         const modalPrice = document.getElementById('homes-modal-price');
         const modalContact = document.getElementById('homes-modal-contact');
 
-        // Fetch homes from database
         async function loadHomes() {
             try {
                 const response = await fetch(homesApiUrl, { cache: 'no-store' });
+                if (!response.ok) throw new Error(response.status);
                 const text = await response.text();
-                if (!response.ok) {
-                    throw new Error(`Homes API error ${response.status}: ${text.slice(0, 200)}`);
-                }
-
+                
                 try {
                     listingsData = JSON.parse(text);
                 } catch (e) {
-                    throw new Error(`Homes API returned non-JSON: ${text.slice(0, 200)}`);
+                    throw new Error("Invalid JSON");
                 }
 
-                if (!Array.isArray(listingsData)) {
-                    throw new Error(`Homes API returned unexpected payload: ${text.slice(0, 200)}`);
-                }
+                if (!Array.isArray(listingsData)) throw new Error("Not an array");
 
-                // If the server-side fallback already rendered listings, don't wipe it with an empty API response.
-                const hasFallback = resultsWrap && resultsWrap.children && resultsWrap.children.length > 0;
-                if (hasFallback && listingsData.length === 0) {
-                    updateResultsCount(resultsWrap.children.length);
-                    if (emptyMsg) emptyMsg.style.display = 'none';
-                    return;
-                }
                 populateCities();
 
-                // Apply URL parameters if present
                 const urlParams = new URLSearchParams(window.location.search);
                 const cityParam = urlParams.get('city');
                 const typeParam = urlParams.get('type');
                 const priceParam = urlParams.get('max_price');
 
+                if (cityParam && citySelect) {
+                    let match = "";
+                    for (let i = 0; i < citySelect.options.length; i++) {
+                        if (citySelect.options[i].value.toLowerCase() === cityParam.toLowerCase()) {
+                            match = citySelect.options[i].value;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        citySelect.value = match;
+                    } else if (cityParam.trim() !== "") {
+                        const opt = document.createElement('option');
+                        opt.value = cityParam;
+                        opt.textContent = cityParam;
+                        citySelect.appendChild(opt);
+                        citySelect.value = cityParam;
+                    }
+                }
+
+                if (typeParam && typeSelect) typeSelect.value = typeParam;
+                if (priceParam && priceInput) priceInput.value = priceParam;
+
                 if (cityParam || typeParam || priceParam) {
-                    if (cityParam && citySelect) citySelect.value = cityParam;
-                    if (typeParam && typeSelect) typeSelect.value = typeParam;
-                    if (priceParam && priceInput) priceInput.value = priceParam;
                     applyFilters();
                 } else {
                     renderListings(listingsData);
                 }
             } catch (error) {
-                console.error('Error loading homes:', error);
-                // If server-side fallback already rendered cards, keep them visible.
+                console.error(error);
                 const hasFallback = resultsWrap && resultsWrap.children && resultsWrap.children.length > 0;
                 if (!hasFallback) {
                     if (emptyMsg) emptyMsg.style.display = 'block';
-                    if (emptyMsg) {
-                        const msg = (error && error.message) ? error.message : 'Neizdevās ielādēt sludinājumus.';
-                        const p = emptyMsg.querySelector('p');
-                        if (p) p.textContent = msg;
-                    }
                     updateResultsCount(0);
                 }
             }
@@ -388,11 +354,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function populateCities() {
-            // Clear existing options except the first one
+            if (!citySelect) return;
             while (citySelect.options.length > 1) {
                 citySelect.remove(1);
             }
-            const cities = Array.from(new Set(listingsData.map(l => l.city))).sort();
+            const cities = Array.from(new Set(listingsData.map(l => l.city).filter(c => c))).sort();
             cities.forEach(city => {
                 const opt = document.createElement('option');
                 opt.value = city;
@@ -419,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const shieldIcon = (item.owner_plan === 'Gold' || item.owner_plan === 'Silver') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
                 const ownerInitial = (item.owner_username || 'U').charAt(0).toUpperCase();
                 const ownerPfpHtml = item.owner_pfp 
-                    ? `<img src="${item.owner_pfp}" alt="${item.owner_username}" class="owner-mini-pfp">` 
+                    ? `<img src="${item.owner_pfp}" alt="${item.owner_username}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\'owner-mini-initial\'>${ownerInitial}</span>';">` 
                     : `<span class="owner-mini-initial">${ownerInitial}</span>`;
 
                 const card = document.createElement('div');
@@ -455,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultsWrap.appendChild(card);
             });
 
-            // Add favorite button functionality
             document.querySelectorAll('.property-favorite').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -469,48 +434,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function applyFilters() {
-            const city = citySelect.value;
-            const type = typeSelect.value;
-            const price = priceInput.value ? parseInt(priceInput.value, 10) : null;
-            const beds = bedsInput.value ? parseInt(bedsInput.value, 10) : null;
+            if (!listingsData || listingsData.length === 0) return;
+            const city = citySelect ? citySelect.value : "";
+            const type = typeSelect ? typeSelect.value : "";
+            const price = (priceInput && priceInput.value) ? parseInt(priceInput.value, 10) : null;
+            const beds = (bedsInput && bedsInput.value) ? parseInt(bedsInput.value, 10) : null;
 
             const filtered = listingsData.filter(item => {
-                if (city && item.city !== city) return false;
+                if (city && item.city !== city) {
+                    if (item.city.toLowerCase() !== city.toLowerCase()) return false;
+                }
                 if (type && item.type !== type) return false;
-                if (price !== null && item.price > price) return false;
-                if (beds !== null && item.beds < beds) return false;
+                if (price !== null && !isNaN(price) && item.price > price) return false;
+                if (beds !== null && !isNaN(beds) && item.beds < beds) return false;
                 return true;
             });
             renderListings(filtered);
         }
 
-        function openModal(id) {
-            const item = listingsData.find(x => x.id === id);
-            if (!item) return;
-            modalImg.src = item.image;
-            modalImg.alt = item.title;
-            modalBadge.textContent = item.badge;
-            modalBadge.className = `badge ${item.type === 'rent' ? 'rent' : 'sale'}`;
-            modalTitle.textContent = item.title;
-            modalLocation.querySelector('span').textContent = item.location;
-            modalBeds.innerHTML = `<i class="fas fa-bed"></i> ${item.beds} guļamist.`;
-            modalSize.innerHTML = `<i class="fas fa-ruler-combined"></i> ${item.size} m²`;
-            modalDesc.textContent = item.desc;
-            modalPrice.textContent = formatPrice(item);
-            modalContact.href = 'mailto:info@homeestate.lv?subject=Interese%20par%20%C4%ABpa%C5%A1umu%20' + encodeURIComponent(item.title);
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal() {
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        // Init - Load homes from database
         loadHomes();
 
-        applyBtn.addEventListener('click', applyFilters);
+        if (applyBtn) applyBtn.addEventListener('click', applyFilters);
         if (heroApply) {
             heroApply.addEventListener('click', () => {
                 applyFilters();
@@ -520,25 +464,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        resultsWrap.addEventListener('click', (e) => {
-            const target = e.target;
-            if (target.matches('.btn-view-property') || target.closest('.btn-view-property')) {
-                // allow default navigation to detailed page
-                return;
-            }
+        if (modalClose) modalClose.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
         });
-
-        if (modalClose) modalClose.addEventListener('click', closeModal);
         if (modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal || e.target.classList.contains('listing-modal__backdrop')) {
-                    closeModal();
+                    modal.style.display = 'none';
+                    document.body.style.overflow = '';
                 }
             });
         }
     })();
 
-    // --- Property detail pop-in animations ---
+
     (function () {
         const popItems = document.querySelectorAll('.property-page .pop-in');
         if (!popItems.length) return;
@@ -553,11 +493,11 @@ document.addEventListener('DOMContentLoaded', () => {
         popItems.forEach(item => popObserver.observe(item));
     })();
 
-    // --- Property Premium v2 Tabs & Gallery ---
+
     (function () {
         if (!document.body.classList.contains('property-premium-v2')) return;
 
-        // Tab functionality
+
         const tabLinks = document.querySelectorAll('.tab-link');
         const tabContents = document.querySelectorAll('.tab-content');
 
@@ -578,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Gallery functionality
+
         const mainImage = document.querySelector('.main-image img');
         const thumbImages = document.querySelectorAll('.thumb-images img');
 

@@ -13,12 +13,7 @@ if (!isset($savienojums) || !$savienojums instanceof mysqli) {
 
 $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 
-$selectFull = "SELECT id, owner_id, title, city, address, location_text, type, price, area, bedrooms, bathrooms,
-        floor_info, description, main_image, thumb1, thumb2, thumb3,
-        rent_price, utilities_price, total_price, status, property_category
-    FROM est_homes";
-
-$selectMin = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms,
+$select = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms,
         description, main_image, status
     FROM est_homes";
 
@@ -29,32 +24,14 @@ $stmt = null;
 $result = false;
 
 if ($userId > 0) {
-    $stmt = $savienojums->prepare($selectFull . $where . $order);
+    $stmt = $savienojums->prepare($select . $where . $order);
     if ($stmt) {
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $result = $stmt->get_result();
     }
 } else {
-    $result = $savienojums->query($selectFull . $where . $order);
-}
-
-if ($result === false) {
-    if ($stmt) {
-        $stmt->close();
-        $stmt = null;
-    }
-
-    if ($userId > 0) {
-        $stmt = $savienojums->prepare($selectMin . $where . $order);
-        if ($stmt) {
-            $stmt->bind_param('i', $userId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-        }
-    } else {
-        $result = $savienojums->query($selectMin . $where . $order);
-    }
+    $result = $savienojums->query($select . $where);
 }
 
 $homes = [];
@@ -79,7 +56,7 @@ if ($ownerIds !== []) {
     $placeholders = implode(',', array_fill(0, count($uniqueOwnerIds), '?'));
     $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plan FROM est_lietotaji WHERE lietotaja_id IN ($placeholders)");
     if ($ownerStmt) {
-        $ownerStmt->bind_param(str_repeat('i', count($uniqueOwnerIds)), ...$uniqueOwnerIds);
+        $ownerStmt->bind_param(str_repeat('i', count($uniqueOwnerIds)), ...array_values($uniqueOwnerIds));
         $ownerStmt->execute();
         $ownerRes = $ownerStmt->get_result();
         while ($o = $ownerRes->fetch_assoc()) {
@@ -117,19 +94,13 @@ foreach ($rawHomes as $row) {
         'badge' => $type === 'rent' ? 'Izīrē' : 'Pārdod',
         'image' => media_absolute_url(!empty($row['main_image']) ? (string)$row['main_image'] : $fallbackImg),
         'desc' => $descShort,
-        'category' => (string)($row['property_category'] ?? ''),
-        'rent_price' => (float)($row['rent_price'] ?? 0),
-        'utilities_price' => (float)($row['utilities_price'] ?? 0),
-        'total_price' => (float)($row['total_price'] ?? 0),
         'owner_username' => (string)($owner['lietotajvards'] ?? ''),
-        'owner_pfp' => userProfileImageUrl($owner['profila_bilde'] ?? ''),
+        'owner_pfp' => media_absolute_url($owner['profila_bilde'] ?? ''),
         'owner_plan' => (string)($owner['plan'] ?? '')
     ];
 }
 
-if ($stmt) {
-    $stmt->close();
-}
+if ($stmt) $stmt->close();
 $savienojums->close();
 
 echo json_encode($homes, JSON_UNESCAPED_UNICODE);

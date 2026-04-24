@@ -4,7 +4,6 @@ session_start();
 require_once __DIR__ . '/../con_db.php';
 require_once __DIR__ . '/../routes/main.php';
 require_once __DIR__ . '/../includes/account.php';
-ensureUserPlanColumns($savienojums);
 
 if (empty($_SESSION['user_id'])) {
     header('Location: ' . main_route('login'));

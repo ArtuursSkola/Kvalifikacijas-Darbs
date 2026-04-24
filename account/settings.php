@@ -10,7 +10,6 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
-ensureUserPlanColumns($savienojums);
 $currentUser = loadCurrentUserContext($savienojums);
 if (!$currentUser) {
     header('Location: ' . main_route('logout'));
