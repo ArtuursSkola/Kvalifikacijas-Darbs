@@ -108,20 +108,78 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                         <option value="buy">Pirkt</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-euro-sign"></i> Maks. cena</label>
-                    <input type="number" id="filter-price" placeholder="Piem., 200000">
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-bed"></i> Guļamistabas</label>
-                    <input type="number" id="filter-beds" min="0" max="10" step="1" placeholder="Min. skaits">
+                <div class="filter-group price-range-group">
+                    <label><i class="fas fa-euro-sign"></i> Cenas diapazons</label>
+                    <div class="price-range-container">
+                        <div class="price-inputs">
+                            <div class="manual-price">
+                                <input type="number" id="price-min-field" class="price-field" value="0">
+                                <span> €</span>
+                            </div>
+                            <span> - </span>
+                            <div class="manual-price">
+                                <input type="number" id="price-max-field" class="price-field" value="0">
+                                <span> €</span>
+                            </div>
+                        </div>
+                        <div class="range-slider">
+                            <div class="range-track"></div>
+                            <input type="range" id="filter-price-min" class="min-range" value="0">
+                            <input type="range" id="filter-price-max" class="max-range" value="0">
+                        </div>
+                    </div>
                 </div>
                 <button id="filter-apply" class="btn-filter" type="button">
                     <i class="fas fa-search"></i>
                     Meklēt
                 </button>
             </div>
-            <div class="filter-hint"><i class="fas fa-info-circle"></i> Rezultāti tiek atjaunoti uzreiz pēc filtra piemērošanas.</div>
+
+            <div class="advanced-filters" id="advanced-filters-panel" style="display: none;">
+                <div class="filters">
+                    <div class="filter-group">
+                        <label><i class="fas fa-bed"></i> Guļamistabas</label>
+                        <input type="number" id="filter-beds" min="0" max="10" step="1" placeholder="Min. skaits">
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-bath"></i> Vannas istabas</label>
+                        <input type="number" id="filter-baths" min="0" max="10" step="1" placeholder="Min. skaits">
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-ruler-combined"></i> Platība (m²)</label>
+                        <div class="area-inputs">
+                            <input type="number" id="filter-area-min" placeholder="Min">
+                            <input type="number" id="filter-area-max" placeholder="Max">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-building"></i> Īpašuma veids</label>
+                        <select id="filter-category">
+                            <option value="">Visi veidi</option>
+                            <option value="apartment">Dzīvoklis</option>
+                            <option value="house">Māja</option>
+                            <option value="land">Zeme</option>
+                            <option value="office">Birojs</option>
+                        </select>
+                    </div>
+                    <div class="filter-group checkbox-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="filter-verified">
+                            <span class="checkmark"></span>
+                            Tikai pārbaudīti īpašnieki <i class="fas fa-shield-alt" style="color: #30b607;"></i>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-footer-actions">
+                <div class="advanced-filters-toggle">
+                    <button type="button" id="toggle-advanced-filters">
+                        Papildu filtri <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="filter-hint"><i class="fas fa-info-circle"></i> Rezultāti tiek atjaunoti uzreiz pēc filtra piemērošanas.</div>
+            </div>
         </div>
 
         <div class="results-header">

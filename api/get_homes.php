@@ -14,7 +14,7 @@ if (!isset($savienojums) || !$savienojums instanceof mysqli) {
 $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 
 $select = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms,
-        description, main_image, status
+        description, main_image, status, property_category
     FROM est_homes";
 
 $where = $userId > 0 ? " WHERE status = 'Aktivs' OR owner_id = ?" : " WHERE status = 'Aktivs'";
@@ -87,6 +87,7 @@ foreach ($rawHomes as $row) {
         'city' => $city,
         'location' => $city . ($locText !== '' ? ', ' . $locText : ''),
         'type' => $type,
+        'category' => (string)($row['property_category'] ?? ''),
         'price' => (float)($row['price'] ?? 0),
         'beds' => (int)($row['bedrooms'] ?? 0),
         'baths' => (int)($row['bathrooms'] ?? 0),

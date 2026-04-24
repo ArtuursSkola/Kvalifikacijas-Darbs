@@ -258,6 +258,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 8000);
     })();
 
+    (function () {
+        const minRange = document.getElementById('index-min-price');
+        const maxRange = document.getElementById('index-max-price');
+        const minLabel = document.getElementById('index-price-min-val');
+        const maxLabel = document.getElementById('index-price-max-val');
+
+        if (!minRange || !maxRange || !minLabel || !maxLabel) return;
+
+        function updateLabels() {
+            minLabel.textContent = parseInt(minRange.value).toLocaleString('lv-LV') + ' €';
+            maxLabel.textContent = parseInt(maxRange.value).toLocaleString('lv-LV') + ' €';
+        }
+
+        minRange.addEventListener('input', () => {
+            if (parseInt(minRange.value) > parseInt(maxRange.value)) {
+                minRange.value = maxRange.value;
+            }
+            updateLabels();
+        });
+
+        maxRange.addEventListener('input', () => {
+            if (parseInt(maxRange.value) < parseInt(minRange.value)) {
+                maxRange.value = minRange.value;
+            }
+            updateLabels();
+        });
+
+        updateLabels();
+    })();
 
     (function () {
         const resultsWrap = document.getElementById('homes-results');
@@ -268,8 +297,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const citySelect = document.getElementById('filter-city');
         const typeSelect = document.getElementById('filter-type');
-        const priceInput = document.getElementById('filter-price');
+        const priceMinInput = document.getElementById('filter-price-min');
+        const priceMaxInput = document.getElementById('filter-price-max');
+        const priceMinField = document.getElementById('price-min-field');
+        const priceMaxField = document.getElementById('price-max-field');
+        const rangeTrack = document.querySelector('.range-track');
         const bedsInput = document.getElementById('filter-beds');
+        const bathsInput = document.getElementById('filter-baths');
+        const areaMinInput = document.getElementById('filter-area-min');
+        const areaMaxInput = document.getElementById('filter-area-max');
+        const categorySelect = document.getElementById('filter-category');
+        const verifiedCheckbox = document.getElementById('filter-verified');
+        const toggleAdvancedBtn = document.getElementById('toggle-advanced-filters');
+        const advancedPanel = document.getElementById('advanced-filters-panel');
+
         const applyBtn = document.getElementById('filter-apply');
         const heroApply = document.getElementById('filter-hero');
         const filterShell = document.querySelector('.filter-shell');
@@ -304,11 +345,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!Array.isArray(listingsData)) throw new Error("Not an array");
 
                 populateCities();
+                initPriceSlider();
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const cityParam = urlParams.get('city');
                 const typeParam = urlParams.get('type');
-                const priceParam = urlParams.get('max_price');
+                const priceMinParam = urlParams.get('min_price');
+                const priceMaxParam = urlParams.get('max_price');
+                const bedsParam = urlParams.get('beds');
+                const bathsParam = urlParams.get('baths');
+                const areaMinParam = urlParams.get('area_min');
+                const areaMaxParam = urlParams.get('area_max');
+                const categoryParam = urlParams.get('category');
+                const verifiedParam = urlParams.get('verified');
 
                 if (cityParam && citySelect) {
                     let match = "";
@@ -329,10 +378,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                if (typeParam && typeSelect) typeSelect.value = typeParam;
-                if (priceParam && priceInput) priceInput.value = priceParam;
+                if (typeParam && typeSelect) {
+                    typeSelect.value = typeParam;
+                }
+                
+                initPriceSlider();
 
-                if (cityParam || typeParam || priceParam) {
+                if (priceMinParam && priceMinField) {
+                    priceMinField.value = priceMinParam;
+                    priceMinInput.value = priceMinParam;
+                }
+                if (priceMaxParam && priceMaxField) {
+                    priceMaxField.value = priceMaxParam;
+                    priceMaxInput.value = priceMaxParam;
+                }
+                updateSliderUI();
+                if (bedsParam && bedsInput) bedsInput.value = bedsParam;
+                if (bathsParam && bathsInput) bathsInput.value = bathsParam;
+                if (areaMinParam && areaMinInput) areaMinInput.value = areaMinParam;
+                if (areaMaxParam && areaMaxInput) areaMaxInput.value = areaMaxParam;
+                if (categoryParam && categorySelect) categorySelect.value = categoryParam;
+                if (verifiedParam === '1' && verifiedCheckbox) verifiedCheckbox.checked = true;
+
+                if (cityParam || typeParam || priceMinParam || priceMaxParam || bedsParam || bathsParam || areaMinParam || areaMaxParam || categoryParam || verifiedParam) {
                     applyFilters();
                 } else {
                     renderListings(listingsData);
@@ -433,20 +501,131 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        function initPriceSlider() {
+            if (!priceMinInput || !priceMaxInput || listingsData.length === 0) return;
+            
+            const selectedType = typeSelect ? typeSelect.value : "";
+            const filteredPrices = listingsData
+                .filter(l => !selectedType || l.type === selectedType)
+                .map(l => l.price);
+
+            if (filteredPrices.length === 0) return;
+
+            const min = Math.min(...filteredPrices);
+            const max = Math.max(...filteredPrices);
+
+            priceMinInput.min = min;
+            priceMinInput.max = max;
+            priceMinInput.value = min;
+            if (priceMinField) priceMinField.value = min;
+
+            priceMaxInput.min = min;
+            priceMaxInput.max = max;
+            priceMaxInput.value = max;
+            if (priceMaxField) priceMaxField.value = max;
+
+            updateSliderUI();
+        }
+
+        if (typeSelect) {
+            typeSelect.addEventListener('change', () => {
+                initPriceSlider();
+                applyFilters();
+            });
+        }
+
+        [priceMinInput, priceMaxInput].forEach(input => {
+            input.addEventListener('input', () => {
+                if (parseInt(priceMinInput.value) > parseInt(priceMaxInput.value)) {
+                    if (input === priceMinInput) {
+                        priceMinInput.value = priceMaxInput.value;
+                    } else {
+                        priceMaxInput.value = priceMinInput.value;
+                    }
+                }
+                if (priceMinField) priceMinField.value = priceMinInput.value;
+                if (priceMaxField) priceMaxField.value = priceMaxInput.value;
+                updateSliderUI();
+                applyFilters();
+            });
+        });
+
+        if (priceMinField && priceMaxField) {
+            [priceMinField, priceMaxField].forEach(field => {
+                field.addEventListener('change', () => {
+                    let val = parseInt(field.value) || 0;
+                    const min = parseInt(priceMinInput.min);
+                    const max = parseInt(priceMinInput.max);
+                    
+                    if (val < min) val = min;
+                    if (val > max) val = max;
+                    field.value = val;
+
+                    if (field === priceMinField) {
+                        if (val > parseInt(priceMaxField.value)) {
+                            field.value = priceMaxField.value;
+                        }
+                        priceMinInput.value = field.value;
+                    } else {
+                        if (val < parseInt(priceMinField.value)) {
+                            field.value = priceMinField.value;
+                        }
+                        priceMaxInput.value = field.value;
+                    }
+                    updateSliderUI();
+                    applyFilters();
+                });
+            });
+        }
+
+        function updateSliderUI() {
+            if (!priceMinInput || !priceMaxInput || !priceMinField || !priceMaxField || !rangeTrack) return;
+            const min = parseInt(priceMinInput.value);
+            const max = parseInt(priceMaxInput.value);
+            const rangeMin = parseInt(priceMinInput.min);
+            const rangeMax = parseInt(priceMinInput.max);
+
+            const left = ((min - rangeMin) / (rangeMax - rangeMin)) * 100;
+            const right = 100 - (((max - rangeMin) / (rangeMax - rangeMin)) * 100);
+
+            rangeTrack.style.left = left + '%';
+            rangeTrack.style.right = right + '%';
+        }
+
+        if (toggleAdvancedBtn && advancedPanel) {
+            toggleAdvancedBtn.addEventListener('click', () => {
+                const isVisible = advancedPanel.style.display === 'block';
+                advancedPanel.style.display = isVisible ? 'none' : 'block';
+                toggleAdvancedBtn.querySelector('i').className = isVisible ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+            });
+        }
+
         function applyFilters() {
             if (!listingsData || listingsData.length === 0) return;
             const city = citySelect ? citySelect.value : "";
             const type = typeSelect ? typeSelect.value : "";
-            const price = (priceInput && priceInput.value) ? parseInt(priceInput.value, 10) : null;
+            const pMin = priceMinField ? parseInt(priceMinField.value, 10) : null;
+            const pMax = priceMaxField ? parseInt(priceMaxField.value, 10) : null;
             const beds = (bedsInput && bedsInput.value) ? parseInt(bedsInput.value, 10) : null;
+            const baths = (bathsInput && bathsInput.value) ? parseInt(bathsInput.value, 10) : null;
+            const areaMin = (areaMinInput && areaMinInput.value) ? parseInt(areaMinInput.value, 10) : null;
+            const areaMax = (areaMaxInput && areaMaxInput.value) ? parseInt(areaMaxInput.value, 10) : null;
+            const category = categorySelect ? categorySelect.value : "";
+            const verifiedOnly = verifiedCheckbox ? verifiedCheckbox.checked : false;
 
             const filtered = listingsData.filter(item => {
                 if (city && item.city !== city) {
                     if (item.city.toLowerCase() !== city.toLowerCase()) return false;
                 }
                 if (type && item.type !== type) return false;
-                if (price !== null && !isNaN(price) && item.price > price) return false;
+                if (pMin !== null && item.price < pMin) return false;
+                if (pMax !== null && item.price > pMax) return false;
                 if (beds !== null && !isNaN(beds) && item.beds < beds) return false;
+                if (baths !== null && !isNaN(baths) && item.baths < baths) return false;
+                if (areaMin !== null && !isNaN(areaMin) && item.size < areaMin) return false;
+                if (areaMax !== null && !isNaN(areaMax) && item.size > areaMax) return false;
+                if (category && item.category !== category) return false;
+                if (verifiedOnly && !(item.owner_plan === 'Gold' || item.owner_plan === 'Silver')) return false;
                 return true;
             });
             renderListings(filtered);

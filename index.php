@@ -80,8 +80,12 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                     </select>
                 </div>
                 <div class="input-group">
-                    <i class="fas fa-euro-sign"></i>
-                    <input type="number" name="max_price" placeholder="Maks. cena">
+                    <i class="fas fa-building"></i>
+                    <select name="category">
+                        <option value="">Visi veidi</option>
+                        <option value="apartment">Dzīvoklis</option>
+                        <option value="house">Māja</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn-search">
                     <i class="fas fa-search"></i>
