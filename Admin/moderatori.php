@@ -19,15 +19,26 @@ $form_type = '';
 
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
-    $stmt = $savienojums->prepare("DELETE FROM est_admin WHERE admin_id = ?");
-    if ($stmt) {
-        $stmt->bind_param('i', $delId);
-        if ($stmt->execute()) {
-            $success = 'Moderators dzēsts.';
-        } else {
-            $errors[] = 'Neizdevās dzēst: ' . $stmt->error;
+    
+    $checkStmt = $savienojums->prepare("SELECT loma FROM est_admin WHERE admin_id = ?");
+    $checkStmt->bind_param('i', $delId);
+    $checkStmt->execute();
+    $targetRole = $checkStmt->get_result()->fetch_assoc()['loma'] ?? '';
+    $checkStmt->close();
+
+    if ($targetRole === 'moderator') {
+        $stmt = $savienojums->prepare("DELETE FROM est_admin WHERE admin_id = ?");
+        if ($stmt) {
+            $stmt->bind_param('i', $delId);
+            if ($stmt->execute()) {
+                $success = 'Moderators dzēsts.';
+            } else {
+                $errors[] = 'Neizdevās dzēst: ' . $stmt->error;
+            }
+            $stmt->close();
         }
-        $stmt->close();
+    } else {
+        $errors[] = 'Administratorus nevar dzēst.';
     }
 }
 
@@ -59,6 +70,9 @@ if (isset($_POST['create_mod'])) {
     }
     if (!preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
         $errors[] = "Parolei jāsatur vismaz viens simbols";
+    }
+    if (!preg_match('/[a-zA-Z]/', $newPassword)) {
+        $errors[] = "Parolei jāsatur vismaz viens burts";
     }
 
     if ($newUsername === '' || $newEmail === '' || $newPassword === '') {
@@ -95,28 +109,55 @@ if (isset($_POST['edit_mod'])) {
     $editPassword = $_POST['edit_password'] ?? '';
     
     if ($editId > 0 && $editUsername !== '' && $editEmail !== '') {
-        $chk = $savienojums->prepare("SELECT admin_id FROM est_admin WHERE (lietotajvards=? OR epasts=?) AND admin_id != ? LIMIT 1");
-        $chk->bind_param('ssi', $editUsername, $editEmail, $editId);
-        $chk->execute();
-        if ($chk->get_result()->num_rows > 0) {
-            $errors[] = 'Lietotājvārds vai e-pasts jau aizņemts.';
-        } else {
+        $checkStmt = $savienojums->prepare("SELECT loma FROM est_admin WHERE admin_id = ?");
+        $checkStmt->bind_param('i', $editId);
+        $checkStmt->execute();
+        $targetRole = $checkStmt->get_result()->fetch_assoc()['loma'] ?? '';
+        $checkStmt->close();
+
+        if ($targetRole === 'moderator' || $editId == $_SESSION['user_id']) {
             if ($editPassword !== '') {
-                $hash = password_hash($editPassword, PASSWORD_DEFAULT);
-                $upd = $savienojums->prepare("UPDATE est_admin SET lietotajvards=?, epasts=?, parole=?, loma=? WHERE admin_id=?");
-                $upd->bind_param('ssssi', $editUsername, $editEmail, $hash, $editRole, $editId);
-            } else {
-                $upd = $savienojums->prepare("UPDATE est_admin SET lietotajvards=?, epasts=?, loma=? WHERE admin_id=?");
-                $upd->bind_param('sssi', $editUsername, $editEmail, $editRole, $editId);
+                if (strlen($editPassword) < 8) {
+                    $errors[] = "Parolei jābūt vismaz 8 simbolus garai";
+                }
+                if (!preg_match('/[0-9]/', $editPassword)) {
+                    $errors[] = "Parolei jāsatur vismaz viens skaitlis";
+                }
+                if (!preg_match('/[^a-zA-Z0-9]/', $editPassword)) {
+                    $errors[] = "Parolei jāsatur vismaz viens simbols";
+                }
+                if (!preg_match('/[a-zA-Z]/', $editPassword)) {
+                    $errors[] = "Parolei jāsatur vismaz viens burts";
+                }
             }
-            if ($upd->execute()) {
-                $success = 'Informācija atjaunināta.';
-            } else {
-                $errors[] = 'Neizdevās atjaunināt: ' . $upd->error;
+
+            if (empty($errors)) {
+                $chk = $savienojums->prepare("SELECT admin_id FROM est_admin WHERE (lietotajvards=? OR epasts=?) AND admin_id != ? LIMIT 1");
+                $chk->bind_param('ssi', $editUsername, $editEmail, $editId);
+                $chk->execute();
+                if ($chk->get_result()->num_rows > 0) {
+                    $errors[] = 'Lietotājvārds vai e-pasts jau aizņemts.';
+                } else {
+                    if ($editPassword !== '') {
+                        $hash = password_hash($editPassword, PASSWORD_DEFAULT);
+                        $upd = $savienojums->prepare("UPDATE est_admin SET lietotajvards=?, epasts=?, parole=?, loma=? WHERE admin_id=?");
+                        $upd->bind_param('ssssi', $editUsername, $editEmail, $hash, $editRole, $editId);
+                    } else {
+                        $upd = $savienojums->prepare("UPDATE est_admin SET lietotajvards=?, epasts=?, loma=? WHERE admin_id=?");
+                        $upd->bind_param('sssi', $editUsername, $editEmail, $editRole, $editId);
+                    }
+                    if ($upd->execute()) {
+                        $success = 'Informācija atjaunināta.';
+                    } else {
+                        $errors[] = 'Neizdevās atjaunināt: ' . $upd->error;
+                    }
+                    $upd->close();
+                }
+                $chk->close();
             }
-            $upd->close();
+        } else {
+            $errors[] = 'Jums nav tiesību rediģēt citus administratorus.';
         }
-        $chk->close();
     }
 }
 
@@ -200,7 +241,7 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
 
         <div class="panel">
             <div class="panel-header">
-                <h3>Sistēmas administratori (est_admin)</h3>
+                <h3>Sistēmas administratori un moderatori</h3>
             </div>
             <div class="table-container">
                 <table>
@@ -227,13 +268,18 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
                                 </td>
                                 <td><?php echo date('d.m.Y H:i', strtotime($m['created_at'])); ?></td>
                                 <td class="actions">
-                                    <button class="btn-sm edit" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($m)); ?>)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <?php if ($m['admin_id'] != $_SESSION['user_id']): ?>
+                                    <?php if ($m['loma'] === 'moderator' || $m['admin_id'] == $_SESSION['user_id']): ?>
+                                        <button class="btn-sm edit" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($m)); ?>)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if ($m['loma'] === 'moderator'): ?>
                                         <a href="?delete=<?php echo $m['admin_id']; ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst šo administratoru?')">
                                             <i class="fas fa-trash"></i>
                                         </a>
+                                    <?php endif; ?>
+                                    <?php if ($m['loma'] === 'admin' && $m['admin_id'] != $_SESSION['user_id']): ?>
+                                        <i class="fas fa-lock" style="color: #94a3b8; padding: 8px;" title="Cits administrators"></i>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -341,8 +387,17 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
             }
         }
 
-        <?php if (!empty($errors) && $form_type === 'create'): ?>
-            openModal('createModal');
+        <?php if (!empty($errors)): ?>
+            <?php if ($form_type === 'create'): ?>
+                openModal('createModal');
+            <?php elseif ($form_type === 'edit'): ?>
+                openEditModal(<?php echo json_encode([
+                    'admin_id' => $_POST['edit_id'] ?? 0,
+                    'lietotajvards' => $_POST['edit_username'] ?? '',
+                    'epasts' => $_POST['edit_email'] ?? '',
+                    'loma' => $_POST['edit_role'] ?? 'moderator'
+                ]); ?>);
+            <?php endif; ?>
         <?php endif; ?>
     </script>
 </body>

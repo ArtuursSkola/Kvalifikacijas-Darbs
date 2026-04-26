@@ -26,7 +26,7 @@
             padding-top: 0;
         }
 
-        /* Hero Section */
+
         .owner-hero {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, #1a3a1e 100%);
             padding: 160px 24px 120px;
@@ -130,7 +130,7 @@
             font-size: 1.1rem;
         }
 
-        /* Model Section */
+
         .owner-model {
             padding: 80px 24px;
             background: var(--white);
@@ -245,7 +245,6 @@
             background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z'/%3E%3C/svg%3E") center/contain no-repeat;
         }
 
-        /* Plans Section */
         .owner-plans {
             padding: 100px 24px;
             background: linear-gradient(180deg, var(--light-bg) 0%, #e8f5e9 100%);
@@ -278,7 +277,6 @@
             align-items: stretch;
         }
 
-        /* Base Plan Card */
         .plan-card {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -391,7 +389,6 @@
             border-color: var(--gray-400);
         }
 
-        /* ========== SILVER CARD EFFECT ========== */
         .plan-card.silver {
             border: 2px solid #c0c0c0;
             background: linear-gradient(145deg, #ffffff 0%, #f5f5f5 50%, #e8e8e8 100%);
@@ -465,7 +462,6 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* ========== GOLD CARD EFFECT ========== */
         .plan-card.gold {
             border: 2px solid #d4af37;
             background: linear-gradient(145deg, #fffef5 0%, #fff9e6 50%, #fff3cd 100%);
@@ -539,12 +535,12 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Gold Crown Icon */
+
         .plan-card.gold .plan-name::before {
             content: '👑 ';
         }
 
-        /* CTA Strip */
+
         .cta-strip {
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             padding: 60px 24px;
@@ -592,7 +588,6 @@
             box-shadow: 0 12px 35px rgba(48,182,7,0.5);
         }
 
-        /* Footer */
         footer {
             background: var(--primary);
             color: rgba(255,255,255,0.8);
@@ -646,7 +641,6 @@
             margin: 0 auto;
         }
 
-        /* Responsive */
         @media (max-width: 1024px) {
             .plans-grid {
                 grid-template-columns: 1fr;
@@ -669,13 +663,13 @@
             .cta-strip__inner { flex-direction: column; text-align: center; }
         }
 
-        /* Owner Listings Dashboard */
+
         .owner-listings {
             padding: 80px 24px;
             background: var(--white);
         }
 
-        /* Listings dashboard lives on myhomes.php, not on owner.php */
+
         body.owner-page:not(.myhomes-page) .owner-listings {
             display: none !important;
         }

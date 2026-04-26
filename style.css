@@ -1,4 +1,4 @@
-/* --- Global Reset & Variables --- */
+
 :root {
     --primary: #1d2733;
     --primary-light: #2c3e50;
@@ -19,7 +19,7 @@
     --radius-md: 16px;
     --radius-lg: 24px;
 
-    /* Legacy variable mapping for compatibility */
+
     --primary-color: var(--primary-light);
     --accent-color: var(--accent);
     --text-dark: var(--gray-800);
@@ -39,7 +39,7 @@ body {
     color: var(--gray-800);
     overflow-x: hidden;
     padding-top: 80px;
-    /* Offset for fixed navbar */
+
 }
 
 @media (max-width: 768px) {
@@ -57,7 +57,7 @@ ul {
     list-style: none;
 }
 
-/* --- Navigation --- */
+
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -74,7 +74,7 @@ ul {
     backdrop-filter: blur(20px);
 }
 
-/* --- 1. Navbar: Hero (Top of page) --- */
+
 .navbar.navbar--hero:not(.scrolled) {
     background-color: transparent !important;
     box-shadow: none !important;
@@ -104,7 +104,7 @@ ul {
     color: var(--accent) !important;
 }
 
-/* --- 2. Navbar: Scrolled (Any page) --- */
+
 .navbar.scrolled {
     padding: 12px 48px !important;
     background-color: var(--white) !important;
@@ -135,7 +135,6 @@ ul {
     background: rgba(48, 182, 7, 0.1) !important;
 }
 
-/* --- 3. Shared Navbar Elements --- */
 .logo { 
     font-size: 1.6rem;
     font-weight: 800;
@@ -167,7 +166,7 @@ ul {
     gap: 12px;
 }
 
-/* Profile dropdown (logged-in header) */
+
 .profile-menu {
     position: relative;
     display: inline-flex;
@@ -324,7 +323,7 @@ ul {
     border-color: rgba(48, 182, 7, 0.18);
 }
 
-/* Settings modal (opens via :target, no JS dependency) */
+
 .settings-modal {
     position: fixed;
     inset: 0;
@@ -585,10 +584,10 @@ body.no-scroll {
     overflow: hidden;
 }
 
-/* Auth buttons specifically for mobile drawer */
+
 .nav-links .auth-buttons-mobile {
     display: none;
-    /* Hidden by default on desktop */
+
 }
 
 @media (max-width: 768px) {
@@ -624,7 +623,6 @@ body.no-scroll {
 
     .auth-buttons {
         display: none;
-        /* Hide original auth buttons on mobile */
     }
 
     .nav-links .auth-buttons-mobile {
@@ -661,7 +659,7 @@ body.no-scroll {
     }
 }
 
-/* --- Hero Section --- */
+
 .hero {
     min-height: 100vh;
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, #1a5a2e 100%);
@@ -718,7 +716,7 @@ body.no-scroll {
     margin-bottom: 40px;
 }
 
-/* JavaScript background classes */
+
 .hero.bg-1 {
     background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('Images/bg1.jpg');
 }
@@ -735,9 +733,7 @@ body.no-scroll {
     background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('Images/background.jpg');
 }
 
-/* Pārējais kods paliek nemainīgs */
 
-/* Search Bar */
 .search-bar {
     background: var(--white);
     padding: 15px;
@@ -790,7 +786,7 @@ body.no-scroll {
     background-color: #1a252f;
 }
 
-/* --- Listings Section --- */
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -936,7 +932,7 @@ body.no-scroll {
     font-weight: 600;
 }
 
-/* --- Features Section --- */
+
 .features-section {
     background-color: var(--white);
     text-align: center;
@@ -1017,9 +1013,7 @@ body.no-scroll {
     cursor: not-allowed;
 }
 
-/* ================================
-   Homes page (reworked)
-   ================================ */
+
 body.homes-page {
     background: radial-gradient(circle at 25% 20%, rgba(48, 182, 7, 0.08), transparent 35%),
         radial-gradient(circle at 80% 0%, rgba(44, 62, 80, 0.07), transparent 40%),
@@ -1328,16 +1322,14 @@ body.homes-page {
     }
 }
 
-/* ================================
-   Property detail pages
-   ================================ */
+
 body.property-page {
     background: radial-gradient(circle at 15% 20%, rgba(48, 182, 7, 0.08), transparent 32%),
         radial-gradient(circle at 85% 10%, rgba(44, 62, 80, 0.08), transparent 38%),
         var(--light-bg);
 }
 
-/* Premium layout overrides (home1) */
+
 .property-premium .property-hero {
     background: transparent;
     padding: 120px 0 40px;
@@ -1668,9 +1660,6 @@ body.property-page {
     }
 }
 
-/* ================================
-   Owner Plans Page
-   ================================ */
 body.owner-page {
     background: var(--light-bg);
     padding-top: 0;
@@ -1933,9 +1922,6 @@ body.owner-page {
     }
 }
 
-/* ================================
-   Property Premium v2 Layout (home1)
-   ================================ */
 .property-premium-v2 .property-container {
     display: grid;
     grid-template-columns: 1fr 320px;
@@ -2218,7 +2204,7 @@ body.owner-page {
     }
 }
 
-/* --- Footer --- */
+
 footer {
     background-color: var(--primary-color);
     color: var(--white);
@@ -2267,7 +2253,7 @@ footer {
     color: var(--accent-color);
 }
 
-/* --- Login/Register Page --- */
+
 body.auth-page {
     background: radial-gradient(circle at 20% 20%, rgba(48, 182, 7, 0.08), transparent 32%),
         radial-gradient(circle at 80% 0%, rgba(44, 62, 80, 0.08), transparent 35%),
@@ -2424,39 +2410,6 @@ body.auth-page {
     color: var(--text-light);
 }
 
-.auth-footer {
-    margin-top: 18px;
-    text-align: center;
-    color: var(--text-light);
-}
-
-.auth-footer a {
-    color: var(--accent-color);
-    font-weight: 700;
-}
-
-.error-msg,
-.success-msg,
-.error-message {
-    padding: 12px 12px;
-    border-radius: 10px;
-    font-weight: 600;
-    margin: 10px 0 14px;
-}
-
-.error-msg,
-.error-message {
-    background: #ffe8e6;
-    color: #c0392b;
-    border: 1px solid #f1c1bd;
-}
-
-.success-msg {
-    background: #e8f8ed;
-    color: #1f7a35;
-    border: 1px solid #c5e8d0;
-}
-
 @media (max-width: 600px) {
     .auth-card {
         padding: 24px 20px;
@@ -2468,7 +2421,90 @@ body.auth-page {
     }
 }
 
-/* --- Pop-in Animation --- */
+
+body.auth-page {
+    background: radial-gradient(circle at 18% 20%, rgba(48,182,7,0.08), transparent 32%),
+                radial-gradient(circle at 82% 8%, rgba(44,62,80,0.07), transparent 34%),
+                var(--light-bg);
+}
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 140px 16px 90px;
+}
+
+.auth-card {
+    width: min(520px, 100%);
+    margin: 0 auto;
+    border-radius: 18px;
+    padding: 34px 30px;
+    box-shadow: 0 18px 48px rgba(0,0,0,0.12);
+    border: 1px solid #e6ecf0;
+    background: var(--white);
+}
+
+.auth-card h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+    color: var(--primary-color);
+}
+
+.auth-subtitle, .auth-sub {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 18px;
+}
+
+.auth-card form {
+    display: grid;
+    gap: 14px;
+}
+
+.auth-footer {
+    margin-top: 18px;
+    text-align: center;
+    color: var(--text-light);
+}
+
+.auth-footer a {
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+.login-btn-submit {
+    border-radius: 12px;
+    font-size: 1.05rem;
+    padding: 14px;
+}
+
+.error-msg, .error-message, .error, .msg.err {
+    padding: 12px 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin: 10px 0 14px;
+    background: #ffe8e6;
+    color: #c0392b;
+    border: 1px solid #f1c1bd;
+}
+
+.success-msg, .msg.ok {
+    padding: 12px 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin: 10px 0 14px;
+    background: #e8f8ed;
+    color: #1f7a35;
+    border: 1px solid #c5e8d0;
+}
+
+
 .pop-in {
     opacity: 0;
     transform: translateY(20px) scale(0.98);
@@ -2478,4 +2514,100 @@ body.auth-page {
 .pop-in.visible {
     opacity: 1;
     transform: translateY(0) scale(1);
+}
+
+footer {
+    background: #1d2733;
+    color: rgba(255,255,255,0.8);
+    padding: 80px 20px 24px;
+    position: relative;
+    z-index: 10;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px;
+    max-width: 1200px;
+    margin: 0 auto 48px;
+}
+
+.footer-col h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.footer-col h3 span { color: #30b607; }
+
+.footer-col p {
+    line-height: 1.8;
+}
+
+.footer-col h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.footer-col ul li {
+    margin-bottom: 12px;
+}
+
+.footer-col ul a {
+    color: rgba(255,255,255,0.7);
+    transition: all 0.2s;
+}
+
+.footer-col ul a:hover {
+    color: #30b607;
+    padding-left: 5px;
+}
+
+.footer-social {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.footer-social a {
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: all 0.3s;
+}
+
+.footer-social a:hover {
+    background: #30b607;
+    transform: translateY(-4px);
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 24px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.5);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+@media (max-width: 1024px) {
+    .footer-content { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .footer-content { 
+        grid-template-columns: 1fr; 
+        text-align: center; 
+        gap: 32px;
+    }
+    .footer-social { justify-content: center; }
 }

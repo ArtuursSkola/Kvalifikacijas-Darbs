@@ -15,6 +15,7 @@ if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin','moderato
 
 $errors = [];
 $success = '';
+$form_type = '';
 
 // Handle delete action (admin only)
 if ($_SESSION['role'] === 'admin' && isset($_GET['delete']) && is_numeric($_GET['delete'])) {
@@ -33,6 +34,7 @@ if ($_SESSION['role'] === 'admin' && isset($_GET['delete']) && is_numeric($_GET[
 
 // Handle create new user
 if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
+    $form_type = 'create';
     $newUsername = trim($_POST['new_username'] ?? '');
     $newEmail = trim($_POST['new_email'] ?? '');
     $newPassword = $_POST['new_password'] ?? '';
@@ -45,6 +47,21 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
     if ($newUsername === '' || $newEmail === '' || $newPassword === '') {
         $errors[] = 'Aizpildi visus obligātos laukus.';
     } else {
+        if (strlen($newPassword) < 8) {
+            $errors[] = "Parolei jābūt vismaz 8 simbolus garai";
+        }
+        if (!preg_match('/[0-9]/', $newPassword)) {
+            $errors[] = "Parolei jāsatur vismaz viens skaitlis";
+        }
+        if (!preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
+            $errors[] = "Parolei jāsatur vismaz viens simbols";
+        }
+        if (!preg_match('/[a-zA-Z]/', $newPassword)) {
+            $errors[] = "Parolei jāsatur vismaz viens burts";
+        }
+    }
+
+    if (empty($errors)) {
         $chk = $savienojums->prepare("SELECT lietotaja_id FROM est_lietotaji WHERE lietotajvards=? OR epasts=? LIMIT 1");
         $chk->bind_param('ss', $newUsername, $newEmail);
         $chk->execute();
@@ -68,6 +85,7 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
 
 // Handle full user edit
 if ($_SESSION['role'] === 'admin' && isset($_POST['edit_user'])) {
+    $form_type = 'edit';
     $editId = (int)($_POST['edit_id'] ?? 0);
     $editUsername = trim($_POST['edit_username'] ?? '');
     $editEmail = trim($_POST['edit_email'] ?? '');
@@ -79,29 +97,46 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['edit_user'])) {
     if (!in_array($editRole, $allowedRoles, true)) $editRole = 'lietotajs';
     
     if ($editId > 0 && $editUsername !== '' && $editEmail !== '') {
-        $chk = $savienojums->prepare("SELECT lietotaja_id FROM est_lietotaji WHERE (lietotajvards=? OR epasts=?) AND lietotaja_id != ? LIMIT 1");
-        $chk->bind_param('ssi', $editUsername, $editEmail, $editId);
-        $chk->execute();
-        if ($chk->get_result()->num_rows > 0) {
-            $errors[] = 'Lietotājvārds vai e-pasts jau aizņemts.';
-        } else {
-            $planVal = $editPlan !== '' ? $editPlan : null;
-            if ($editPassword !== '') {
-                $hash = password_hash($editPassword, PASSWORD_DEFAULT);
-                $upd = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards=?, epasts=?, parole=?, loma=?, plan=? WHERE lietotaja_id=?");
-                $upd->bind_param('sssssi', $editUsername, $editEmail, $hash, $editRole, $planVal, $editId);
-            } else {
-                $upd = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards=?, epasts=?, loma=?, plan=? WHERE lietotaja_id=?");
-                $upd->bind_param('ssssi', $editUsername, $editEmail, $editRole, $planVal, $editId);
+        if ($editPassword !== '') {
+            if (strlen($editPassword) < 8) {
+                $errors[] = "Parolei jābūt vismaz 8 simbolus garai";
             }
-            if ($upd->execute()) {
-                $success = 'Lietotājs atjaunināts.';
-            } else {
-                $errors[] = 'Neizdevās atjaunināt: ' . $upd->error;
+            if (!preg_match('/[0-9]/', $editPassword)) {
+                $errors[] = "Parolei jāsatur vismaz viens skaitlis";
             }
-            $upd->close();
+            if (!preg_match('/[^a-zA-Z0-9]/', $editPassword)) {
+                $errors[] = "Parolei jāsatur vismaz viens simbols";
+            }
+            if (!preg_match('/[a-zA-Z]/', $editPassword)) {
+                $errors[] = "Parolei jāsatur vismaz viens burts";
+            }
         }
-        $chk->close();
+
+        if (empty($errors)) {
+            $chk = $savienojums->prepare("SELECT lietotaja_id FROM est_lietotaji WHERE (lietotajvards=? OR epasts=?) AND lietotaja_id != ? LIMIT 1");
+            $chk->bind_param('ssi', $editUsername, $editEmail, $editId);
+            $chk->execute();
+            if ($chk->get_result()->num_rows > 0) {
+                $errors[] = 'Lietotājvārds vai e-pasts jau aizņemts.';
+            } else {
+                $planVal = $editPlan !== '' ? $editPlan : null;
+                if ($editPassword !== '') {
+                    $hash = password_hash($editPassword, PASSWORD_DEFAULT);
+                    $upd = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards=?, epasts=?, parole=?, loma=?, plan=? WHERE lietotaja_id=?");
+                    $upd->bind_param('sssssi', $editUsername, $editEmail, $hash, $editRole, $planVal, $editId);
+                } else {
+                    $upd = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards=?, epasts=?, loma=?, plan=? WHERE lietotaja_id=?");
+                    $upd->bind_param('ssssi', $editUsername, $editEmail, $editRole, $planVal, $editId);
+                }
+                if ($upd->execute()) {
+                    $success = 'Lietotājs atjaunināts.';
+                } else {
+                    $errors[] = 'Neizdevās atjaunināt: ' . $upd->error;
+                }
+                $upd->close();
+            }
+            $chk->close();
+        }
     }
 }
 
@@ -142,7 +177,7 @@ $totalPages = max(1, ceil($totalUsers / $perPage));
 
 // Get users
 $users = [];
-$sql = "SELECT lietotaja_id, lietotajvards, epasts, loma, plan, created_at FROM est_lietotaji $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?";
+$sql = "SELECT lietotaja_id, lietotajvards, epasts, loma, plan, plan_expires_at, created_at FROM est_lietotaji $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?";
 if ($search !== '') {
     $stmt = $savienojums->prepare($sql);
     $stmt->bind_param($types . 'ii', ...[...$params, $perPage, $offset]);
@@ -208,7 +243,7 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
         <?php if ($success): ?>
             <div class="alert success"><?php echo htmlspecialchars($success); ?></div>
         <?php endif; ?>
-        <?php if ($errors): ?>
+        <?php if ($errors && $form_type === ''): ?>
             <div class="alert error"><?php echo implode('<br>', array_map('htmlspecialchars', $errors)); ?></div>
         <?php endif; ?>
 
@@ -253,6 +288,7 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
                             <th>E-pasts</th>
                             <th>Loma</th>
                             <th>Plāns</th>
+                            <th>Termiņš</th>
                             <th>Reģistrēts</th>
                             <?php if ($_SESSION['role'] === 'admin'): ?>
                                 <th>Darbības</th>
@@ -261,7 +297,7 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
                     </thead>
                     <tbody>
                         <?php if (empty($users)): ?>
-                            <tr><td colspan="7" style="text-align:center;color:#6b7a8f;padding:40px;">Nav lietotāju</td></tr>
+                            <tr><td colspan="8" style="text-align:center;color:#6b7a8f;padding:40px;">Nav lietotāju</td></tr>
                         <?php else: ?>
                             <?php foreach ($users as $u): ?>
                                 <tr>
@@ -282,6 +318,22 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
                                         <?php else: ?>
                                             <span class="badge gray">—</span>
                                         <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php 
+                                        if (!empty($u['plan']) && !empty($u['plan_expires_at'])) {
+                                            $expires = strtotime($u['plan_expires_at']);
+                                            $now = time();
+                                            if ($expires > $now) {
+                                                $days = ceil(($expires - $now) / 86400);
+                                                echo '<span style="font-weight:600;color:#30b607;">' . $days . ' dienas</span>';
+                                            } else {
+                                                echo '<span style="color:#e74c3c;font-weight:600;">Beidzies</span>';
+                                            }
+                                        } else {
+                                            echo '<span style="color:#94a3b8;">—</span>';
+                                        }
+                                        ?>
                                     </td>
                                     <td><?php echo $u['created_at'] ? date('d.m.Y H:i', strtotime($u['created_at'])) : '—'; ?></td>
                                     <?php if ($_SESSION['role'] === 'admin'): ?>
@@ -325,6 +377,9 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
                 <h3><i class="fas fa-user-plus"></i> Jauns lietotājs</h3>
                 <button class="modal-close" onclick="closeModal('createModal')">&times;</button>
             </div>
+            <?php if ($errors && $form_type === 'create'): ?>
+                <div class="alert error" style="margin: 10px 20px 0;"><?php echo implode('<br>', array_map('htmlspecialchars', $errors)); ?></div>
+            <?php endif; ?>
             <form method="POST">
                 <div class="modal-body">
                     <div class="form-group">
@@ -372,6 +427,9 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
                 <h3><i class="fas fa-user-edit"></i> Rediģēt lietotāju</h3>
                 <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
             </div>
+            <?php if ($errors && $form_type === 'edit'): ?>
+                <div class="alert error" style="margin: 10px 20px 0;"><?php echo implode('<br>', array_map('htmlspecialchars', $errors)); ?></div>
+            <?php endif; ?>
             <form method="POST">
                 <input type="hidden" name="edit_id" id="edit_id">
                 <div class="modal-body">
@@ -434,6 +492,20 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
             if (e.target === overlay) overlay.classList.remove('active');
         });
     });
+
+    <?php if (!empty($errors)): ?>
+        <?php if ($form_type === 'create'): ?>
+            openModal('createModal');
+        <?php elseif ($form_type === 'edit'): ?>
+            openEditModal(<?php echo json_encode([
+                'lietotaja_id' => $_POST['edit_id'] ?? 0,
+                'lietotajvards' => $_POST['edit_username'] ?? '',
+                'epasts' => $_POST['edit_email'] ?? '',
+                'loma' => $_POST['edit_role'] ?? 'lietotajs',
+                'plan' => $_POST['edit_plan'] ?? ''
+            ]); ?>);
+        <?php endif; ?>
+    <?php endif; ?>
     </script>
 </body>
 </html>

@@ -28,8 +28,6 @@
             background: rgba(255,255,255,0.98);
             backdrop-filter: blur(20px);
         }
-
-        /* Back Button */
         .back-nav {
             max-width: 1200px;
             margin: 100px auto 20px;
@@ -55,7 +53,7 @@
             transform: translateX(-5px);
         }
 
-        /* Property Container */
+
         .property-wrapper {
             max-width: 1200px;
             margin: 0 auto 60px;
@@ -66,7 +64,6 @@
             align-items: start;
         }
 
-        /* Main Content */
         .property-main {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -74,7 +71,7 @@
             box-shadow: var(--shadow-md);
         }
 
-        /* Header */
+
         .property-header {
             padding: 32px 32px 24px;
             border-bottom: 1px solid var(--gray-200);
@@ -128,7 +125,6 @@
             background: linear-gradient(135deg, #3498db, #2980b9);
         }
 
-        /* Gallery */
         .property-gallery {
             padding: 24px 32px;
         }
@@ -175,7 +171,6 @@
             border-color: var(--accent);
         }
 
-        /* Tabs */
         .property-details {
             padding: 0 32px 32px;
         }
@@ -247,7 +242,7 @@
             margin-bottom: 20px;
         }
 
-        /* Amenities List */
+
         .amenities-list {
             list-style: none;
             display: grid;
@@ -271,7 +266,7 @@
             font-size: 1.1rem;
         }
 
-        /* Spec Grid */
+
         .spec-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -299,7 +294,7 @@
             color: var(--primary);
         }
 
-        /* Map Placeholder */
+
         .map-placeholder {
             background: var(--gray-100);
             border-radius: var(--radius-md);
@@ -316,7 +311,7 @@
             object-fit: cover;
         }
 
-        /* Sidebar */
+
         .property-sidebar {
             position: sticky;
             top: 100px;
@@ -332,7 +327,7 @@
             box-shadow: var(--shadow-md);
         }
 
-        /* Price Widget */
+
         .sidebar-price {
             text-align: center;
             background: var(--white);
@@ -367,7 +362,7 @@
             box-shadow: 0 8px 25px rgba(48,182,7,0.4);
         }
 
-        /* Agent Widget */
+
         .sidebar-agent h4 {
             font-size: 1rem;
             font-weight: 600;
@@ -436,7 +431,7 @@
             color: var(--white);
         }
 
-        /* Replace hardcoded agent card with owner card */
+
         .property-detail-page .sidebar-agent {
             display: none;
         }
@@ -445,7 +440,7 @@
             display: none;
         }
 
-        /* Calculator Widget */
+
         .sidebar-calculator h4 {
             font-size: 1rem;
             font-weight: 600;
@@ -492,7 +487,7 @@
             line-height: 1.5;
         }
 
-        /* Footer */
+
         footer {
             background: var(--primary);
             color: rgba(255,255,255,0.8);
@@ -574,7 +569,7 @@
             margin: 0 auto;
         }
 
-        /* Responsive */
+
         @media (max-width: 1024px) {
             .property-wrapper {
                 grid-template-columns: 1fr;

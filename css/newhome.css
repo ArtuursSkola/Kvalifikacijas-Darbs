@@ -178,3 +178,5 @@
         .rent-only.hidden, .apartment-only.hidden { display: none; }
         input.invalid, select.invalid { border-color: #c0392b; }
         .pricing-grid input { margin-bottom: 4px; }
+
+
