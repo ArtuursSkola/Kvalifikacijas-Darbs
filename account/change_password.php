@@ -25,38 +25,57 @@ if ($currentPassword === '' || $newPassword === '' || $newPasswordRepeat === '')
 }
 
 if ($newPassword !== $newPasswordRepeat) {
-    $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Jaunās paroles nesakrīt.'];
+    $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Jaunās paroles nesakrīt.', 'section' => 'password'];
     header('Location: ' . $redirectTo);
     exit;
 }
 
+$errors = [];
 if (strlen($newPassword) < 8) {
-    $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Jaunajai parolei jābūt vismaz 8 simbolus garai.'];
+    $errors[] = 'Parolei jābūt vismaz 8 simbolus garai.';
+}
+if (!preg_match('/[0-9]/', $newPassword)) {
+    $errors[] = 'Parolei jāsatur vismaz viens skaitlis.';
+}
+if (!preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
+    $errors[] = 'Parolei jāsatur vismaz viens simbols.';
+}
+
+if (!empty($errors)) {
+    $_SESSION['settings_flash'] = ['type' => 'error', 'message' => implode(' ', $errors), 'section' => 'password'];
     header('Location: ' . $redirectTo);
     exit;
 }
 
-$user = fetchUserById($savienojums, $userId);
+$userType = $_SESSION['user_type'] ?? 'user';
+$user = fetchUserById($savienojums, $userId, $userType);
+
 if (!$user) {
     header('Location: ' . main_route('logout'));
     exit;
 }
 
 if (!password_verify($currentPassword, (string)($user['parole'] ?? ''))) {
-    $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Pašreizējā parole nav pareiza.'];
+    $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Pašreizējā parole nav pareiza.', 'section' => 'password'];
     header('Location: ' . $redirectTo);
     exit;
 }
 
+$table = ($userType === 'admin') ? 'est_admin' : 'est_lietotaji';
+$idCol = ($userType === 'admin') ? 'admin_id' : 'lietotaja_id';
+
 $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-$stmt = $savienojums->prepare("UPDATE est_lietotaji SET parole = ? WHERE lietotaja_id = ?");
+$stmt = $savienojums->prepare("UPDATE $table SET parole = ? WHERE $idCol = ?");
 if ($stmt) {
     $stmt->bind_param('si', $newHash, $userId);
-    $stmt->execute();
+    if ($stmt->execute()) {
+        $_SESSION['settings_flash'] = ['type' => 'success', 'message' => 'Parole nomainīta veiksmīgi.', 'section' => 'password'];
+    } else {
+        $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Sistēmas kļūda, mēģiniet vēlreiz.', 'section' => 'password'];
+    }
     $stmt->close();
 }
 
-$_SESSION['settings_flash'] = ['type' => 'success', 'message' => 'Parole nomainīta veiksmīgi.'];
 header('Location: ' . $redirectTo);
 exit;
 

@@ -42,7 +42,7 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
         <p>Pārvaldi profilu, drošību un savu plānu.</p>
     </div>
 
-    <?php if (is_array($flash) && !empty($flash['message'])): ?>
+    <?php if (is_array($flash) && !empty($flash['message']) && empty($flash['section'])): ?>
         <div class="settings-flash settings-flash--<?php echo htmlspecialchars((string)($flash['type'] ?? 'info')); ?>">
             <?php echo htmlspecialchars((string)$flash['message']); ?>
         </div>
@@ -77,6 +77,11 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
 
     <section class="settings-card">
         <h2>Drošība</h2>
+        <?php if (is_array($flash) && !empty($flash['message']) && ($flash['section'] ?? '') === 'password'): ?>
+            <div class="settings-flash settings-flash--<?php echo htmlspecialchars((string)($flash['type'] ?? 'info')); ?>" style="margin-bottom: 15px;">
+                <?php echo htmlspecialchars((string)$flash['message']); ?>
+            </div>
+        <?php endif; ?>
         <form method="POST" action="<?php echo main_route('account.password'); ?>" class="settings-form">
             <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? main_route('account.settings_page')); ?>">
 

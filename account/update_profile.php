@@ -21,13 +21,17 @@ if ($username === '') {
     exit;
 }
 
-$currentUser = fetchUserById($savienojums, $userId);
+$userType = $_SESSION['user_type'] ?? 'user';
+$currentUser = fetchUserById($savienojums, $userId, $userType);
 if (!$currentUser) {
     header('Location: ' . main_route('logout'));
     exit;
 }
 
-$stmt = $savienojums->prepare("SELECT lietotaja_id FROM est_lietotaji WHERE lietotajvards = ? AND lietotaja_id != ? LIMIT 1");
+$table = ($userType === 'admin') ? 'est_admin' : 'est_lietotaji';
+$idCol = ($userType === 'admin') ? 'admin_id' : 'lietotaja_id';
+
+$stmt = $savienojums->prepare("SELECT $idCol FROM $table WHERE lietotajvards = ? AND $idCol != ? LIMIT 1");
 if ($stmt) {
     $stmt->bind_param('si', $username, $userId);
     $stmt->execute();
@@ -58,14 +62,14 @@ if (isset($_FILES['profile_picture']) && is_array($_FILES['profile_picture']) &&
     }
 }
 
-$stmt = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards = ?, profila_bilde = ? WHERE lietotaja_id = ?");
+$stmt = $savienojums->prepare("UPDATE $table SET lietotajvards = ?, profila_bilde = ? WHERE $idCol = ?");
 if ($stmt) {
     $stmt->bind_param('ssi', $username, $profilePicture, $userId);
     $stmt->execute();
     $stmt->close();
 }
 
-$updatedUser = fetchUserById($savienojums, $userId);
+$updatedUser = fetchUserById($savienojums, $userId, $userType);
 if ($updatedUser) {
     storeUserSessionData($updatedUser);
 }

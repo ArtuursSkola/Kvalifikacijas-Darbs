@@ -406,7 +406,32 @@ ul {
 
 .settings-form {
     display: grid;
-    gap: 10px;
+    gap: 12px;
+}
+
+.settings-form label {
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.settings-form input[type="text"],
+.settings-form input[type="password"],
+.settings-form input[type="file"] {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid rgba(44, 62, 80, 0.16);
+    background: #f9fbfd;
+    padding: 12px 14px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.settings-form input:focus {
+    outline: 2px solid rgba(48, 182, 7, 0.22);
+    border-color: rgba(48, 182, 7, 0.35);
+    background: #ffffff;
 }
 
 .settings-avatar-row {

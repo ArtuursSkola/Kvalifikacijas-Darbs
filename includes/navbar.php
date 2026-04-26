@@ -126,7 +126,7 @@ $myHomesUrl = main_route('property.myhomes');
 </nav>
 
 <?php if ($currentUser): ?>
-    <div class="settings-modal" id="settings-modal" aria-hidden="true">
+    <div class="settings-modal" id="settings-modal">
         <a class="settings-modal__backdrop" href="#" aria-label="Aizvērt"></a>
         <div class="settings-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
             <a class="settings-modal__close" href="#" aria-label="Aizvērt">&times;</a>
@@ -166,6 +166,15 @@ $myHomesUrl = main_route('property.myhomes');
 
                 <section class="settings-panel">
                     <h3>Drošība</h3>
+                    <?php 
+                    $flash = $_SESSION['settings_flash'] ?? null;
+                    if (is_array($flash) && !empty($flash['message']) && ($flash['section'] ?? '') === 'password'): 
+                        unset($_SESSION['settings_flash']);
+                    ?>
+                        <div class="settings-flash settings-flash--<?php echo htmlspecialchars((string)($flash['type'] ?? 'info')); ?>" style="margin-bottom: 15px; border-radius: 12px; padding: 10px; background: rgba(231, 76, 60, 0.08); color: #b02618; border: 1px solid rgba(231, 76, 60, 0.2); font-weight: 600; font-size: 0.9rem;">
+                            <?php echo htmlspecialchars((string)$flash['message']); ?>
+                        </div>
+                    <?php endif; ?>
                     <form method="POST" action="<?php echo main_route('account.password'); ?>" class="settings-form">
                         <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars((string)($_SERVER['REQUEST_URI'] ?? main_route('home')) . '#settings-modal'); ?>">
 
