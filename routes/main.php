@@ -129,6 +129,7 @@ function main_routes(): array
         'register' => 'login/register.php',
         'logout' => 'login/logout.php',
         'account.settings_page' => 'account/settings.php',
+        'account.favourites' => 'account/favourites.php',
         'account.settings' => 'account/update_profile.php',
         'account.password' => 'account/change_password.php',
         'account.become_owner' => 'account/become_owner.php',
@@ -136,6 +137,9 @@ function main_routes(): array
         'payment.checkout_offer' => 'payments/checkout_offer.php',
         'payment.success' => 'payments/success.php',
         'api.homes' => 'api/get_homes.php',
+        'api.favorites_ids' => 'api/favorites_ids.php',
+        'api.favorites_toggle' => 'api/toggle_favorite.php',
+        'api.favorites' => 'api/get_favorites.php',
     ];
 
     return $routes;

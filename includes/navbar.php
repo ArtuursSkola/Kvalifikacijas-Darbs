@@ -108,6 +108,10 @@ $myHomesUrl = main_route('property.myhomes');
                         <i class="fas fa-user-cog"></i>
                         Iestatījumi
                     </a>
+                    <a class="profile-dropdown__link" href="#favorites-modal">
+                        <i class="fas fa-heart"></i>
+                        Favorīti
+                    </a>
                     <a href="<?php echo main_route('logout', ['i' => 1]); ?>" class="profile-dropdown__link">
                         <i class="fas fa-sign-out-alt"></i>
                         Iziet
@@ -124,6 +128,16 @@ $myHomesUrl = main_route('property.myhomes');
         <i class="fas fa-bars"></i>
     </div>
 </nav>
+
+<script>
+window.__homeest = window.__homeest || {};
+window.__homeest.favoritesIdsApi = "<?php echo htmlspecialchars(main_route('api.favorites_ids'), ENT_QUOTES); ?>";
+window.__homeest.favoritesToggleApi = "<?php echo htmlspecialchars(main_route('api.favorites_toggle'), ENT_QUOTES); ?>";
+window.__homeest.favoritesApi = "<?php echo htmlspecialchars(main_route('api.favorites'), ENT_QUOTES); ?>";
+window.__homeest.loginUrl = "<?php echo htmlspecialchars(main_route('login'), ENT_QUOTES); ?>";
+window.__homeest.propertyRoute = "<?php echo htmlspecialchars(main_route('property.show'), ENT_QUOTES); ?>";
+window.__homeest.isLoggedIn = <?php echo $currentUser ? 'true' : 'false'; ?>;
+</script>
 
 <?php if ($currentUser): ?>
     <div class="settings-modal" id="settings-modal">
@@ -308,6 +322,19 @@ $myHomesUrl = main_route('property.myhomes');
                     <?php endif; ?>
                 </section>
             </div>
+        </div>
+    </div>
+
+    <div class="settings-modal" id="favorites-modal">
+        <a class="settings-modal__backdrop" href="#" aria-label="Aizvērt"></a>
+        <div class="settings-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="favorites-modal-title">
+            <a class="settings-modal__close" href="#" aria-label="Aizvērt">&times;</a>
+            <div class="settings-modal__header">
+                <h2 id="favorites-modal-title">Favorīti</h2>
+                <p>Tavi saglabātie sludinājumi.</p>
+            </div>
+            <div id="favorites-empty" style="display:none; font-weight:700; color: rgba(44, 62, 80, 0.7); padding: 10px 2px;">Nav favorītu.</div>
+            <div id="favorites-results" class="favorites-grid"></div>
         </div>
     </div>
 <?php endif; ?>

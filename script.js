@@ -462,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="property-image">
                         <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
                         <span class="property-badge ${item.type === 'rent' ? 'rent' : 'sale'}">${item.badge}</span>
-                        <button class="property-favorite" title="Pievienot favorītiem">
+                        <button class="property-favorite" title="Pievienot favorītiem" type="button" data-home-id="${item.id}">
                             <i class="far fa-heart"></i>
                         </button>
                     </div>
@@ -487,17 +487,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
                 resultsWrap.appendChild(card);
-            });
-
-            document.querySelectorAll('.property-favorite').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    btn.classList.toggle('active');
-                    const icon = btn.querySelector('i');
-                    icon.classList.toggle('far');
-                    icon.classList.toggle('fas');
-                });
             });
         }
 
@@ -710,4 +699,154 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     })();
+
+    const api = (window.__homeest || {});
+    let favoriteIds = new Set();
+
+    function setFavoriteActive(btn, isActive) {
+        if (!btn) return;
+        btn.classList.toggle('active', !!isActive);
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('far', !isActive);
+            icon.classList.toggle('fas', !!isActive);
+        }
+    }
+
+    function syncFavoriteButtons() {
+        document.querySelectorAll('.property-favorite[data-home-id], .favorite-btn[data-home-id]').forEach(btn => {
+            const id = parseInt(btn.getAttribute('data-home-id') || '0', 10) || 0;
+            setFavoriteActive(btn, id > 0 && favoriteIds.has(id));
+        });
+    }
+
+    async function loadFavoriteIds() {
+        if (!api.favoritesIdsApi) return;
+        try {
+            const res = await fetch(api.favoritesIdsApi, { credentials: 'same-origin' });
+            const data = await res.json();
+            favoriteIds = new Set((Array.isArray(data) ? data : []).map(n => parseInt(n, 10)).filter(n => n > 0));
+            syncFavoriteButtons();
+        } catch (_) {
+        }
+    }
+
+    async function toggleFavorite(homeId) {
+        if (!api.favoritesToggleApi) return null;
+        const fd = new FormData();
+        fd.append('home_id', String(homeId));
+        const res = await fetch(api.favoritesToggleApi, { method: 'POST', body: fd, credentials: 'same-origin' });
+        if (res.status === 401) {
+            if (api.loginUrl) window.location.href = api.loginUrl;
+            return null;
+        }
+        return res.json();
+    }
+
+    document.addEventListener('click', async (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('.property-favorite[data-home-id], .favorite-btn[data-home-id]') : null;
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const homeId = parseInt(btn.getAttribute('data-home-id') || '0', 10) || 0;
+        if (homeId <= 0) return;
+
+        if (!api.isLoggedIn) {
+            if (api.loginUrl) window.location.href = api.loginUrl;
+            return;
+        }
+
+        const out = await toggleFavorite(homeId);
+        if (!out || typeof out.favorited !== 'boolean') return;
+
+        if (out.favorited) favoriteIds.add(homeId);
+        else favoriteIds.delete(homeId);
+
+        syncFavoriteButtons();
+    });
+
+    async function loadFavoritesIntoModal() {
+        const wrap = document.getElementById('favorites-results');
+        const empty = document.getElementById('favorites-empty');
+        if (!wrap || !empty || !api.favoritesApi) return;
+
+        wrap.innerHTML = '';
+        empty.style.display = 'none';
+
+        try {
+            const res = await fetch(api.favoritesApi, { credentials: 'same-origin' });
+            if (res.status === 401) {
+                empty.textContent = 'Nepieciešams ielogoties.';
+                empty.style.display = 'block';
+                return;
+            }
+            const list = await res.json();
+            if (!Array.isArray(list) || list.length === 0) {
+                empty.textContent = 'Nav favorītu.';
+                empty.style.display = 'block';
+                return;
+            }
+
+            list.forEach(item => {
+                const shieldIcon = (item.owner_plan === 'Gold' || item.owner_plan === 'Silver') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
+                const ownerInitial = (item.owner_username || 'U').charAt(0).toUpperCase();
+                const ownerPfpHtml = item.owner_pfp
+                    ? `<img src="${item.owner_pfp}" alt="${item.owner_username || ''}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\\'owner-mini-initial\\'>${ownerInitial}</span>';">`
+                    : `<span class="owner-mini-initial">${ownerInitial}</span>`;
+
+                const card = document.createElement('div');
+                card.className = 'property-card';
+                card.innerHTML = `
+                    <div class="property-image">
+                        <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
+                        <span class="property-badge ${item.type === 'rent' ? 'rent' : 'sale'}">${item.badge}</span>
+                        <button class="property-favorite active" title="Noņemt no favorītiem" type="button" data-home-id="${item.id}">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                    <div class="property-details">
+                        <h3>${item.title}</h3>
+                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${item.location}</p>
+                        <div class="property-features">
+                            <span><i class="fas fa-bed"></i> ${item.beds} guļamist.</span>
+                            <span><i class="fas fa-ruler-combined"></i> ${item.size} m²</span>
+                            <span><i class="fas fa-bath"></i> ${item.baths || 1} vannas</span>
+                        </div>
+                        <div class="property-owner-bar">
+                            <div class="property-owner-info">
+                                ${ownerPfpHtml}
+                                <span class="owner-username">${item.owner_username || 'Īpašnieks'}${shieldIcon}</span>
+                            </div>
+                        </div>
+                        <div class="property-footer">
+                            <span class="property-price">${item.type === 'rent' ? `${Number(item.price || 0).toLocaleString('lv-LV')} € / mēn` : `${Number(item.price || 0).toLocaleString('lv-LV')} €`}</span>
+                            <a href="${api.propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                `;
+                wrap.appendChild(card);
+            });
+
+            list.forEach(item => {
+                const id = parseInt(item.id || 0, 10) || 0;
+                if (id > 0) favoriteIds.add(id);
+            });
+            syncFavoriteButtons();
+        } catch (_) {
+            empty.textContent = 'Neizdevās ielādēt favorītus.';
+            empty.style.display = 'block';
+        }
+    }
+
+    window.addEventListener('hashchange', () => {
+        if (window.location.hash === '#favorites-modal') {
+            loadFavoritesIntoModal();
+        }
+    });
+    if (window.location.hash === '#favorites-modal') {
+        loadFavoritesIntoModal();
+    }
+
+    loadFavoriteIds();
 });

@@ -143,7 +143,7 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                         <div class="card-image">
                             <img src="<?php echo htmlspecialchars($image); ?>" alt="<?php echo htmlspecialchars($home['nosaukums']); ?>">
                             <span class="badge <?php echo $badgeClass; ?>"><?php echo $badgeText; ?></span>
-                            <button class="favorite-btn"><i class="far fa-heart"></i></button>
+                            <button class="favorite-btn" type="button" data-home-id="<?php echo (int)$home['id']; ?>"><i class="far fa-heart"></i></button>
                         </div>
                         <div class="card-details">
                             <h3><?php echo htmlspecialchars($home['nosaukums']); ?></h3>

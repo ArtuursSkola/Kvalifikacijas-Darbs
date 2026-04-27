@@ -216,7 +216,7 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                             onerror="this.onerror=null;this.src='<?php echo htmlspecialchars($fallbackImg, ENT_QUOTES); ?>';"
                         >
                         <span class="property-badge <?php echo htmlspecialchars($badgeClass); ?>"><?php echo htmlspecialchars($badge); ?></span>
-                        <button class="property-favorite" title="Pievienot favorītiem" type="button">
+                        <button class="property-favorite" title="Pievienot favorītiem" type="button" data-home-id="<?php echo (int)$home['id']; ?>">
                             <i class="far fa-heart"></i>
                         </button>
                     </div>
