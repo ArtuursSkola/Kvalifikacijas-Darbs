@@ -10,8 +10,8 @@ include 'includes/header.php';
 
 
 $newestHomes = [];
-$sql = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image 
-        FROM est_homes WHERE status = 'Aktivs' ORDER BY created_at DESC LIMIT 3";
+$sql = "SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas, galvenais_attels 
+        FROM est_homes WHERE statuss = 'Aktivs' ORDER BY created_at DESC LIMIT 3";
 $result = $savienojums->query($sql);
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -21,7 +21,7 @@ if ($result && $result->num_rows > 0) {
 }
 
 if ($newestHomes !== []) {
-    $ownerIds = array_filter(array_unique(array_column($newestHomes, 'owner_id')));
+    $ownerIds = array_filter(array_unique(array_column($newestHomes, 'ipasnieka_id')));
     if ($ownerIds !== []) {
         $placeholders = implode(',', array_fill(0, count($ownerIds), '?'));
         $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plan FROM est_lietotaji WHERE lietotaja_id IN ($placeholders)");
@@ -36,8 +36,8 @@ if ($newestHomes !== []) {
             $ownerStmt->close();
 
             foreach ($newestHomes as &$h) {
-                if (isset($owners[$h['owner_id']])) {
-                    $h['owner_data'] = $owners[$h['owner_id']];
+                if (isset($owners[$h['ipasnieka_id']])) {
+                    $h['owner_data'] = $owners[$h['ipasnieka_id']];
                 }
             }
         }
@@ -45,7 +45,7 @@ if ($newestHomes !== []) {
 }
 
 $activeHomesCount = 0;
-$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
+$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Aktivs'");
 if ($resActive && $row = $resActive->fetch_row()) $activeHomesCount = (int)$row[0];
 
 $totalUsersCount = 0;
@@ -53,7 +53,7 @@ $resUsers = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji");
 if ($resUsers && $row = $resUsers->fetch_row()) $totalUsersCount = (int)$row[0];
 
 $dealsCount = 0;
-$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Pardots'");
+$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Pardots'");
 if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
 ?>
 
@@ -120,19 +120,19 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
             <div class="section-header">
                 <span class="section-label">Jaunākie piedāvājumi</span>
                 <h2 class="section-title-new">Jaunākie īpašumi</h2>
-                <p class="section-subtitle">Izpēti jaunākos piedāvājumus un atrodi savu nākamo mājvietu.</p>
+                <p class="section-subtitle">Izpēti jaunākos piedāvāvumus un atrodi savu nākamo mājvietu.</p>
             </div>
             
             <div class="listing-grid">
                 <?php if (!empty($newestHomes)): ?>
                     <?php foreach ($newestHomes as $home): 
-                        $isRent = $home['type'] === 'rent';
+                        $isRent = $home['veids'] === 'rent';
                         $priceDisplay = $isRent 
-                            ? number_format($home['price'], 0, ',', ' ') . ' € / mēn'
-                            : number_format($home['price'], 0, ',', ' ') . ' €';
+                            ? number_format($home['cena'], 0, ',', ' ') . ' € / mēn'
+                            : number_format($home['cena'], 0, ',', ' ') . ' €';
                         $badgeClass = $isRent ? 'rent' : 'sale';
                         $badgeText = $isRent ? 'Izīrē' : 'Pārdod';
-                        $image = $home['main_image'] ?: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=500&q=60';
+                        $image = $home['galvenais_attels'] ?: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=500&q=60';
                         $owner = $home['owner_data'];
                         $ownerName = $owner['lietotajvards'] ?? 'Īpašnieks';
                         $ownerPfp = userProfileImageUrl($owner['profila_bilde'] ?? '');
@@ -141,17 +141,17 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                     ?>
                     <div class="card">
                         <div class="card-image">
-                            <img src="<?php echo htmlspecialchars($image); ?>" alt="<?php echo htmlspecialchars($home['title']); ?>">
+                            <img src="<?php echo htmlspecialchars($image); ?>" alt="<?php echo htmlspecialchars($home['nosaukums']); ?>">
                             <span class="badge <?php echo $badgeClass; ?>"><?php echo $badgeText; ?></span>
                             <button class="favorite-btn"><i class="far fa-heart"></i></button>
                         </div>
                         <div class="card-details">
-                            <h3><?php echo htmlspecialchars($home['title']); ?></h3>
-                            <p class="location"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($home['city'] . ', ' . $home['location_text']); ?></p>
+                            <h3><?php echo htmlspecialchars($home['nosaukums']); ?></h3>
+                            <p class="location"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($home['pilseta'] . ', ' . $home['atrasanas_vieta']); ?></p>
                             <div class="features">
-                                <span><i class="fas fa-bed"></i> <?php echo (int)$home['bedrooms']; ?> guļamist.</span>
-                                <span><i class="fas fa-ruler-combined"></i> <?php echo (int)$home['area']; ?> m²</span>
-                                <span><i class="fas fa-bath"></i> <?php echo (int)$home['bathrooms']; ?> vannas</span>
+                                <span><i class="fas fa-bed"></i> <?php echo (int)$home['gulamistabas']; ?> guļamist.</span>
+                                <span><i class="fas fa-ruler-combined"></i> <?php echo (int)$home['platiba']; ?> m²</span>
+                                <span><i class="fas fa-bath"></i> <?php echo (int)$home['vannasistabas']; ?> vannas</span>
                             </div>
 
                             <div class="property-owner-bar">

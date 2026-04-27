@@ -34,11 +34,11 @@ if (isset($_POST['create_listing'])) {
     $city = trim($_POST['city'] ?? '');
     $type = $_POST['type'] ?? 'rent';
     $price = (float)($_POST['price'] ?? 0);
-    $status = $_POST['status'] ?? 'draft';
+    $status = $_POST['status'] ?? 'Melnraksts';
     $description = trim($_POST['description'] ?? '');
     
     if ($title !== '' && $city !== '') {
-        $stmt = $savienojums->prepare("INSERT INTO est_homes (title, city, type, price, status, description, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+        $stmt = $savienojums->prepare("INSERT INTO est_homes (nosaukums, pilseta, veids, cena, statuss, apraksts, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
         $stmt->bind_param('sssdss', $title, $city, $type, $price, $status, $description);
         if ($stmt->execute()) {
             $success = 'Sludinājums izveidots.';
@@ -53,11 +53,11 @@ if (isset($_POST['edit_listing'])) {
     $city = trim($_POST['city'] ?? '');
     $type = $_POST['type'] ?? 'rent';
     $price = (float)($_POST['price'] ?? 0);
-    $status = $_POST['status'] ?? 'draft';
+    $status = $_POST['status'] ?? 'Melnraksts';
     $description = trim($_POST['description'] ?? '');
     
     if ($id > 0 && $title !== '') {
-        $stmt = $savienojums->prepare("UPDATE est_homes SET title=?, city=?, type=?, price=?, status=?, description=? WHERE id=?");
+        $stmt = $savienojums->prepare("UPDATE est_homes SET nosaukums=?, pilseta=?, veids=?, cena=?, statuss=?, apraksts=? WHERE id=?");
         $stmt->bind_param('sssdssi', $title, $city, $type, $price, $status, $description, $id);
         if ($stmt->execute()) {
             $success = 'Sludinājums atjaunināts.';
@@ -78,19 +78,19 @@ $params = [];
 $types = '';
 
 if ($search !== '') {
-    $whereConditions[] = "(title LIKE ? OR city LIKE ?)";
+    $whereConditions[] = "(nosaukums LIKE ? OR pilseta LIKE ?)";
     $searchParam = '%' . $search . '%';
     $params[] = $searchParam;
     $params[] = $searchParam;
     $types .= 'ss';
 }
 if ($filterType !== '') {
-    $whereConditions[] = "type = ?";
+    $whereConditions[] = "veids = ?";
     $params[] = $filterType;
     $types .= 's';
 }
 if ($filterStatus !== '') {
-    $whereConditions[] = "status = ?";
+    $whereConditions[] = "statuss = ?";
     $params[] = $filterStatus;
     $types .= 's';
 }
@@ -110,7 +110,7 @@ if ($params) {
 $totalPages = max(1, ceil($totalHomes / $perPage));
 
 $homes = [];
-$sql = "SELECT h.*, u.lietotajvards as owner_name FROM est_homes h LEFT JOIN est_lietotaji u ON h.owner_id = u.lietotaja_id $whereClause ORDER BY h.created_at DESC LIMIT ? OFFSET ?";
+$sql = "SELECT h.*, u.lietotajvards as owner_name FROM est_homes h LEFT JOIN est_lietotaji u ON h.ipasnieka_id = u.lietotaja_id $whereClause ORDER BY h.created_at DESC LIMIT ? OFFSET ?";
 if ($params) {
     $stmt = $savienojums->prepare($sql);
     $stmt->bind_param($types . 'ii', ...array_merge($params, [$perPage, $offset]));
@@ -126,10 +126,10 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_homes")->fetch_row()[0];
-$activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='Aktivs'")->fetch_row()[0];
-$draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status='Melnraksts'")->fetch_row()[0];
-$rentCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE type='rent'")->fetch_row()[0];
-$buyCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE type='buy'")->fetch_row()[0];
+$activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss='Aktivs'")->fetch_row()[0];
+$draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss='Melnraksts'")->fetch_row()[0];
+$rentCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE veids='rent'")->fetch_row()[0];
+$buyCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE veids='buy'")->fetch_row()[0];
 
 function buildUrl($overrides = []) {
     $params = array_merge($_GET, $overrides);
@@ -266,22 +266,22 @@ function buildUrl($overrides = []) {
                             <?php foreach ($homes as $h): ?>
                                 <tr>
                                     <td><?php echo $h['id']; ?></td>
-                                    <td><strong><?php echo htmlspecialchars($h['title']); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($h['city']); ?></td>
+                                    <td><strong><?php echo htmlspecialchars($h['nosaukums']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($h['pilseta']); ?></td>
                                     <td>
-                                        <span class="badge <?php echo $h['type'] === 'rent' ? 'blue' : 'orange'; ?>">
-                                            <?php echo $h['type'] === 'rent' ? 'Īre' : 'Pārdošana'; ?>
+                                        <span class="badge <?php echo $h['veids'] === 'rent' ? 'blue' : 'orange'; ?>">
+                                            <?php echo $h['veids'] === 'rent' ? 'Īre' : 'Pārdošana'; ?>
                                         </span>
                                     </td>
-                                    <td class="price">€<?php echo number_format($h['price'], 0, ',', ' '); ?></td>
+                                    <td class="price">€<?php echo number_format($h['cena'], 0, ',', ' '); ?></td>
                                     <td><?php echo htmlspecialchars($h['owner_name'] ?? '—'); ?></td>
                                     <td>
                                         <?php
                                         $statusClass = ['Aktivs' => 'green', 'Melnraksts' => 'gray', 'Noraidīts' => 'red', 'Pardots' => 'blue'];
                                         $statusLabel = ['Aktivs' => 'Aktīvs', 'Melnraksts' => 'Melnraksts', 'Noraidīts' => 'Noraidīts', 'Pardots' => 'Pārdots'];
                                         ?>
-                                        <span class="badge <?php echo $statusClass[$h['status']] ?? 'gray'; ?>">
-                                            <?php echo $statusLabel[$h['status']] ?? $h['status']; ?>
+                                        <span class="badge <?php echo $statusClass[$h['statuss']] ?? 'gray'; ?>">
+                                            <?php echo $statusLabel[$h['statuss']] ?? $h['statuss']; ?>
                                         </span>
                                     </td>
                                     <td><?php echo $h['created_at'] ? date('d.m.Y', strtotime($h['created_at'])) : '—'; ?></td>
@@ -434,12 +434,12 @@ function buildUrl($overrides = []) {
     }
     function openEditModal(listing) {
         document.getElementById('edit_id').value = listing.id;
-        document.getElementById('edit_title').value = listing.title || '';
-        document.getElementById('edit_city').value = listing.city || '';
-        document.getElementById('edit_price').value = listing.price || '';
-        document.getElementById('edit_type').value = listing.type || 'rent';
-        document.getElementById('edit_status').value = listing.status || 'draft';
-        document.getElementById('edit_description').value = listing.description || '';
+        document.getElementById('edit_title').value = listing.nosaukums || '';
+        document.getElementById('edit_city').value = listing.pilseta || '';
+        document.getElementById('edit_price').value = listing.cena || '';
+        document.getElementById('edit_type').value = listing.veids || 'rent';
+        document.getElementById('edit_status').value = listing.statuss || 'Melnraksts';
+        document.getElementById('edit_description').value = listing.apraksts || '';
         openModal('editModal');
     }
     document.querySelectorAll('.modal-overlay').forEach(overlay => {

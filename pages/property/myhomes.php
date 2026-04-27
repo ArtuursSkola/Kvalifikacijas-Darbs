@@ -24,9 +24,9 @@ include __DIR__ . '/../../includes/header.php';
 $ownerId = (int)($currentUser['lietotaja_id'] ?? $_SESSION['user_id'] ?? 0);
 $myHomes = [];
 if ($ownerId > 0) {
-    $sql = "SELECT id, title, city, status, price, type, main_image, created_at
+    $sql = "SELECT id, nosaukums, pilseta, statuss, cena, veids, galvenais_attels, created_at
         FROM est_homes
-        WHERE owner_id = ?
+        WHERE ipasnieka_id = ?
         ORDER BY created_at DESC";
     $stmt = $savienojums->prepare($sql);
     if ($stmt) {
@@ -77,20 +77,20 @@ if ($ownerId > 0) {
             <div class="owner-grid">
                 <?php foreach ($myHomes as $home): ?>
                     <?php
-                    $status = $home['status'] ?: 'draft';
+                    $status = $home['statuss'] ?: 'Melnraksts';
                     $statusLabels = [
-                        'active' => ['label' => 'Aktīvs', 'class' => 'status-active'],
-                        'draft' => ['label' => 'Melnraksts', 'class' => 'status-draft'],
-                        'rejected' => ['label' => 'Noraidīts', 'class' => 'status-rejected'],
-                        'inactive' => ['label' => 'Neaktīvs', 'class' => 'status-inactive'],
+                        'Aktivs' => ['label' => 'Aktīvs', 'class' => 'status-active'],
+                        'Melnraksts' => ['label' => 'Melnraksts', 'class' => 'status-draft'],
+                        'Noraidīts' => ['label' => 'Noraidīts', 'class' => 'status-rejected'],
+                        'Pardots' => ['label' => 'Pārdots', 'class' => 'status-inactive'],
                     ];
                     $st = $statusLabels[$status] ?? ['label' => (string)$status, 'class' => ''];
                     $fallbackImg = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';
-                    $img = trim((string)($home['main_image'] ?? ''));
+                    $img = trim((string)($home['galvenais_attels'] ?? ''));
                     if ($img === '') {
                         $img = $fallbackImg;
                     }
-                    $price = isset($home['price']) ? number_format((float)$home['price'], 0, ',', ' ') . ' €' : '—';
+                    $price = isset($home['cena']) ? number_format((float)$home['cena'], 0, ',', ' ') . ' €' : '—';
                     ?>
                     <div class="owner-card">
                         <div class="owner-card__img">
@@ -103,8 +103,8 @@ if ($ownerId > 0) {
                             <span class="owner-status <?php echo htmlspecialchars($st['class']); ?>"><?php echo htmlspecialchars($st['label']); ?></span>
                         </div>
                         <div class="owner-card__info">
-                            <h4 title="<?php echo htmlspecialchars((string)($home['title'] ?? '')); ?>"><?php echo htmlspecialchars((string)($home['title'] ?? '')); ?></h4>
-                            <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars((string)($home['city'] ?? '')); ?></p>
+                            <h4 title="<?php echo htmlspecialchars((string)($home['nosaukums'] ?? '')); ?>"><?php echo htmlspecialchars((string)($home['nosaukums'] ?? '')); ?></h4>
+                            <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars((string)($home['pilseta'] ?? '')); ?></p>
                             <div class="owner-card__footer">
                                 <span class="price"><?php echo htmlspecialchars($price); ?></span>
                                 <div class="owner-card__actions">

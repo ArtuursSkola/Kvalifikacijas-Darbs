@@ -13,11 +13,11 @@ if (!isset($savienojums) || !$savienojums instanceof mysqli) {
 
 $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 
-$select = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms,
-        description, main_image, status, property_category
+$select = "SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas,
+        apraksts, galvenais_attels, statuss, kategorija
     FROM est_homes";
 
-$where = $userId > 0 ? " WHERE status = 'Aktivs' OR owner_id = ?" : " WHERE status = 'Aktivs'";
+$where = $userId > 0 ? " WHERE statuss = 'Aktivs' OR ipasnieka_id = ?" : " WHERE statuss = 'Aktivs'";
 $order = " ORDER BY created_at DESC";
 
 $stmt = null;
@@ -42,7 +42,7 @@ $ownerIds = [];
 
 if ($result && $result instanceof mysqli_result) {
     while ($row = $result->fetch_assoc()) {
-        $ownerId = (int)($row['owner_id'] ?? 0);
+        $ownerId = (int)($row['ipasnieka_id'] ?? 0);
         if ($ownerId > 0) {
             $ownerIds[] = $ownerId;
         }
@@ -67,33 +67,33 @@ if ($ownerIds !== []) {
 }
 
 foreach ($rawHomes as $row) {
-    $desc = (string)($row['description'] ?? '');
+    $desc = (string)($row['apraksts'] ?? '');
     $descShort = '';
     if ($desc !== '') {
         $slice = function_exists('mb_substr') ? mb_substr($desc, 0, 150) : substr($desc, 0, 150);
         $descShort = $slice . '...';
     }
-    $type = (string)($row['type'] ?? '');
-    $city = (string)($row['city'] ?? '');
-    $locText = (string)($row['location_text'] ?? '');
-    $ownerId = (int)($row['owner_id'] ?? 0);
+    $type = (string)($row['veids'] ?? '');
+    $city = (string)($row['pilseta'] ?? '');
+    $locText = (string)($row['atrasanas_vieta'] ?? '');
+    $ownerId = (int)($row['ipasnieka_id'] ?? 0);
     $owner = $ownersMap[$ownerId] ?? null;
 
     $homes[] = [
         'id' => (int)($row['id'] ?? 0),
-        'status' => (string)($row['status'] ?? ''),
+        'status' => (string)($row['statuss'] ?? ''),
         'is_own' => $userId > 0 && $ownerId === $userId,
-        'title' => (string)($row['title'] ?? ''),
+        'title' => (string)($row['nosaukums'] ?? ''),
         'city' => $city,
         'location' => $city . ($locText !== '' ? ', ' . $locText : ''),
         'type' => $type,
-        'category' => (string)($row['property_category'] ?? ''),
-        'price' => (float)($row['price'] ?? 0),
-        'beds' => (int)($row['bedrooms'] ?? 0),
-        'baths' => (int)($row['bathrooms'] ?? 0),
-        'size' => (int)($row['area'] ?? 0),
+        'category' => (string)($row['kategorija'] ?? ''),
+        'price' => (float)($row['cena'] ?? 0),
+        'beds' => (int)($row['gulamistabas'] ?? 0),
+        'baths' => (int)($row['vannasistabas'] ?? 0),
+        'size' => (int)($row['platiba'] ?? 0),
         'badge' => $type === 'rent' ? 'Izīrē' : 'Pārdod',
-        'image' => media_absolute_url(!empty($row['main_image']) ? (string)$row['main_image'] : $fallbackImg),
+        'image' => media_absolute_url(!empty($row['galvenais_attels']) ? (string)$row['galvenais_attels'] : $fallbackImg),
         'desc' => $descShort,
         'owner_username' => (string)($owner['lietotajvards'] ?? ''),
         'owner_pfp' => media_absolute_url($owner['profila_bilde'] ?? ''),

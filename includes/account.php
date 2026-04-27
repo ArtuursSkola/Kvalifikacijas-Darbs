@@ -179,7 +179,7 @@ function fetchUserPropertyTransactions(mysqli $conn, int $userId): array
 
     $items = [];
     $stmt = $conn->prepare("SELECT t.transaction_type, t.amount, t.currency, t.created_at, t.home_id,
-        h.title as home_title, h.city as home_city, h.type as home_type
+        h.nosaukums as home_title, h.pilseta as home_city, h.veids as home_type
         FROM est_property_transactions t
         LEFT JOIN est_homes h ON h.id = t.home_id
         WHERE t.user_id = ?

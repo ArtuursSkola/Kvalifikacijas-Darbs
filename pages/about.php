@@ -11,7 +11,7 @@ $extraStyles = ['about'];
 include __DIR__ . '/../includes/header.php';
 
 $activeHomesCount = 0;
-$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
+$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Aktivs'");
 if ($resActive && $row = $resActive->fetch_row()) $activeHomesCount = (int)$row[0];
 
 $totalUsersCount = 0;
@@ -19,7 +19,7 @@ $resUsers = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji");
 if ($resUsers && $row = $resUsers->fetch_row()) $totalUsersCount = (int)$row[0];
 
 $dealsCount = 0;
-$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Pardots'");
+$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Pardots'");
 if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
 ?>
 

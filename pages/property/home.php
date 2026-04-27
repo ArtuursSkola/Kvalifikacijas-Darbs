@@ -28,7 +28,14 @@ if ($homeRes->num_rows === 0) {
 $home = $homeRes->fetch_assoc();
 $homeStmt->close();
 
-$ownerId = (int)($home['owner_id'] ?? 0);
+$viewStmt = $savienojums->prepare("UPDATE est_homes SET skatijumi = skatijumi + 1 WHERE id = ?");
+if ($viewStmt) {
+    $viewStmt->bind_param('i', $homeId);
+    $viewStmt->execute();
+    $viewStmt->close();
+}
+
+$ownerId = (int)($home['ipasnieka_id'] ?? 0);
 $owner = null;
 if ($ownerId > 0) {
     $ownStmt = $savienojums->prepare("SELECT lietotajvards, epasts, profila_bilde, plan FROM est_lietotaji WHERE lietotaja_id = ? LIMIT 1");
@@ -40,7 +47,7 @@ if ($ownerId > 0) {
     }
 }
 
-$pageTitle = htmlspecialchars($home['title']) . ' - HomeEstate';
+$pageTitle = htmlspecialchars($home['nosaukums']) . ' - HomeEstate';
 $extraStyles = ['home'];
 $bodyClass = 'property-detail-page';
 include __DIR__ . '/../../includes/header.php';
@@ -53,29 +60,29 @@ $ownerPlan = (string)($owner['plan'] ?? '');
 $hasShield = in_array($ownerPlan, ['Silver', 'Gold'], true);
 
 $amenities = [];
-if (!empty($home['amenities'])) {
-    $amenities = array_map('trim', explode(',', $home['amenities']));
+if (!empty($home['ertibas'])) {
+    $amenities = array_map('trim', explode(',', $home['ertibas']));
 }
 
 $gallery = [];
-if (!empty($home['gallery'])) {
-    $gallery = json_decode($home['gallery'], true) ?: [];
+if (!empty($home['galerija'])) {
+    $gallery = json_decode($home['galerija'], true) ?: [];
 }
 
-$mainImage = media_url($home['main_image'] ?? '');
+$mainImage = media_url($home['galvenais_attels'] ?? '');
 
-$floorDisplay = htmlspecialchars($home['floor_info'] ?: $home['floor']);
-if ($home['property_category'] === 'house' && !empty($home['floor_info'])) {
-    $floorDisplay = htmlspecialchars($home['floor_info']);
+$floorDisplay = htmlspecialchars($home['stavu_info'] ?: $home['stavs']);
+if ($home['kategorija'] === 'house' && !empty($home['stavu_info'])) {
+    $floorDisplay = htmlspecialchars($home['stavu_info']);
 }
 
-$priceDisplay = $home['type'] === 'rent' 
-    ? number_format($home['price'], 0, ',', ' ') . ' € / mēn'
-    : number_format($home['price'], 0, ',', ' ') . ' €';
+$priceDisplay = $home['veids'] === 'rent'
+    ? number_format($home['cena'], 0, ',', ' ') . ' € / mēn'
+    : number_format($home['cena'], 0, ',', ' ') . ' €';
 
-$rentPrice = $home['rent_price'] ?: $home['price'];
-$utilitiesPrice = $home['utilities_price'] ?: 0;
-$totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
+$rentPrice = $home['ires_maksa'] ?: $home['cena'];
+$utilitiesPrice = $home['komunalo_maksa'] ?: 0;
+$totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 ?>
     <div class="back-nav">
         <a href="<?php echo main_route('property.list'); ?>" class="btn-back">
@@ -87,20 +94,20 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
     <div class="property-wrapper">
         <main class="property-main">
             <div class="property-header">
-                <h1><?php echo htmlspecialchars($home['title']); ?></h1>
+                <h1><?php echo htmlspecialchars($home['nosaukums']); ?></h1>
                 <div class="property-meta">
-                    <span class="type-badge <?php echo $home['type']; ?>">
-                        <?php echo $home['type'] === 'rent' ? 'Izīrē' : 'Pārdod'; ?>
+                    <span class="type-badge <?php echo $home['veids']; ?>">
+                        <?php echo $home['veids'] === 'rent' ? 'Izīrē' : 'Pārdod'; ?>
                     </span>
-                    <span><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($home['city'] . ', ' . $home['location_text']); ?></span>
-                    <span class="chip"><i class="fas fa-bed"></i> <?php echo $home['bedrooms']; ?> guļamist.</span>
-                    <span class="chip"><i class="fas fa-ruler-combined"></i> <?php echo $home['area']; ?> m²</span>
-                    <?php if ($home['property_category']): ?>
+                    <span><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($home['pilseta'] . ', ' . $home['atrasanas_vieta']); ?></span>
+                    <span class="chip"><i class="fas fa-bed"></i> <?php echo $home['gulamistabas']; ?> guļamist.</span>
+                    <span class="chip"><i class="fas fa-ruler-combined"></i> <?php echo $home['platiba']; ?> m²</span>
+                    <?php if ($home['kategorija']): ?>
                     <span class="chip">
-                        <i class="fas <?php echo $home['property_category'] === 'house' ? 'fa-home' : 'fa-building'; ?>"></i> 
+                        <i class="fas <?php echo $home['kategorija'] === 'house' ? 'fa-home' : 'fa-building'; ?>"></i> 
                         <?php 
                             $catLabels = ['apartment' => 'Dzīvoklis', 'house' => 'Māja', 'land' => 'Zeme'];
-                            echo htmlspecialchars($catLabels[$home['property_category']] ?? $home['property_category']); 
+                            echo htmlspecialchars($catLabels[$home['kategorija']] ?? $home['kategorija']); 
                         ?>
                     </span>
                     <?php endif; ?>
@@ -109,7 +116,7 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
 
             <div class="property-gallery">
                 <div class="main-image">
-                    <img id="gallery-main" src="<?php echo htmlspecialchars($mainImage); ?>" alt="<?php echo htmlspecialchars($home['title']); ?>">
+                    <img id="gallery-main" src="<?php echo htmlspecialchars($mainImage); ?>" alt="<?php echo htmlspecialchars($home['nosaukums']); ?>">
                 </div>
                 <div class="thumb-images">
                     <img src="<?php echo htmlspecialchars($mainImage); ?>" alt="Galvenais attēls" class="active" onclick="changeImage(this)">
@@ -128,7 +135,7 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
 
                 <div id="description" class="tab-content active">
                     <h3>Par īpašumu</h3>
-                    <p><?php echo nl2br(htmlspecialchars($home['description'])); ?></p>
+                    <p><?php echo nl2br(htmlspecialchars($home['apraksts'])); ?></p>
                     
                     <?php if (!empty($amenities)): ?>
                     <h3 style="margin-top: 24px;">Ērtības un aprīkojums</h3>
@@ -142,31 +149,31 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
 
                 <div id="layout" class="tab-content">
                     <h3>Īpašuma plānojums</h3>
-                    <p><?php echo nl2br(htmlspecialchars($home['layout_text'] ?: 'Plānojuma informācija nav pieejama.')); ?></p>
+                    <p><?php echo nl2br(htmlspecialchars($home['planojums'] ?: 'Plānojuma informācija nav pieejama.')); ?></p>
                     
                     <div class="spec-grid">
                         <div class="spec-card">
                             <strong>Platība</strong>
-                            <span><?php echo $home['area']; ?> m²</span>
+                            <span><?php echo $home['platiba']; ?> m²</span>
                         </div>
                         <div class="spec-card">
                             <strong>Guļamistabas</strong>
-                            <span><?php echo $home['bedrooms']; ?></span>
+                            <span><?php echo $home['gulamistabas']; ?></span>
                         </div>
                         <div class="spec-card">
-                            <strong><?php echo $home['property_category'] === 'house' ? 'Stāvi' : 'Stāvs'; ?></strong>
+                            <strong><?php echo $home['kategorija'] === 'house' ? 'Stāvi' : 'Stāvs'; ?></strong>
                             <span><?php echo $floorDisplay; ?></span>
                         </div>
                         <div class="spec-card">
                             <strong>Vannasistabas</strong>
-                            <span><?php echo $home['bathrooms']; ?></span>
+                            <span><?php echo $home['vannasistabas']; ?></span>
                         </div>
                     </div>
                 </div>
 
                 <div id="map" class="tab-content">
                     <h3>Atrašanās vieta</h3>
-                    <p><?php echo nl2br(htmlspecialchars($home['map_text'] ?: 'Īpašums atrodas ' . $home['city'] . ', ' . $home['address'])); ?></p>
+                    <p><?php echo nl2br(htmlspecialchars($home['karte'] ?: 'Īpašums atrodas ' . $home['pilseta'] . ', ' . $home['adrese'])); ?></p>
                     <div class="map-placeholder">
                         <img src="https://i.imgur.com/5g2j3fD.png" alt="Karte ar atrašanās vietu">
                     </div>
@@ -194,11 +201,11 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
                     </div>
                 </div>
                 <?php if ($ownerEmail !== ''): ?>
-                    <a href="mailto:<?php echo htmlspecialchars($ownerEmail); ?>?subject=Interese%20par%20<?php echo urlencode($home['title']); ?>" class="agent-contact">
+                    <a href="mailto:<?php echo htmlspecialchars($ownerEmail); ?>?subject=Interese%20par%20<?php echo urlencode($home['nosaukums']); ?>" class="agent-contact">
                         <i class="fas fa-envelope"></i> Sazināties
                     </a>
                 <?php else: ?>
-                    <a href="mailto:info@homeestate.lv?subject=Interese%20par%20<?php echo urlencode($home['title']); ?>" class="agent-contact">
+                    <a href="mailto:info@homeestate.lv?subject=Interese%20par%20<?php echo urlencode($home['nosaukums']); ?>" class="agent-contact">
                         <i class="fas fa-envelope"></i> Sazināties
                     </a>
                 <?php endif; ?>
@@ -206,7 +213,7 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
 
             <div class="sidebar-widget sidebar-price">
                 <span class="price"><?php echo $priceDisplay; ?></span>
-                <a href="mailto:info@homeestate.lv?subject=Interese%20par%20<?php echo urlencode($home['title']); ?>" class="btn-primary">
+                <a href="mailto:info@homeestate.lv?subject=Interese%20par%20<?php echo urlencode($home['nosaukums']); ?>" class="btn-primary">
                     <i class="fas fa-envelope"></i> Sazināties ar aģentu
                 </a>
             </div>
@@ -225,7 +232,7 @@ $totalPrice = $home['total_price'] ?: ($rentPrice + $utilitiesPrice);
                 </a>
             </div>
             
-            <?php if ($home['type'] === 'rent'): ?>
+            <?php if ($home['veids'] === 'rent'): ?>
             <div class="sidebar-widget sidebar-calculator">
                 <h4><i class="fas fa-calculator"></i> Īres izmaksas</h4>
                 <div class="calc-row">

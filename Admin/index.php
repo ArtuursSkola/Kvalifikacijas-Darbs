@@ -27,7 +27,7 @@ $todayHomes = fetchCount($savienojums, "SELECT COUNT(*) FROM est_homes WHERE DAT
 $totalUsers = fetchCount($savienojums, "SELECT COUNT(*) FROM est_lietotaji");
 $totalHomes = fetchCount($savienojums, "SELECT COUNT(*) FROM est_homes");
 $totalAdmins = fetchCount($savienojums, "SELECT COUNT(*) FROM est_admin");
-$activeHomes = fetchCount($savienojums, "SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
+$activeHomes = fetchCount($savienojums, "SELECT COUNT(*) FROM est_homes WHERE statuss = 'Aktivs'");
 $ownersCount = fetchCount($savienojums, "SELECT COUNT(*) FROM est_lietotaji WHERE loma = 'ipasnieks'");
 $weekUsers = fetchCount($savienojums, "SELECT COUNT(*) FROM est_lietotaji WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
 
@@ -42,7 +42,7 @@ if ($ruRes) {
 
 // Jaunāki sludinājumi
 $recentHomes = [];
-$rhRes = $savienojums->query("SELECT id, title, city, type, status, price, created_at FROM est_homes ORDER BY created_at DESC LIMIT 5");
+$rhRes = $savienojums->query("SELECT id, nosaukums, pilseta, veids, statuss, cena, created_at FROM est_homes ORDER BY created_at DESC LIMIT 5");
 if ($rhRes) {
     while ($row = $rhRes->fetch_assoc()) {
         $recentHomes[] = $row;
@@ -200,16 +200,16 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
                             <?php else: ?>
                                 <?php foreach ($recentHomes as $h): ?>
                                     <tr>
-                                        <td><strong><?php echo htmlspecialchars($h['title']); ?></strong></td>
-                                        <td><?php echo htmlspecialchars($h['city']); ?></td>
-                                        <td class="price">€<?php echo number_format($h['price'], 0, ',', ' '); ?></td>
+                                        <td><strong><?php echo htmlspecialchars($h['nosaukums']); ?></strong></td>
+                                        <td><?php echo htmlspecialchars($h['pilseta']); ?></td>
+                                        <td class="price">€<?php echo number_format($h['cena'], 0, ',', ' '); ?></td>
                                         <td>
                                             <?php
                                                 $statusClass = ['Aktivs' => 'green', 'Melnraksts' => 'gray', 'Noraidīts' => 'red', 'Pardots' => 'blue'];
-                                                $label = $statusLabel[$h['status']] ?? $h['status'];
-                                                if ($h['status'] === 'Aktivs') $label = 'Aktīvs';
+                                                $label = $h['statuss'];
+                                                if ($h['statuss'] === 'Aktivs') $label = 'Aktīvs';
                                             ?>
-                                            <span class="badge <?php echo $statusClass[$h['status']] ?? 'gray'; ?>">
+                                            <span class="badge <?php echo $statusClass[$h['statuss']] ?? 'gray'; ?>">
                                                 <?php echo htmlspecialchars($label); ?>
                                             </span>
                                         </td>

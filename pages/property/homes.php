@@ -17,10 +17,10 @@ include __DIR__ . '/../../includes/header.php';
 
 $initialHomes = [];
 $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
-$sql = "SELECT id, owner_id, title, city, location_text, type, price, area, bedrooms, bathrooms, main_image, status
+$sql = "SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas, galvenais_attels, statuss
     FROM est_homes
-    WHERE status = 'Aktivs'"
-    . ($currentUserId > 0 ? " OR owner_id = ?" : "")
+    WHERE statuss = 'Aktivs'"
+    . ($currentUserId > 0 ? " OR ipasnieka_id = ?" : "")
     . " ORDER BY created_at DESC";
 
 if ($currentUserId > 0) {
@@ -41,15 +41,15 @@ if ($currentUserId > 0) {
     }
 }
 $activeHomesCount = 0;
-$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Aktivs'");
+$resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Aktivs'");
 if ($resActive && $row = $resActive->fetch_row()) $activeHomesCount = (int)$row[0];
 
 $citiesCount = 0;
-$resCities = $savienojums->query("SELECT COUNT(DISTINCT city) FROM est_homes WHERE status = 'Aktivs'");
+$resCities = $savienojums->query("SELECT COUNT(DISTINCT pilseta) FROM est_homes WHERE statuss = 'Aktivs'");
 if ($resCities && $row = $resCities->fetch_row()) $citiesCount = (int)$row[0];
 
 $dealsCount = 0;
-$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE status = 'Pardots'");
+$resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Pardots'");
 if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
 ?>
 
@@ -194,15 +194,15 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
             <?php foreach ($initialHomes as $home): ?>
                 <?php
                 $fallbackImg = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';
-                $img = trim((string)($home['main_image'] ?? ''));
+                $img = trim((string)($home['galvenais_attels'] ?? ''));
                 if ($img === '') {
                     $img = $fallbackImg;
                 }
-                $type = (string)($home['type'] ?? '');
+                $type = (string)($home['veids'] ?? '');
                 $badge = $type === 'rent' ? 'Izīrē' : 'Pārdod';
                 $badgeClass = $type === 'rent' ? 'rent' : 'sale';
-                $location = trim((string)($home['city'] ?? '')) . ', ' . trim((string)($home['location_text'] ?? ''));
-                $price = (float)($home['price'] ?? 0);
+                $location = trim((string)($home['pilseta'] ?? '')) . ', ' . trim((string)($home['atrasanas_vieta'] ?? ''));
+                $price = (float)($home['cena'] ?? 0);
                 $priceLabel = $type === 'rent'
                     ? number_format($price, 0, ',', ' ') . ' € / mēn'
                     : number_format($price, 0, ',', ' ') . ' €';
@@ -211,7 +211,7 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                     <div class="property-image">
                         <img
                             src="<?php echo htmlspecialchars(media_url($img)); ?>"
-                            alt="<?php echo htmlspecialchars((string)($home['title'] ?? '')); ?>"
+                            alt="<?php echo htmlspecialchars((string)($home['nosaukums'] ?? '')); ?>"
                             loading="lazy"
                             onerror="this.onerror=null;this.src='<?php echo htmlspecialchars($fallbackImg, ENT_QUOTES); ?>';"
                         >
@@ -221,12 +221,12 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                         </button>
                     </div>
                     <div class="property-details">
-                        <h3><?php echo htmlspecialchars((string)($home['title'] ?? '')); ?></h3>
+                        <h3><?php echo htmlspecialchars((string)($home['nosaukums'] ?? '')); ?></h3>
                         <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($location); ?></p>
                         <div class="property-features">
-                            <span><i class="fas fa-bed"></i> <?php echo (int)($home['bedrooms'] ?? 0); ?> guļamist.</span>
-                            <span><i class="fas fa-ruler-combined"></i> <?php echo (int)($home['area'] ?? 0); ?> m²</span>
-                            <span><i class="fas fa-bath"></i> <?php echo (int)($home['bathrooms'] ?? 0); ?> vannas</span>
+                            <span><i class="fas fa-bed"></i> <?php echo (int)($home['gulamistabas'] ?? 0); ?> guļamist.</span>
+                            <span><i class="fas fa-ruler-combined"></i> <?php echo (int)($home['platiba'] ?? 0); ?> m²</span>
+                            <span><i class="fas fa-bath"></i> <?php echo (int)($home['vannasistabas'] ?? 0); ?> vannas</span>
                         </div>
                         <div class="property-footer">
                             <span class="property-price"><?php echo htmlspecialchars($priceLabel); ?></span>

@@ -61,46 +61,46 @@ if ($isEdit) {
     }
 
 
-    if ((int)$existingHome['owner_id'] !== (int)$_SESSION['user_id']) {
+    if ((int)$existingHome['ipasnieka_id'] !== (int)$_SESSION['user_id']) {
         header('Location: ' . main_route('property.list'));
         exit;
     }
 }
 
 
-$title = $existingHome['title'] ?? '';
-$city = $existingHome['city'] ?? '';
-$address = $existingHome['address'] ?? '';
-$location_text = $existingHome['location_text'] ?? '';
-$price = $existingHome['price'] ?? '';
-$area = $existingHome['area'] ?? '';
-$bedrooms = $existingHome['bedrooms'] ?? '';
-$bathrooms = $existingHome['bathrooms'] ?? '';
-$floor = $existingHome['floor'] ?? '';
+$title = $existingHome['nosaukums'] ?? '';
+$city = $existingHome['pilseta'] ?? '';
+$address = $existingHome['adrese'] ?? '';
+$location_text = $existingHome['atrasanas_vieta'] ?? '';
+$price = $existingHome['cena'] ?? '';
+$area = $existingHome['platiba'] ?? '';
+$bedrooms = $existingHome['gulamistabas'] ?? '';
+$bathrooms = $existingHome['vannasistabas'] ?? '';
+$floor = $existingHome['stavs'] ?? '';
 $total_floors = ''; 
-if ($existingHome && $existingHome['floor_info']) {
+if ($existingHome && $existingHome['stavu_info']) {
    
-    if (strpos($existingHome['floor_info'], '/') !== false) {
-        list($f, $tf) = explode('/', $existingHome['floor_info']);
+    if (strpos($existingHome['stavu_info'], '/') !== false) {
+        list($f, $tf) = explode('/', $existingHome['stavu_info']);
         $floor = $f;
         $total_floors = $tf;
-    } elseif (strpos($existingHome['floor_info'], 'stāvu māja') !== false) {
-        $total_floors = (int)$existingHome['floor_info'];
+    } elseif (strpos($existingHome['stavu_info'], 'stāvu māja') !== false) {
+        $total_floors = (int)$existingHome['stavu_info'];
     }
 }
 
-$description = $existingHome['description'] ?? '';
-$layout_text = $existingHome['layout_text'] ?? '';
-$map_text = $existingHome['map_text'] ?? '';
-$amenities = $existingHome['amenities'] ?? '';
-$property_category = $existingHome['property_category'] ?? 'apartment';
-$type = $existingHome['type'] ?? 'rent';
-$main_image = $existingHome['main_image'] ?? '';
+$description = $existingHome['apraksts'] ?? '';
+$layout_text = $existingHome['planojums'] ?? '';
+$map_text = $existingHome['karte'] ?? '';
+$amenities = $existingHome['ertibas'] ?? '';
+$property_category = $existingHome['kategorija'] ?? 'apartment';
+$type = $existingHome['veids'] ?? 'rent';
+$main_image = $existingHome['galvenais_attels'] ?? '';
 $main_image_url = '';
-$gallery_json = $existingHome['gallery'] ?? '[]';
-$rent_price = $existingHome['rent_price'] ?? '';
-$utilities_price = $existingHome['utilities_price'] ?? '';
-$total_price = $existingHome['total_price'] ?? '';
+$gallery_json = $existingHome['galerija'] ?? '[]';
+$rent_price = $existingHome['ires_maksa'] ?? '';
+$utilities_price = $existingHome['komunalo_maksa'] ?? '';
+$total_price = $existingHome['kopa_maksa'] ?? '';
 $price_label = $type === 'rent' ? 'Cena (EUR / men.) *' : 'Cena (EUR) *';
 
 
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Lūdzu aizpildi obligātos laukus (nosaukums, pilsēta, atrašanās vieta, cena).';
     }
 
-    $currentOldMain = $existingHome['main_image'] ?? '';
+    $currentOldMain = $existingHome['galvenais_attels'] ?? '';
     $mainImageFallback = ($main_image_url !== '') ? $main_image_url : $currentOldMain;
     $main_image = handleUploadOrUrl('main_image_file', $mainImageFallback, $uploadDir);
 
@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($raw_keep !== '') {
         $kept_existing = json_decode($raw_keep, true) ?: [];
     } elseif ($isEdit && !isset($_POST['existing_gallery_keep'])) {
-        $kept_existing = json_decode($existingHome['gallery'] ?? '[]', true) ?: [];
+        $kept_existing = json_decode($existingHome['galerija'] ?? '[]', true) ?: [];
     }
 
     $combined_gallery = array_merge($kept_existing, $gallery_paths);
@@ -208,15 +208,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($isEdit) {
             $sql = "UPDATE est_homes SET 
-                title=?, city=?, address=?, location_text=?, property_category=?, type=?, 
-                price=?, area=?, bedrooms=?, bathrooms=?, floor=?, floor_info=?, 
-                description=?, layout_text=?, map_text=?, amenities=?, 
-                main_image=?, gallery=?, rent_price=?, utilities_price=?, total_price=?, status='draft'
-                WHERE id=? AND owner_id=?";
+                nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
+                cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
+                apraksts=?, planojums=?, karte=?, ertibas=?, 
+                galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, statuss='Melnraksts'
+                WHERE id=? AND ipasnieka_id=?";
             $stmt = $savienojums->prepare($sql);
             if ($stmt) {
                 $stmt->bind_param(
-                    'sssssssdiiiisssssssddii',
+                    'ssssssddiiisssssssdddii',
                     $title, $city, $address, $location_text, $property_category, $type,
                     $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
                     $description, $layout_text, $map_text, $amenities,
@@ -226,12 +226,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             $sql = "INSERT INTO est_homes
-                (owner_id, title, city, address, location_text, property_category, type, price, area, bedrooms, bathrooms, floor, floor_info, description, layout_text, map_text, amenities, main_image, gallery, rent_price, utilities_price, total_price, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')";
+                (ipasnieka_id, nosaukums, pilseta, adrese, atrasanas_vieta, kategorija, veids, cena, platiba, gulamistabas, vannasistabas, stavs, stavu_info, apraksts, planojums, karte, ertibas, galvenais_attels, galerija, ires_maksa, komunalo_maksa, kopa_maksa, statuss)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Melnraksts')";
             $stmt = $savienojums->prepare($sql);
             if ($stmt) {
                 $stmt->bind_param(
-                    'issssssdiiiisssssssddd',
+                    'issssssddiiisssssssddd',
                     $ownerId, $title, $city, $address, $location_text, $property_category, $type,
                     $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
                     $description, $layout_text, $map_text, $amenities,
