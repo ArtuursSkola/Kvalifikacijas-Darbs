@@ -125,6 +125,10 @@
             background: linear-gradient(135deg, #3498db, #2980b9);
         }
 
+        .property-meta .type-badge.short_rent {
+            background: linear-gradient(135deg, #f39c12, #d35400);
+        }
+
         .property-gallery {
             padding: 24px 32px;
         }

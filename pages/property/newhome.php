@@ -93,15 +93,25 @@ $description = $existingHome['apraksts'] ?? '';
 $layout_text = $existingHome['planojums'] ?? '';
 $map_text = $existingHome['karte'] ?? '';
 $amenities = $existingHome['ertibas'] ?? '';
-$property_category = $existingHome['kategorija'] ?? 'apartment';
-$type = $existingHome['veids'] ?? 'rent';
+$property_category = $existingHome['kategorija'] ?? 'dzivoklis';
+$type = $existingHome['veids'] ?? 'ire';
 $main_image = $existingHome['galvenais_attels'] ?? '';
 $main_image_url = '';
 $gallery_json = $existingHome['galerija'] ?? '[]';
 $rent_price = $existingHome['ires_maksa'] ?? '';
 $utilities_price = $existingHome['komunalo_maksa'] ?? '';
 $total_price = $existingHome['kopa_maksa'] ?? '';
-$price_label = $type === 'rent' ? 'Cena (EUR / men.) *' : 'Cena (EUR) *';
+$pirts_price_per_day = $existingHome['pirts_cena_diena'] ?? '';
+$balla_price_per_day = $existingHome['balla_cena_diena'] ?? '';
+$has_pirts = $pirts_price_per_day !== '' && (float)$pirts_price_per_day > 0;
+$has_balla = $balla_price_per_day !== '' && (float)$balla_price_per_day > 0;
+if ($type === 'ire') {
+    $price_label = 'Cena (EUR / men.) *';
+} elseif ($type === 'istermina_ire') {
+    $price_label = 'Cena (EUR / nakti) *';
+} else {
+    $price_label = 'Cena (EUR) *';
+}
 
 
 $galleryLimit = 2;
@@ -116,9 +126,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $city = trim((string)($_POST['city'] ?? ''));
     $address = trim((string)($_POST['address'] ?? ''));
     $location_text = trim((string)($_POST['location_text'] ?? ''));
-    $property_category = (string)($_POST['property_category'] ?? 'apartment');
-    $type = ((string)($_POST['type'] ?? '')) === 'buy' ? 'buy' : 'rent';
-    $price_label = $type === 'rent' ? 'Cena (EUR / men.) *' : 'Cena (EUR) *';
+    $property_category = (string)($_POST['property_category'] ?? 'dzivoklis');
+    $rawType = (string)($_POST['type'] ?? '');
+    if ($rawType === 'pardod') {
+        $type = 'pardod';
+    } elseif ($rawType === 'istermina_ire') {
+        $type = 'istermina_ire';
+    } else {
+        $type = 'ire';
+    }
+    if ($type === 'ire') {
+        $price_label = 'Cena (EUR / men.) *';
+    } elseif ($type === 'istermina_ire') {
+        $price_label = 'Cena (EUR / nakti) *';
+    } else {
+        $price_label = 'Cena (EUR) *';
+    }
     $price = trim((string)($_POST['price'] ?? ''));
     $area = trim((string)($_POST['area'] ?? ''));
     $bedrooms = trim((string)($_POST['bedrooms'] ?? ''));
@@ -132,17 +155,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $main_image_url = trim((string)($_POST['main_image_url'] ?? ''));
     
-    $rent_price = $price;
-    $utilities_price = trim((string)($_POST['utilities_price'] ?? '0'));
+    $utilities_price = $type === 'ire' ? trim((string)($_POST['utilities_price'] ?? '0')) : '0';
+    $rent_price = $type === 'ire' ? $price : '0';
+
+    $has_pirts = isset($_POST['has_pirts']) && (string)$_POST['has_pirts'] === '1';
+    $has_balla = isset($_POST['has_balla']) && (string)$_POST['has_balla'] === '1';
+    $pirts_price_per_day = $has_pirts ? trim((string)($_POST['pirts_price_per_day'] ?? '')) : '0';
+    $balla_price_per_day = $has_balla ? trim((string)($_POST['balla_price_per_day'] ?? '')) : '0';
     
-    if ($type === 'rent') {
+    if ($type === 'ire') {
         $total_price = (float)str_replace(',', '.', $rent_price) + (float)str_replace(',', '.', $utilities_price);
     } else {
         $total_price = (float)str_replace(',', '.', $price);
     }
 
-    if ($title === '' || $city === '' || $location_text === '' || $price === '') {
-        $errors[] = 'Lūdzu aizpildi obligātos laukus (nosaukums, pilsēta, atrašanās vieta, cena).';
+	    $len = function (string $v): int {
+	        return function_exists('mb_strlen') ? (int)mb_strlen($v) : (int)strlen($v);
+	    };
+	    $lettersOnly = function (string $v): bool {
+	        return $v !== '' && (bool)preg_match('/^[\\p{L}\\s]+$/u', $v);
+	    };
+
+	    if ($title === '' || $city === '' || $location_text === '' || $price === '') {
+	        $errors[] = 'Lūdzu aizpildi obligātos laukus (nosaukums, pilsēta, atrašanās vieta, cena).';
+	    }
+
+	    if ($title !== '' && (!$lettersOnly($title) || $len($title) > 30)) {
+	        $errors[] = 'Nosaukums drīkst saturēt tikai burtus un atstarpes un nedrīkst būt garāks par 30 rakstīmēm.';
+	    }
+	    if ($city !== '' && (!$lettersOnly($city) || $len($city) > 30)) {
+	        $errors[] = 'Pilsēta drīkst saturēt tikai burtus un atstarpes un nedrīkst būt garāka par 30 rakstīmēm.';
+	    }
+	    if ($location_text !== '' && (!$lettersOnly($location_text) || $len($location_text) > 50)) {
+	        $errors[] = 'Atrašanās vietas apraksts drīkst saturēt tikai burtus un atstarpes un nedrīkst būt garāks par 50 rakstīmēm.';
+	    }
+	    if ($address !== '') {
+	        if ($len($address) > 35) {
+	            $errors[] = 'Adrese nedrīkst būt garāka par 35 rakstīmēm.';
+	        } else {
+	            $m = [];
+	            preg_match_all('/\\p{L}/u', $address, $m);
+	            if (count($m[0] ?? []) < 4) {
+	                $errors[] = 'Adresē jābūt vismaz 4 burtiem.';
+	            }
+	        }
+	    }
+	    if ($len($description) < 5) {
+	        $errors[] = 'Aprakstam jābūt vismaz 5 rakstīmēm.';
+	    }
+	    if ($len($layout_text) < 5) {
+	        $errors[] = 'Plānojumam jābūt vismaz 5 rakstīmēm.';
+	    }
+
+    if ($type === 'istermina_ire') {
+        if ($has_pirts && $pirts_price_per_day === '') {
+            $errors[] = 'Lūdzu norādiet pirts cenu par dienu.';
+        }
+        if ($has_balla && $balla_price_per_day === '') {
+            $errors[] = 'Lūdzu norādiet baļļas cenu par dienu.';
+        }
     }
 
     $currentOldMain = $existingHome['galvenais_attels'] ?? '';
@@ -189,7 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ownerId = (int)$_SESSION['user_id'];
 
         $floorInfo = '';
-        if ($property_category === 'house') {
+        if ($property_category === 'maja') {
             $floorInfo = $total_floors !== '' ? $total_floors . ' stāvu māja' : '';
         } else {
             if ($floor !== '' || $total_floors !== '') {
@@ -205,37 +276,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rentVal = (float)str_replace(',', '.', $rent_price);
         $utilVal = (float)str_replace(',', '.', $utilities_price);
         $totalVal = (float)$total_price;
+        $pirtsVal = (float)str_replace(',', '.', (string)$pirts_price_per_day);
+        $ballaVal = (float)str_replace(',', '.', (string)$balla_price_per_day);
 
         if ($isEdit) {
             $sql = "UPDATE est_homes SET 
                 nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
                 cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
                 apraksts=?, planojums=?, karte=?, ertibas=?, 
-                galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, statuss='Melnraksts'
+                galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, statuss='Melnraksts'
                 WHERE id=? AND ipasnieka_id=?";
             $stmt = $savienojums->prepare($sql);
             if ($stmt) {
                 $stmt->bind_param(
-                    'ssssssddiiisssssssdddii',
+                    'ssssssddiiisssssssdddddii',
                     $title, $city, $address, $location_text, $property_category, $type,
                     $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
                     $description, $layout_text, $map_text, $amenities,
-                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal,
+                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
                     $editId, $ownerId
                 );
             }
         } else {
             $sql = "INSERT INTO est_homes
-                (ipasnieka_id, nosaukums, pilseta, adrese, atrasanas_vieta, kategorija, veids, cena, platiba, gulamistabas, vannasistabas, stavs, stavu_info, apraksts, planojums, karte, ertibas, galvenais_attels, galerija, ires_maksa, komunalo_maksa, kopa_maksa, statuss)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Melnraksts')";
+                (ipasnieka_id, nosaukums, pilseta, adrese, atrasanas_vieta, kategorija, veids, cena, platiba, gulamistabas, vannasistabas, stavs, stavu_info, apraksts, planojums, karte, ertibas, galvenais_attels, galerija, ires_maksa, komunalo_maksa, kopa_maksa, pirts_cena_diena, balla_cena_diena, statuss)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Melnraksts')";
             $stmt = $savienojums->prepare($sql);
             if ($stmt) {
                 $stmt->bind_param(
-                    'issssssddiiisssssssddd',
+                    'issssssddiiisssssssddddd',
                     $ownerId, $title, $city, $address, $location_text, $property_category, $type,
                     $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
                     $description, $layout_text, $map_text, $amenities,
-                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal
+                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal
                 );
             }
         }
@@ -353,36 +426,37 @@ include __DIR__ . '/../../includes/header.php';
         <input type="hidden" name="edit_id" value="<?php echo $editId; ?>">
         <div class="step active" data-step="1">
             <div class="form-grid">
-                <div>
-                    <label>Nosaukums *</label>
-                    <input type="text" name="title" value="<?php echo htmlspecialchars($title); ?>" data-required="1">
-                </div>
-                <div>
-                    <label>Atrašanās vietas apraksts *</label>
-                    <input type="text" name="location_text" placeholder="Piem.: Rīga, Brīvības iela" value="<?php echo htmlspecialchars($location_text); ?>" data-required="1">
-                </div>
-                <div>
-                    <label>Pilsēta *</label>
-                    <input type="text" name="city" value="<?php echo htmlspecialchars($city); ?>" data-required="1">
-                </div>
-                <div>
-                    <label>Adrese</label>
-                    <input type="text" name="address" value="<?php echo htmlspecialchars($address); ?>">
-                </div>
+	                <div>
+	                    <label>Nosaukums *</label>
+	                    <input type="text" name="title" value="<?php echo htmlspecialchars($title); ?>" data-required="1" maxlength="30">
+	                </div>
+	                <div>
+	                    <label>Atrašanās vietas apraksts *</label>
+	                    <input type="text" name="location_text" placeholder="Piem.: Centra vidus" value="<?php echo htmlspecialchars($location_text); ?>" data-required="1" maxlength="50">
+	                </div>
+	                <div>
+	                    <label>Pilsēta *</label>
+	                    <input type="text" name="city" value="<?php echo htmlspecialchars($city); ?>" data-required="1" maxlength="30">
+	                </div>
+	                <div>
+	                    <label>Adrese</label>
+	                    <input type="text" name="address" value="<?php echo htmlspecialchars($address); ?>" maxlength="35">
+	                </div>
 
                 <div>
                     <label>Darījuma tips *</label>
                     <select name="type" id="deal-type" data-required="1">
-                        <option value="rent" <?php echo $type === 'rent' ? 'selected' : ''; ?>>Izīrēt</option>
-                        <option value="buy" <?php echo $type === 'buy' ? 'selected' : ''; ?>>Pārdot</option>
+                        <option value="istermina_ire" <?php echo $type === 'istermina_ire' ? 'selected' : ''; ?>>Īstermiņa īre</option>
+                        <option value="ire" <?php echo $type === 'ire' ? 'selected' : ''; ?>>Izīrēt</option>
+                        <option value="pardod" <?php echo $type === 'pardod' ? 'selected' : ''; ?>>Pārdot</option>
                     </select>
                 </div>
                 <div>
                     <label>Kategorija</label>
                     <select name="property_category" id="property-category">
-                        <option value="apartment" <?php echo $property_category === 'apartment' ? 'selected' : ''; ?>>Dzīvoklis</option>
-                        <option value="house" <?php echo $property_category === 'house' ? 'selected' : ''; ?>>Māja</option>
-                        <option value="land" <?php echo $property_category === 'land' ? 'selected' : ''; ?>>Zeme</option>
+                        <option value="dzivoklis" <?php echo $property_category === 'dzivoklis' ? 'selected' : ''; ?>>Dzīvoklis</option>
+                        <option value="maja" <?php echo $property_category === 'maja' ? 'selected' : ''; ?>>Māja</option>
+                        <option value="apartaments" <?php echo $property_category === 'apartaments' ? 'selected' : ''; ?>>Apartaments</option>
                     </select>
                 </div>
 
@@ -419,14 +493,14 @@ include __DIR__ . '/../../includes/header.php';
 
         <div class="step" data-step="2">
             <div class="form-grid full">
-                <div>
-                    <label>Apraksts</label>
-                    <textarea name="description" placeholder="Īpašuma apraksts..."><?php echo htmlspecialchars($description); ?></textarea>
-                </div>
-                <div>
-                    <label>Plānojums</label>
-                    <textarea name="layout_text" placeholder="Plānojuma apraksts..."><?php echo htmlspecialchars($layout_text); ?></textarea>
-                </div>
+	                <div>
+	                    <label>Apraksts</label>
+	                    <textarea name="description" placeholder="Īpašuma apraksts..." data-required="1" data-minlen="5"><?php echo htmlspecialchars($description); ?></textarea>
+	                </div>
+	                <div>
+	                    <label>Plānojums</label>
+	                    <textarea name="layout_text" placeholder="Plānojuma apraksts..." data-required="1" data-minlen="5"><?php echo htmlspecialchars($layout_text); ?></textarea>
+	                </div>
                 <div>
                     <label>Karte / atrašanās vieta</label>
                     <textarea name="map_text" placeholder="Kā nokļūt / ko iekļaut kartē..."><?php echo htmlspecialchars($map_text); ?></textarea>
@@ -507,6 +581,31 @@ include __DIR__ . '/../../includes/header.php';
                     <label>Pārdošanas cena (EUR)</label>
                     <input type="text" id="buy-price-display" value="<?php echo htmlspecialchars($price); ?>" disabled>
                 </div>
+                <div class="short-rent-only hidden">
+                    <label>Cena (EUR / nakti)</label>
+                    <input type="number" id="short-rent-price-display" value="<?php echo htmlspecialchars($price); ?>" disabled>
+                    <p class="muted small">Tiek ņemta cena par nakti.</p>
+                </div>
+                <div class="short-rent-only hidden">
+                    <label style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="has-pirts" name="has_pirts" value="1" <?php echo $has_pirts ? 'checked' : ''; ?>>
+                        Pirts (papildu maksa)
+                    </label>
+                    <div id="pirts-price-wrap" style="<?php echo $has_pirts ? '' : 'display:none;'; ?>">
+                        <input type="number" step="0.01" min="0" name="pirts_price_per_day" id="pirts-price-per-day" value="<?php echo htmlspecialchars($pirts_price_per_day); ?>" placeholder="50">
+                        <p class="muted small">Cena par 1 dienu.</p>
+                    </div>
+                </div>
+                <div class="short-rent-only hidden">
+                    <label style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="has-balla" name="has_balla" value="1" <?php echo $has_balla ? 'checked' : ''; ?>>
+                        Balla (papildu maksa)
+                    </label>
+                    <div id="balla-price-wrap" style="<?php echo $has_balla ? '' : 'display:none;'; ?>">
+                        <input type="number" step="0.01" min="0" name="balla_price_per_day" id="balla-price-per-day" value="<?php echo htmlspecialchars($balla_price_per_day); ?>" placeholder="50">
+                        <p class="muted small">Cena par 1 dienu.</p>
+                    </div>
+                </div>
             </div>
 
             <div class="step-nav">
@@ -527,6 +626,7 @@ include __DIR__ . '/../../includes/header.php';
     const propertyCategory = document.getElementById('property-category');
     const rentBlocks = document.querySelectorAll('.rent-only');
     const buyBlocks = document.querySelectorAll('.buy-only');
+    const shortRentBlocks = document.querySelectorAll('.short-rent-only');
     const aptBlocks = document.querySelectorAll('.apartment-only');
     const floorTotalLabel = document.getElementById('floor-total-label');
     const nextBtns = document.querySelectorAll('.btn-next');
@@ -535,72 +635,186 @@ include __DIR__ . '/../../includes/header.php';
     const mainPriceInput = document.getElementById('main-price');
     const rentDisplay = document.getElementById('rent-price-display');
     const buyDisplay = document.getElementById('buy-price-display');
+    const shortRentDisplay = document.getElementById('short-rent-price-display');
     const utilitiesInput = document.getElementById('utilities-price');
     const totalCalcInput = document.getElementById('total-price-calc');
+
+    const hasPirts = document.getElementById('has-pirts');
+    const pirtsWrap = document.getElementById('pirts-price-wrap');
+    const pirtsPrice = document.getElementById('pirts-price-per-day');
+    const hasBalla = document.getElementById('has-balla');
+    const ballaWrap = document.getElementById('balla-price-wrap');
+    const ballaPrice = document.getElementById('balla-price-per-day');
     
     const mainImageInput = document.getElementById('main-image-input');
     const mainImageUrlInput = document.getElementById('main-image-url');
     const mainPreview = document.getElementById('main-preview');
     const galleryInput = document.getElementById('gallery-input');
-    const galleryPreview = document.getElementById('gallery-preview');
-    const galleryCounterText = document.getElementById('gallery-counter-text');
-    const galleryLimit = <?php echo $galleryLimit; ?>;
+	    const galleryPreview = document.getElementById('gallery-preview');
+	    const galleryCounterText = document.getElementById('gallery-counter-text');
+	    const galleryLimit = <?php echo $galleryLimit; ?>;
+	    const titleInput = form.querySelector('input[name="title"]');
+	    const cityInput = form.querySelector('input[name="city"]');
+	    const locationInput = form.querySelector('input[name="location_text"]');
+	    const addressInput = form.querySelector('input[name="address"]');
 
     let currentStep = 0;
     const stepNames = ['Pamatinformācija', 'Apraksti', 'Priekšrocības', 'Mediji', 'Cenas'];
 
-    let galleryFiles = [];
-    let existingGallery = <?php echo $gallery_json; ?>;
-    const existingKeepInput = document.getElementById('existing-gallery-keep');
+	    let galleryFiles = [];
+	    let existingGallery = <?php echo $gallery_json; ?>;
+	    const existingKeepInput = document.getElementById('existing-gallery-keep');
+	    const hasExistingMain = <?php echo $main_image ? 'true' : 'false'; ?>;
 
     const setStep = (idx) => {
         steps.forEach((step, i) => step.classList.toggle('active', i === idx));
         currentStep = idx;
-        if (status) status.textContent = `${idx + 1}/5: ${stepNames[idx] || ''}`;
+        if (status) {
+            let name = stepNames[idx] || '';
+            if (idx === 4 && dealType && dealType.value === 'istermina_ire') name = 'Rezervacijas info';
+            status.textContent = `${idx + 1}/5: ${name}`;
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const validateStep = (idx) => {
-        const step = steps[idx];
-        if (!step) return true;
-        let ok = true;
-        step.querySelectorAll('[data-required="1"]').forEach(el => {
-            const visible = el.offsetParent !== null;
-            if (!visible) return;
-            if (!String(el.value || '').trim()) {
-                ok = false;
-                el.classList.add('invalid');
-            } else {
-                el.classList.remove('invalid');
-            }
-        });
-        return ok;
-    };
+	    const cpLen = (v) => Array.from(String(v || '')).length;
+	    const lettersOnlyRe = /^[\p{L}\s]+$/u;
+	    const countLetters = (v) => (String(v || '').match(/\p{L}/gu) || []).length;
+	    const sliceCp = (v, max) => Array.from(String(v || '')).slice(0, max).join('');
+
+	    const sanitizeTextOnly = (el) => {
+	        if (!el) return;
+	        const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
+	        let v = String(el.value || '');
+	        v = v.replace(/[^\p{L}\s]/gu, '');
+	        v = v.replace(/\s+/g, ' ');
+	        v = v.replace(/^\s+/, '');
+	        if (maxLen > 0 && cpLen(v) > maxLen) v = sliceCp(v, maxLen);
+	        el.value = v;
+	    };
+
+	    [titleInput, cityInput, locationInput].forEach(el => {
+	        if (!el) return;
+	        el.addEventListener('input', () => sanitizeTextOnly(el));
+	        el.addEventListener('blur', () => {
+	            el.value = String(el.value || '').trim();
+	        });
+	    });
+
+	    const validateStep = (idx) => {
+	        const step = steps[idx];
+	        if (!step) return true;
+	        let ok = true;
+
+	        const checkEl = (el) => {
+	            const visible = el.offsetParent !== null;
+	            if (!visible) return true;
+
+	            const val = String(el.value || '');
+	            const trimmed = val.trim();
+	            let good = true;
+
+	            if (el.getAttribute('data-required') === '1' && trimmed === '') good = false;
+
+	            const minLen = parseInt(el.getAttribute('data-minlen') || '0', 10) || 0;
+	            if (good && minLen > 0 && cpLen(trimmed) < minLen) good = false;
+
+	            if (good && (el.name === 'title' || el.name === 'city' || el.name === 'location_text')) {
+	                const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
+	                if (!lettersOnlyRe.test(trimmed)) good = false;
+	                if (maxLen > 0 && cpLen(trimmed) > maxLen) good = false;
+	            }
+
+	            if (good && el.name === 'address' && trimmed !== '') {
+	                const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
+	                if (maxLen > 0 && cpLen(trimmed) > maxLen) good = false;
+	                if (countLetters(trimmed) < 4) good = false;
+	            }
+
+	            if (!good) {
+	                ok = false;
+	                el.classList.add('invalid');
+	            } else {
+	                el.classList.remove('invalid');
+	            }
+	            return good;
+	        };
+
+	        step.querySelectorAll('[data-required=\"1\"], [data-minlen], input[name=\"title\"], input[name=\"city\"], input[name=\"location_text\"], input[name=\"address\"]').forEach(checkEl);
+
+	        if (idx === 3) {
+	            const hasFile = mainImageInput && mainImageInput.files && mainImageInput.files.length > 0;
+	            const hasUrl = mainImageUrlInput && String(mainImageUrlInput.value || '').trim() !== '';
+	            if (!hasFile && !hasUrl && !hasExistingMain) {
+	                ok = false;
+	                if (mainImageInput) mainImageInput.classList.add('invalid');
+	                if (mainImageUrlInput) mainImageUrlInput.classList.add('invalid');
+	            } else {
+	                if (mainImageInput) mainImageInput.classList.remove('invalid');
+	                if (mainImageUrlInput) mainImageUrlInput.classList.remove('invalid');
+	            }
+	        }
+
+	        return ok;
+	    };
 
     const calculateTotal = () => {
         const p = parseFloat(mainPriceInput.value) || 0;
         const u = parseFloat(utilitiesInput.value) || 0;
-        if (dealType.value === 'rent') {
+        if (dealType.value === 'ire') {
             totalCalcInput.value = (p + u).toFixed(2);
         } else {
             totalCalcInput.value = p.toFixed(2);
         }
         if (rentDisplay) rentDisplay.value = p;
         if (buyDisplay) buyDisplay.value = p;
+        if (shortRentDisplay) shortRentDisplay.value = p;
     };
 
     const toggleDealFields = () => {
-        const isRent = dealType.value === 'rent';
-        if (priceLabel) priceLabel.textContent = isRent ? 'Cena (EUR / men.) *' : 'Cena (EUR) *';
+        const mode = dealType.value;
+        const isRent = mode === 'ire';
+        const isBuy = mode === 'pardod';
+        const isShort = mode === 'istermina_ire';
+
+        if (priceLabel) {
+            priceLabel.textContent = isRent ? 'Cena (EUR / men.) *' : (isShort ? 'Cena (EUR / nakti) *' : 'Cena (EUR) *');
+        }
+
         rentBlocks.forEach(block => block.classList.toggle('hidden', !isRent));
-        buyBlocks.forEach(block => block.classList.toggle('hidden', isRent));
+        buyBlocks.forEach(block => block.classList.toggle('hidden', !isBuy));
+        shortRentBlocks.forEach(block => block.classList.toggle('hidden', !isShort));
+
+        if (!isRent && utilitiesInput) utilitiesInput.value = '0';
         calculateTotal();
+        if (status && currentStep === 4) setStep(4);
+    };
+
+    const syncShortRentExtras = () => {
+        if (hasPirts && pirtsWrap && pirtsPrice) {
+            pirtsWrap.style.display = hasPirts.checked ? '' : 'none';
+            if (hasPirts.checked) {
+                pirtsPrice.setAttribute('data-required', '1');
+            } else {
+                pirtsPrice.removeAttribute('data-required');
+                pirtsPrice.value = '';
+            }
+        }
+        if (hasBalla && ballaWrap && ballaPrice) {
+            ballaWrap.style.display = hasBalla.checked ? '' : 'none';
+            if (hasBalla.checked) {
+                ballaPrice.setAttribute('data-required', '1');
+            } else {
+                ballaPrice.removeAttribute('data-required');
+                ballaPrice.value = '';
+            }
+        }
     };
 
     const toggleCategoryFields = () => {
         const cat = propertyCategory.value;
-        const isApt = cat === 'apartment';
-        const isHouse = cat === 'house';
+        const isApt = cat === 'dzivoklis';
+        const isHouse = cat === 'maja';
         aptBlocks.forEach(block => block.classList.toggle('hidden', !isApt));
         if (isHouse) {
             floorTotalLabel.textContent = 'Stāvu skaits mājā';
@@ -701,12 +915,21 @@ include __DIR__ . '/../../includes/header.php';
         renderGallery();
     });
 
-    form.addEventListener('submit', (e) => {
-        if (galleryFiles.length > 0) {
-            const dt = new DataTransfer();
-            galleryFiles.forEach(file => dt.items.add(file));
-            galleryInput.files = dt.files;
-        }
+	    form.addEventListener('submit', (e) => {
+	        for (let i = 0; i < steps.length; i++) {
+	            if (!validateStep(i)) {
+	                e.preventDefault();
+	                setStep(i);
+	                const first = steps[i].querySelector('.invalid');
+	                if (first) first.focus();
+	                return;
+	            }
+	        }
+	        if (galleryFiles.length > 0) {
+	            const dt = new DataTransfer();
+	            galleryFiles.forEach(file => dt.items.add(file));
+	            galleryInput.files = dt.files;
+	        }
         if (existingKeepInput) {
             existingKeepInput.value = JSON.stringify(existingGallery);
         }
@@ -715,10 +938,16 @@ include __DIR__ . '/../../includes/header.php';
     mainPriceInput.addEventListener('input', calculateTotal);
     utilitiesInput.addEventListener('input', calculateTotal);
 
-    nextBtns.forEach(btn => btn.addEventListener('click', () => {
-        const target = parseInt(btn.dataset.next, 10) - 1;
-        if (validateStep(currentStep)) setStep(target);
-    }));
+	    nextBtns.forEach(btn => btn.addEventListener('click', () => {
+	        const target = parseInt(btn.dataset.next, 10) - 1;
+	        if (validateStep(currentStep)) {
+	            setStep(target);
+	        } else {
+	            const step = steps[currentStep];
+	            const first = step ? step.querySelector('.invalid') : null;
+	            if (first) first.focus();
+	        }
+	    }));
 
     backBtns.forEach(btn => btn.addEventListener('click', () => {
         const target = parseInt(btn.dataset.prev, 10) - 1;
@@ -732,8 +961,11 @@ include __DIR__ . '/../../includes/header.php';
 
     if (dealType) dealType.addEventListener('change', toggleDealFields);
     if (propertyCategory) propertyCategory.addEventListener('change', toggleCategoryFields);
+    if (hasPirts) hasPirts.addEventListener('change', syncShortRentExtras);
+    if (hasBalla) hasBalla.addEventListener('change', syncShortRentExtras);
 
     toggleDealFields();
+    syncShortRentExtras();
     toggleCategoryFields();
     renderGallery();
     setStep(0);

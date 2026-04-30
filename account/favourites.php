@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.innerHTML = `
                 <div class="property-image">
                     <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
-                    <span class="property-badge ${item.type === 'rent' ? 'rent' : 'sale'}">${item.badge}</span>
+                    <span class="property-badge ${item.type === 'ire' ? 'ire' : 'sale'}">${item.badge}</span>
                     <button class="property-favorite active" title="Noņemt no favorītiem" type="button" data-home-id="${item.id}">
                         <i class="fas fa-heart"></i>
                     </button>
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span><i class="fas fa-bath"></i> ${item.baths || 1} vannas</span>
                     </div>
                     <div class="property-footer">
-                        <span class="property-price">${item.type === 'rent' ? `${Number(item.price || 0).toLocaleString('lv-LV')} € / mēn` : `${Number(item.price || 0).toLocaleString('lv-LV')} €`}</span>
+                        <span class="property-price">${item.type === 'ire' ? `${Number(item.price || 0).toLocaleString('lv-LV')} € / mēn` : `${Number(item.price || 0).toLocaleString('lv-LV')} €`}</span>
                         <a href="${api.propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>

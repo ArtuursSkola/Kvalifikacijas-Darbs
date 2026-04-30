@@ -87,6 +87,11 @@ foreach ($homes as $row) {
         $location .= ', ' . $row['atrasanas_vieta'];
     }
 
+    $type = (string)($row['veids'] ?? '');
+    if ($type === 'rent') $type = 'ire';
+    if ($type === 'buy') $type = 'pardod';
+    $badgeText = $type === 'ire' ? 'Īrēšana' : ($type === 'istermina_ire' ? 'Īstermiņa īre' : 'Pārdod');
+
     $response[] = [
         'id' => (int)$row['id'],
         'status' => $row['statuss'],
@@ -94,13 +99,13 @@ foreach ($homes as $row) {
         'title' => $row['nosaukums'],
         'city' => $city,
         'location' => $location,
-        'type' => $row['veids'],
+        'type' => $type,
         'category' => $row['kategorija'],
         'price' => (float)$row['cena'],
         'beds' => (int)$row['gulamistabas'],
         'baths' => (int)$row['vannasistabas'],
         'size' => (int)$row['platiba'],
-        'badge' => $row['veids'] === 'rent' ? 'Izīrē' : 'Pārdod',
+        'badge' => $badgeText,
         'image' => media_absolute_url($row['galvenais_attels'] ?: $fallbackImg),
         'desc' => $descShort,
         'owner_username' => $owner['lietotajvards'] ?? '',

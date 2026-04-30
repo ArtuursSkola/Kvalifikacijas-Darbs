@@ -104,8 +104,9 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                     <label><i class="fas fa-home"></i> Tips</label>
                     <select id="filter-type">
                         <option value="">Visi tipi</option>
-                        <option value="rent">Īrēt</option>
-                        <option value="buy">Pirkt</option>
+                        <option value="ire">Īrēt</option>
+                        <option value="istermina_ire">Īstermiņa īre</option>
+                        <option value="pardod">Pirkt</option>
                     </select>
                 </div>
                 <div class="filter-group price-range-group">
@@ -156,10 +157,9 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                         <label><i class="fas fa-building"></i> Īpašuma veids</label>
                         <select id="filter-category">
                             <option value="">Visi veidi</option>
-                            <option value="apartment">Dzīvoklis</option>
-                            <option value="house">Māja</option>
-                            <option value="land">Zeme</option>
-                            <option value="office">Birojs</option>
+                            <option value="dzivoklis">Dzīvoklis</option>
+                            <option value="maja">Māja</option>
+                            <option value="apartaments">Apartaments</option>
                         </select>
                     </div>
                     <div class="filter-group checkbox-group">
@@ -199,13 +199,21 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                     $img = $fallbackImg;
                 }
                 $type = (string)($home['veids'] ?? '');
-                $badge = $type === 'rent' ? 'Izīrē' : 'Pārdod';
-                $badgeClass = $type === 'rent' ? 'rent' : 'sale';
+                $isRent = in_array($type, ['ire', 'rent'], true);
+                $badge = $isRent ? 'Īrēšana' : 'Pārdod';
+                $badgeClass = $isRent ? 'rent' : 'sale';
+                if ($type === 'istermina_ire') {
+                    $badge = 'Īstermiņa īre';
+                    $badgeClass = 'short-rent';
+                }
                 $location = trim((string)($home['pilseta'] ?? '')) . ', ' . trim((string)($home['atrasanas_vieta'] ?? ''));
                 $price = (float)($home['cena'] ?? 0);
-                $priceLabel = $type === 'rent'
+                $priceLabel = $isRent
                     ? number_format($price, 0, ',', ' ') . ' € / mēn'
                     : number_format($price, 0, ',', ' ') . ' €';
+                if ($type === 'istermina_ire') {
+                    $priceLabel = number_format($price, 0, ',', ' ') . ' € / nakti';
+                }
                 ?>
                 <div class="property-card">
                     <div class="property-image">
@@ -275,4 +283,3 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
     </div>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
-

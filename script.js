@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(homesApiUrl, { cache: 'no-store' });
                 if (!response.ok) throw new Error(response.status);
                 const text = await response.text();
-                
+
                 try {
                     listingsData = JSON.parse(text);
                 } catch (e) {
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeParam && typeSelect) {
                     typeSelect.value = typeParam;
                 }
-                
+
                 initPriceSlider();
 
                 if (priceMinParam && priceMinField) {
@@ -435,9 +435,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        function formatPrice(item) {
-            return item.type === 'rent' ? `${item.price.toLocaleString('lv-LV')} € / mēn` : `${item.price.toLocaleString('lv-LV')} €`;
-        }
+	        function formatPrice(item) {
+	            if (item.type === 'istermina_ire') return `${item.price.toLocaleString('lv-LV')} \u20ac / nakti`;
+	            return (item.type === 'ire' || item.type === 'rent') ? `${item.price.toLocaleString('lv-LV')} € / mēn` : `${item.price.toLocaleString('lv-LV')} €`;
+	        }
+
+	        function badgeClass(type) {
+	            if (type === 'ire' || type === 'rent') return 'rent';
+	            if (type === 'istermina_ire') return 'short-rent';
+	            return 'sale';
+	        }
 
         function renderListings(list) {
             resultsWrap.innerHTML = '';
@@ -452,8 +459,8 @@ document.addEventListener('DOMContentLoaded', () => {
             list.forEach(item => {
                 const shieldIcon = (item.owner_plan === 'Gold' || item.owner_plan === 'Silver') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
                 const ownerInitial = (item.owner_username || 'U').charAt(0).toUpperCase();
-                const ownerPfpHtml = item.owner_pfp 
-                    ? `<img src="${item.owner_pfp}" alt="${item.owner_username}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\'owner-mini-initial\'>${ownerInitial}</span>';">` 
+                const ownerPfpHtml = item.owner_pfp
+                    ? `<img src="${item.owner_pfp}" alt="${item.owner_username}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\'owner-mini-initial\'>${ownerInitial}</span>';">`
                     : `<span class="owner-mini-initial">${ownerInitial}</span>`;
 
                 const card = document.createElement('div');
@@ -461,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.innerHTML = `
                     <div class="property-image">
                         <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
-                        <span class="property-badge ${item.type === 'rent' ? 'rent' : 'sale'}">${item.badge}</span>
+                        <span class="property-badge ${badgeClass(item.type)}">${item.badge}</span>
                         <button class="property-favorite" title="Pievienot favorītiem" type="button" data-home-id="${item.id}">
                             <i class="far fa-heart"></i>
                         </button>
@@ -492,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function initPriceSlider() {
             if (!priceMinInput || !priceMaxInput || listingsData.length === 0) return;
-            
+
             const selectedType = typeSelect ? typeSelect.value : "";
             const filteredPrices = listingsData
                 .filter(l => !selectedType || l.type === selectedType)
@@ -545,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let val = parseInt(field.value) || 0;
                     const min = parseInt(priceMinInput.min);
                     const max = parseInt(priceMinInput.max);
-                    
+
                     if (val < min) val = min;
                     if (val > max) val = max;
                     field.value = val;
@@ -800,7 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.innerHTML = `
                     <div class="property-image">
                         <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
-                        <span class="property-badge ${item.type === 'rent' ? 'rent' : 'sale'}">${item.badge}</span>
+                        <span class="property-badge ${badgeClass(item.type)}">${item.badge}</span>
                         <button class="property-favorite active" title="Noņemt no favorītiem" type="button" data-home-id="${item.id}">
                             <i class="fas fa-heart"></i>
                         </button>
@@ -820,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         <div class="property-footer">
-                            <span class="property-price">${item.type === 'rent' ? `${Number(item.price || 0).toLocaleString('lv-LV')} € / mēn` : `${Number(item.price || 0).toLocaleString('lv-LV')} €`}</span>
+                            <span class="property-price">${formatPrice(item)}</span>
                             <a href="${api.propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
                         </div>
                     </div>

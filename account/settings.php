@@ -189,8 +189,8 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
                             <strong>
                                 <?php
                                 $label = (string)($t['transaction_type'] ?? '');
-                                if ($label === 'rent') $label = 'Īre';
-                                if ($label === 'buy') $label = 'Pirkums';
+                                if ($label === 'ire') $label = 'Īre';
+                                if ($label === 'pardod') $label = 'Pirkums';
                                 echo htmlspecialchars($label !== '' ? $label : 'Darījums');
                                 ?>
                             </strong>

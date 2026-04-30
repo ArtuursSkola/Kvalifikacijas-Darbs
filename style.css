@@ -874,6 +874,10 @@ body.no-scroll {
     background-color: var(--accent-color);
 }
 
+.badge.short-rent {
+    background-color: #f39c12;
+}
+
 .card-details {
     padding: 20px;
 }

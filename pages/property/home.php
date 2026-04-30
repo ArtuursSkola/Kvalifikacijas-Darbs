@@ -72,13 +72,23 @@ if (!empty($home['galerija'])) {
 $mainImage = media_url($home['galvenais_attels'] ?? '');
 
 $floorDisplay = htmlspecialchars($home['stavu_info'] ?: $home['stavs']);
-if ($home['kategorija'] === 'house' && !empty($home['stavu_info'])) {
+if ($home['kategorija'] === 'maja' && !empty($home['stavu_info'])) {
     $floorDisplay = htmlspecialchars($home['stavu_info']);
 }
 
-$priceDisplay = $home['veids'] === 'rent'
+$type = (string)($home['veids'] ?? '');
+$type = $type === 'rent' ? 'ire' : ($type === 'buy' ? 'pardod' : $type);
+$badgeText = $type === 'ire' ? 'Īrēšana' : ($type === 'istermina_ire' ? 'Īstermiņa īre' : 'Pārdod');
+
+$priceDisplay = in_array($type, ['ire', 'rent'], true)
     ? number_format($home['cena'], 0, ',', ' ') . ' € / mēn'
     : number_format($home['cena'], 0, ',', ' ') . ' €';
+
+$pirtsPricePerDay = (float)($home['pirts_cena_diena'] ?? 0);
+$ballaPricePerDay = (float)($home['balla_cena_diena'] ?? 0);
+if ($type === 'istermina_ire') {
+    $priceDisplay = number_format($home['cena'], 0, ',', ' ') . ' € / nakti';
+}
 
 $rentPrice = $home['ires_maksa'] ?: $home['cena'];
 $utilitiesPrice = $home['komunalo_maksa'] ?: 0;
@@ -97,16 +107,16 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                 <h1><?php echo htmlspecialchars($home['nosaukums']); ?></h1>
                 <div class="property-meta">
                     <span class="type-badge <?php echo $home['veids']; ?>">
-                        <?php echo $home['veids'] === 'rent' ? 'Izīrē' : 'Pārdod'; ?>
+                        <?php echo $badgeText; ?>
                     </span>
                     <span><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($home['pilseta'] . ', ' . $home['atrasanas_vieta']); ?></span>
                     <span class="chip"><i class="fas fa-bed"></i> <?php echo $home['gulamistabas']; ?> guļamist.</span>
                     <span class="chip"><i class="fas fa-ruler-combined"></i> <?php echo $home['platiba']; ?> m²</span>
                     <?php if ($home['kategorija']): ?>
                     <span class="chip">
-                        <i class="fas <?php echo $home['kategorija'] === 'house' ? 'fa-home' : 'fa-building'; ?>"></i> 
+                        <i class="fas <?php echo $home['kategorija'] === 'maja' ? 'fa-home' : 'fa-building'; ?>"></i> 
                         <?php 
-                            $catLabels = ['apartment' => 'Dzīvoklis', 'house' => 'Māja', 'land' => 'Zeme'];
+                            $catLabels = ['dzivoklis' => 'Dzīvoklis', 'maja' => 'Māja', 'apartaments' => 'Apartaments'];
                             echo htmlspecialchars($catLabels[$home['kategorija']] ?? $home['kategorija']); 
                         ?>
                     </span>
@@ -161,7 +171,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                             <span><?php echo $home['gulamistabas']; ?></span>
                         </div>
                         <div class="spec-card">
-                            <strong><?php echo $home['kategorija'] === 'house' ? 'Stāvi' : 'Stāvs'; ?></strong>
+                            <strong><?php echo $home['kategorija'] === 'maja' ? 'Stāvi' : 'Stāvs'; ?></strong>
                             <span><?php echo $floorDisplay; ?></span>
                         </div>
                         <div class="spec-card">
@@ -232,7 +242,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                 </a>
             </div>
             
-            <?php if ($home['veids'] === 'rent'): ?>
+            <?php if ($home['veids'] === 'ire'): ?>
             <div class="sidebar-widget sidebar-calculator">
                 <h4><i class="fas fa-calculator"></i> Īres izmaksas</h4>
                 <div class="calc-row">
@@ -248,6 +258,27 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                     <span><?php echo number_format($totalPrice, 0, ',', ' '); ?> €</span>
                 </div>
                 <p class="calc-note">Aptuvenās izmaksas. Komunālie maksājumi var mainīties atkarībā no patēriņa.</p>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($home['veids'] === 'istermina_ire'): ?>
+            <div class="sidebar-widget sidebar-calculator">
+                <h4><i class="fas fa-info-circle"></i> Rezervacijas info</h4>
+                <?php if ($pirtsPricePerDay > 0): ?>
+                <div class="calc-row">
+                    <span>Pirts (par 1 dienu)</span>
+                    <span><?php echo number_format($pirtsPricePerDay, 0, ',', ' '); ?> €</span>
+                </div>
+                <?php endif; ?>
+                <?php if ($ballaPricePerDay > 0): ?>
+                <div class="calc-row">
+                    <span>Balla (par 1 dienu)</span>
+                    <span><?php echo number_format($ballaPricePerDay, 0, ',', ' '); ?> €</span>
+                </div>
+                <?php endif; ?>
+                <?php if ($pirtsPricePerDay <= 0 && $ballaPricePerDay <= 0): ?>
+                <p class="calc-note">Nav papildu opciju.</p>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
         </aside>

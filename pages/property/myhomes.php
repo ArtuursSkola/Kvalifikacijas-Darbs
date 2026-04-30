@@ -90,7 +90,9 @@ if ($ownerId > 0) {
                     if ($img === '') {
                         $img = $fallbackImg;
                     }
-                    $price = isset($home['cena']) ? number_format((float)$home['cena'], 0, ',', ' ') . ' €' : '—';
+                    $type = (string)($home['veids'] ?? '');
+                    $suffix = $type === 'ire' ? ' € / mēn' : ($type === 'istermina_ire' ? ' € / nakti' : ' €');
+                    $price = isset($home['cena']) ? number_format((float)$home['cena'], 0, ',', ' ') . $suffix : '—';
                     ?>
                     <div class="owner-card">
                         <div class="owner-card__img">

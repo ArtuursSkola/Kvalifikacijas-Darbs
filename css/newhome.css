@@ -175,7 +175,7 @@
         .step.active { display: block; }
         .step-nav { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
         .step-status { font-weight: 700; color: var(--primary-color); margin-bottom: 10px; }
-        .rent-only.hidden, .apartment-only.hidden { display: none; }
+        .rent-only.hidden, .buy-only.hidden, .short-rent-only.hidden, .apartment-only.hidden { display: none; }
         input.invalid, select.invalid { border-color: #c0392b; }
         .pricing-grid input { margin-bottom: 4px; }
 

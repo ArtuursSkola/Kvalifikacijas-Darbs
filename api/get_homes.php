@@ -74,10 +74,14 @@ foreach ($rawHomes as $row) {
         $descShort = $slice . '...';
     }
     $type = (string)($row['veids'] ?? '');
+    if ($type === 'rent') $type = 'ire';
+    if ($type === 'buy') $type = 'pardod';
     $city = (string)($row['pilseta'] ?? '');
     $locText = (string)($row['atrasanas_vieta'] ?? '');
     $ownerId = (int)($row['ipasnieka_id'] ?? 0);
     $owner = $ownersMap[$ownerId] ?? null;
+
+    $badgeText = $type === 'ire' ? 'Īrēšana' : ($type === 'istermina_ire' ? 'Īstermiņa īre' : 'Pārdod');
 
     $homes[] = [
         'id' => (int)($row['id'] ?? 0),
@@ -92,7 +96,7 @@ foreach ($rawHomes as $row) {
         'beds' => (int)($row['gulamistabas'] ?? 0),
         'baths' => (int)($row['vannasistabas'] ?? 0),
         'size' => (int)($row['platiba'] ?? 0),
-        'badge' => $type === 'rent' ? 'Izīrē' : 'Pārdod',
+        'badge' => $badgeText,
         'image' => media_absolute_url(!empty($row['galvenais_attels']) ? (string)$row['galvenais_attels'] : $fallbackImg),
         'desc' => $descShort,
         'owner_username' => (string)($owner['lietotajvards'] ?? ''),

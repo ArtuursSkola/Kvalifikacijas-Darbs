@@ -56,7 +56,7 @@ if (isset($_GET['reject']) && is_numeric($_GET['reject'])) {
 if (isset($_POST['create_listing'])) {
     $title = trim($_POST['title'] ?? '');
     $city = trim($_POST['city'] ?? '');
-    $type = $_POST['type'] ?? 'rent';
+    $type = $_POST['type'] ?? 'ire';
     $price = (float)($_POST['price'] ?? 0);
     $status = $_POST['status'] ?? 'Melnraksts';
     $description = trim($_POST['description'] ?? '');
@@ -75,7 +75,7 @@ if (isset($_POST['edit_listing'])) {
     $id = (int)($_POST['listing_id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
     $city = trim($_POST['city'] ?? '');
-    $type = $_POST['type'] ?? 'rent';
+    $type = $_POST['type'] ?? 'ire';
     $price = (float)($_POST['price'] ?? 0);
     $status = $_POST['status'] ?? 'Melnraksts';
     $description = trim($_POST['description'] ?? '');
@@ -153,8 +153,8 @@ $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_homes")->fetch_row()
 $activeCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss='Aktivs'")->fetch_row()[0];
 $draftCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss='Melnraksts' OR statuss='' OR statuss IS NULL")->fetch_row()[0];
 $pendingCount = $draftCount; 
-$rentCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE veids='rent'")->fetch_row()[0];
-$buyCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE veids='buy'")->fetch_row()[0];
+$rentCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE veids='ire'")->fetch_row()[0];
+$buyCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE veids='pardod'")->fetch_row()[0];
 $rejectedCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss='Noraidīts'")->fetch_row()[0];
 
 function buildUrl($overrides = []) {
@@ -264,8 +264,9 @@ function buildUrl($overrides = []) {
                     <input type="text" name="search" placeholder="Meklēt..." value="<?php echo htmlspecialchars($search); ?>">
                     <select name="type">
                         <option value="">Visi tipi</option>
-                        <option value="rent" <?php echo $filterType === 'rent' ? 'selected' : ''; ?>>Īre</option>
-                        <option value="buy" <?php echo $filterType === 'buy' ? 'selected' : ''; ?>>Pārdošana</option>
+                        <option value="ire" <?php echo $filterType === 'ire' ? 'selected' : ''; ?>>Īre</option>
+                <option value="pardod" <?php echo $filterType === 'pardod' ? 'selected' : ''; ?>>Pārdošana</option>
+                <option value="istermina_ire" <?php echo $filterType === 'istermina_ire' ? 'selected' : ''; ?>>Īstermiņa īre</option>
                     </select>
                     <select name="status">
                         <option value="">Visi statusi</option>
@@ -305,8 +306,8 @@ function buildUrl($overrides = []) {
                                     <td><strong><?php echo htmlspecialchars($h['nosaukums']); ?></strong></td>
                                     <td><?php echo htmlspecialchars($h['pilseta']); ?></td>
                                     <td>
-                                        <span class="badge <?php echo $h['veids'] === 'rent' ? 'blue' : 'orange'; ?>">
-                                            <?php echo $h['veids'] === 'rent' ? 'Īre' : 'Pārdošana'; ?>
+                                        <span class="badge <?php echo in_array((string)($h['veids'] ?? ''), ['ire', 'rent', 'istermina_ire'], true) ? 'blue' : 'orange'; ?>">
+                    <?php echo ($h['veids'] === 'istermina_ire') ? 'Īstermiņa īre' : (in_array((string)($h['veids'] ?? ''), ['ire', 'rent'], true) ? 'Īrēšana' : 'Pārdošana'); ?>
                                         </span>
                                     </td>
                                     <td class="price">€<?php echo number_format($h['cena'], 0, ',', ' '); ?></td>
@@ -386,8 +387,8 @@ function buildUrl($overrides = []) {
                         <div class="form-group">
                             <label>Tips</label>
                             <select name="type">
-                                <option value="rent">Īre</option>
-                                <option value="buy">Pārdošana</option>
+                                <option value="ire">Īre</option>
+                                <option value="pardod">Pārdošana</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -439,8 +440,8 @@ function buildUrl($overrides = []) {
                         <div class="form-group">
                             <label>Tips</label>
                             <select name="type" id="edit_type">
-                                <option value="rent">Īre</option>
-                                <option value="buy">Pārdošana</option>
+                                <option value="ire">Īre</option>
+                                <option value="pardod">Pārdošana</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -478,7 +479,7 @@ function buildUrl($overrides = []) {
         document.getElementById('edit_title').value = listing.nosaukums || '';
         document.getElementById('edit_city').value = listing.pilseta || '';
         document.getElementById('edit_price').value = listing.cena || '';
-        document.getElementById('edit_type').value = listing.veids || 'rent';
+        document.getElementById('edit_type').value = listing.veids || 'ire';
         document.getElementById('edit_status').value = listing.statuss || 'Melnraksts';
         document.getElementById('edit_description').value = listing.apraksts || '';
         openModal('editModal');

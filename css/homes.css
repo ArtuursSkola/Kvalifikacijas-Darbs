@@ -723,6 +723,11 @@ footer {
     color: var(--white);
 }
 
+.property-badge.short-rent {
+    background: linear-gradient(135deg, #f39c12, #d35400);
+    color: var(--white);
+}
+
 .property-favorite {
     position: absolute;
     top: 16px;

@@ -75,16 +75,18 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                     <i class="fas fa-home"></i>
                     <select name="type">
                         <option value="">Visi tipi</option>
-                        <option value="buy">Pirkt</option>
-                        <option value="rent">Īrēt</option>
+                        <option value="pardod">Pirkt</option>
+                        <option value="istermina_ire">Īstermiņa īre</option>
+                        <option value="ire">Īrēt</option>
                     </select>
                 </div>
                 <div class="input-group">
                     <i class="fas fa-building"></i>
                     <select name="category">
                         <option value="">Visi veidi</option>
-                        <option value="apartment">Dzīvoklis</option>
-                        <option value="house">Māja</option>
+                        <option value="dzivoklis">Dzīvoklis</option>
+                        <option value="apartaments">Apartaments</option>
+                        <option value="maja">Māja</option>
                     </select>
                 </div>
                 <button type="submit" class="btn-search">
@@ -126,18 +128,23 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
             <div class="listing-grid">
                 <?php if (!empty($newestHomes)): ?>
                     <?php foreach ($newestHomes as $home): 
-                        $isRent = $home['veids'] === 'rent';
+                        $isRent = in_array((string)($home['veids'] ?? ''), ['ire', 'rent'], true);
                         $priceDisplay = $isRent 
                             ? number_format($home['cena'], 0, ',', ' ') . ' € / mēn'
                             : number_format($home['cena'], 0, ',', ' ') . ' €';
                         $badgeClass = $isRent ? 'rent' : 'sale';
-                        $badgeText = $isRent ? 'Izīrē' : 'Pārdod';
+                        $badgeText = $isRent ? 'Īrēšana' : 'Pārdod';
                         $image = $home['galvenais_attels'] ?: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=500&q=60';
                         $owner = $home['owner_data'];
                         $ownerName = $owner['lietotajvards'] ?? 'Īpašnieks';
                         $ownerPfp = userProfileImageUrl($owner['profila_bilde'] ?? '');
                         $ownerInitial = strtoupper(substr($ownerName, 0, 1));
                         $hasShield = in_array($owner['plan'] ?? '', ['Silver', 'Gold'], true);
+                        if (($home['veids'] ?? '') === 'istermina_ire') {
+                            $priceDisplay = number_format($home['cena'], 0, ',', ' ') . ' € / nakti';
+                            $badgeClass = 'short-rent';
+                            $badgeText = 'Īstermiņa īre';
+                        }
                     ?>
                     <div class="card">
                         <div class="card-image">

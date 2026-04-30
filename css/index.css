@@ -335,6 +335,11 @@
     color: #fff;
 }
 
+.badge.short-rent {
+    background: linear-gradient(135deg, #f39c12, #d35400);
+    color: #fff;
+}
+
 .card-image .favorite-btn {
     position: absolute;
     top: 16px;
