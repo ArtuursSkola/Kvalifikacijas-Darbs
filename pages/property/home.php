@@ -211,21 +211,172 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                     </div>
                 </div>
                 <?php if ($ownerEmail !== ''): ?>
-                    <a href="mailto:<?php echo htmlspecialchars($ownerEmail); ?>?subject=Interese%20par%20<?php echo urlencode($home['nosaukums']); ?>" class="agent-contact">
-                        <i class="fas fa-envelope"></i> Sazināties
+                    <a href="#application-form" class="agent-contact">
+                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
                     </a>
                 <?php else: ?>
-                    <a href="mailto:info@homeestate.lv?subject=Interese%20par%20<?php echo urlencode($home['nosaukums']); ?>" class="agent-contact">
-                        <i class="fas fa-envelope"></i> Sazināties
+                    <a href="#application-form" class="agent-contact">
+                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
                     </a>
                 <?php endif; ?>
             </div>
 
             <div class="sidebar-widget sidebar-price">
-                <span class="price"><?php echo $priceDisplay; ?></span>
-                <a href="mailto:info@homeestate.lv?subject=Interese%20par%20<?php echo urlencode($home['nosaukums']); ?>" class="btn-primary">
-                    <i class="fas fa-envelope"></i> Sazināties ar aģentu
+                <?php if (($home['veids'] ?? '') === 'ire'): ?>
+                    <h4><i class="fas fa-calculator"></i> Īres izmaksas</h4>
+                    <div class="calc-row">
+                        <span>Īres maksa</span>
+                        <span><?php echo number_format($rentPrice, 0, ',', ' '); ?> €</span>
+                    </div>
+                    <div class="calc-row">
+                        <span>Komunālie (apt.)</span>
+                        <span><?php echo number_format($utilitiesPrice, 0, ',', ' '); ?> €</span>
+                    </div>
+                    <div class="calc-row total">
+                        <span>Kopā mēnesī</span>
+                        <span><?php echo number_format($totalPrice, 0, ',', ' '); ?> €</span>
+                    </div>
+                <?php else: ?>
+                    <span class="price"><?php echo $priceDisplay; ?></span>
+                <?php endif; ?>
+                <a href="#application-form" class="btn-primary">
+                    <i class="fas fa-envelope"></i> Izveidot pieteikumu
                 </a>
+            </div>
+
+            <div id="application-form" class="settings-modal">
+
+                <div style="background: white; padding: 20px; margin: auto;" class="application-modal">
+                    <div id="application-top">
+                        <div class="application-top-top" style="display: flex; justify-content: space-between">
+                            <h2>Pieteikums</h2>
+                            <a href="#"><i class="fa-solid fa-x"></i></a>
+                            </div>
+                    <p style="font-size: 15px">Izveidot pieteikumu sludinājumam</p>
+                    </div>
+                    <div class="application-input">
+
+                        <?php if (($home['veids'] ?? '') === 'ire'): ?>
+
+                        <div class="application-input-group">
+                            <h4>Vārds un uzvārds</h4>
+                            <input type="text" name="lt_full_name" placeholder="...">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>E-pasts</h4>
+                            <input type="email" name="lt_email" placeholder="...">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Telefona nr.</h4>
+                            <input type="tel" name="lt_phone" placeholder="+371 ">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>īres periods mēnešos</h4>
+                            <input type="number" name="lt_rent_months" min="1" placeholder="Piem. 6">
+                        <label class="application-checkbox">
+                            <input type="checkbox" name="lt_rent_unknown" value="1">
+                            Pagaidām nav zināms
+                        </label>
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Sākuma datums</h4>
+                            <input type="date" name="lt_start_date">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Papildu komentāri</h4>
+                            <textarea name="lt_comment" rows="4" placeholder="..."></textarea>
+                        </div>
+
+                        <div class="application-input-group">
+                            <button class="btn-submit">Nosūtīt pieteikumu</button>
+                        </div>
+
+                        <?php elseif (($home['veids'] ?? '') === 'istermina_ire'): ?>
+
+                        <div class="application-input-group">
+                         <h4>Vārds un uzvārds</h4>
+                         <input type="text" name="st_full_name" placeholder="...">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>E-pasts</h4>
+                            <input type="email" name="st_email" placeholder="...">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Telefona nr.</h4>
+                            <input type="tel" name="st_phone" placeholder="+371 ">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Sākuma datums</h4>
+                            <input type="date" name="st_start_date">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Beigu datums</h4>
+                            <input type="date" name="st_end_date">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Komentāri</h4>
+                            <textarea name="st_comment" rows="4" placeholder="..."></textarea>
+                        </div>
+
+                        <div class="application-input-group">
+                            <button class="btn-submit">Nosūtīt pieteikumu</button>
+                        </div>
+
+                        <?php else: ?>
+
+                        <div class="application-input-group">
+                            <h4>Vārds un uzvārds</h4>
+                            <input type="text" placeholder="...">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>E-pasts</h4>
+                            <input type="email" placeholder="...">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Telefona nr.</h4>
+                            <input type="tel" placeholder="+371 ">
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Piedāvātā summa</h4>
+                            <input type="number" placeholder="...">
+                        </div>
+
+                        <div class="application-input-group">
+                        <h4>Finansēšanas veids</h4>
+                        <div style="max-width: 200px;">
+                            <select id="pay-method" name="pay-method"
+                                    style="padding: 5px; font-size: 14px; border-radius: 4px; width: 100%;">
+                                <option value="cash">Skaidra nauda</option>
+                                <option value="mortgage">Hipotēka</option>
+                            </select>
+                        </div>
+                        </div>
+
+                        <div class="application-input-group">
+                            <h4>Papildu komentārs</h4>
+                            <input type="text" placeholder="...">
+                        </div>
+
+                        <div class="application-input-group">
+                            <button class="btn-submit">Nosūtīt pieteikumu</button>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                </div>
             </div>
             
             <div class="sidebar-widget sidebar-agent">
@@ -242,45 +393,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                 </a>
             </div>
             
-            <?php if ($home['veids'] === 'ire'): ?>
-            <div class="sidebar-widget sidebar-calculator">
-                <h4><i class="fas fa-calculator"></i> Īres izmaksas</h4>
-                <div class="calc-row">
-                    <span>Īres maksa</span>
-                    <span><?php echo number_format($rentPrice, 0, ',', ' '); ?> €</span>
-                </div>
-                <div class="calc-row">
-                    <span>Komunālie (apt.)</span>
-                    <span><?php echo number_format($utilitiesPrice, 0, ',', ' '); ?> €</span>
-                </div>
-                <div class="calc-row total">
-                    <span>Kopā mēnesī</span>
-                    <span><?php echo number_format($totalPrice, 0, ',', ' '); ?> €</span>
-                </div>
-                <p class="calc-note">Aptuvenās izmaksas. Komunālie maksājumi var mainīties atkarībā no patēriņa.</p>
-            </div>
-            <?php endif; ?>
-
-            <?php if ($home['veids'] === 'istermina_ire'): ?>
-            <div class="sidebar-widget sidebar-calculator">
-                <h4><i class="fas fa-info-circle"></i> Rezervacijas info</h4>
-                <?php if ($pirtsPricePerDay > 0): ?>
-                <div class="calc-row">
-                    <span>Pirts (par 1 dienu)</span>
-                    <span><?php echo number_format($pirtsPricePerDay, 0, ',', ' '); ?> €</span>
-                </div>
-                <?php endif; ?>
-                <?php if ($ballaPricePerDay > 0): ?>
-                <div class="calc-row">
-                    <span>Balla (par 1 dienu)</span>
-                    <span><?php echo number_format($ballaPricePerDay, 0, ',', ' '); ?> €</span>
-                </div>
-                <?php endif; ?>
-                <?php if ($pirtsPricePerDay <= 0 && $ballaPricePerDay <= 0): ?>
-                <p class="calc-note">Nav papildu opciju.</p>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
+            
         </aside>
     </div>
 
