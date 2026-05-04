@@ -6,9 +6,216 @@ require_once __DIR__ . '/../con_db.php';
 require_once __DIR__ . '/../routes/main.php';
 require_once __DIR__ . '/../includes/account.php';
 
-if (!isset($savienojums) || !$savienojums instanceof mysqli) {
-    echo json_encode(['error' => 'Database connection failed'], JSON_UNESCAPED_UNICODE);
+function json_out(array $payload, int $code = 200): never
+{
+    http_response_code($code);
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+if (!isset($savienojums) || !$savienojums instanceof mysqli) {
+    json_out(['ok' => false, 'error' => 'Database connection failed'], 500);
+}
+
+$action = trim((string)($_REQUEST['action'] ?? ''));
+
+if ($action === 'availability') {
+    $homeId = isset($_GET['home_id']) ? (int)$_GET['home_id'] : 0;
+    $month = trim((string)($_GET['month'] ?? ''));
+    if ($homeId <= 0 || !preg_match('/^\\d{4}-\\d{2}$/', $month)) {
+        json_out(['ok' => false, 'error' => 'Bad request'], 400);
+    }
+
+    $from = $month . '-01';
+    $to = date('Y-m-d', strtotime($from . ' +1 month'));
+
+    $stmt = $savienojums->prepare("
+        SELECT sakuma_datums, beigu_datums
+        FROM est_pieteikumi
+        WHERE sludinajuma_id = ?
+          AND sakuma_datums IS NOT NULL
+          AND beigu_datums IS NOT NULL
+          AND statuss IN ('Apstiprinats', 'Rezervets')
+          AND sakuma_datums < ?
+          AND beigu_datums > ?
+        ORDER BY sakuma_datums ASC
+    ");
+    if (!$stmt) {
+        json_out(['ok' => false, 'error' => 'Failed to prepare query'], 500);
+    }
+    $stmt->bind_param('iss', $homeId, $to, $from);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $ranges = [];
+    while ($res && ($row = $res->fetch_assoc())) {
+        $ranges[] = [
+            'from' => (string)($row['sakuma_datums'] ?? ''),
+            'to' => (string)($row['beigu_datums'] ?? ''),
+        ];
+    }
+    $stmt->close();
+    $savienojums->close();
+    json_out(['ok' => true, 'home_id' => $homeId, 'month' => $month, 'ranges' => $ranges]);
+}
+
+if ($action === 'pieteikums_create') {
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        json_out(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+
+    $homeId = isset($_POST['home_id']) ? (int)$_POST['home_id'] : 0;
+    if ($homeId <= 0) {
+        json_out(['ok' => false, 'error' => 'Missing home_id'], 400);
+    }
+
+    $homeStmt = $savienojums->prepare("SELECT id, veids, statuss FROM est_homes WHERE id = ? LIMIT 1");
+    if (!$homeStmt) {
+        json_out(['ok' => false, 'error' => 'Failed to prepare query'], 500);
+    }
+    $homeStmt->bind_param('i', $homeId);
+    $homeStmt->execute();
+    $home = $homeStmt->get_result()->fetch_assoc();
+    $homeStmt->close();
+
+    if (!$home) {
+        json_out(['ok' => false, 'error' => 'Sludinājums nav atrasts'], 404);
+    }
+
+    if (($home['statuss'] ?? '') === 'Pardots') {
+        json_out(['ok' => false, 'error' => 'Šis īpašums jau ir pārdots vai izīrēts.'], 403);
+    }
+
+    $veids = (string)($home['veids'] ?? '');
+    $lietotajaId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+
+    $vardsUzvards = trim((string)($_POST['vards_uzvards'] ?? ''));
+    $epasts = trim((string)($_POST['epasts'] ?? ''));
+    $telefons = trim((string)($_POST['telefons'] ?? ''));
+    $komentars = trim((string)($_POST['komentars'] ?? ''));
+
+    if ($vardsUzvards === '' || $epasts === '') {
+        json_out(['ok' => false, 'error' => 'Aizpildiet vārdu/uzvārdu un e-pastu.'], 422);
+    }
+    if (!filter_var($epasts, FILTER_VALIDATE_EMAIL)) {
+        json_out(['ok' => false, 'error' => 'Nederīgs e-pasts.'], 422);
+    }
+
+    $iresMenesi = null;
+    $navZinams = 0;
+    $iresSakumaDatums = null;
+    $sakumaDatums = null;
+    $beiguDatums = null;
+    $piedavataSumma = null;
+    $finansesanasVeids = null;
+
+    if ($veids === 'ire' || $veids === 'rent') {
+        $iresMenesiRaw = trim((string)($_POST['ires_menesi'] ?? ''));
+        $iresMenesi = $iresMenesiRaw === '' ? null : (int)$iresMenesiRaw;
+        $navZinams = isset($_POST['nav_zinams']) && (string)$_POST['nav_zinams'] === '1' ? 1 : 0;
+        $iresSakumaDatums = trim((string)($_POST['ires_sakuma_datums'] ?? ''));
+        if ($iresSakumaDatums === '') {
+            json_out(['ok' => false, 'error' => 'Norādiet sākuma datumu.'], 422);
+        }
+    } elseif ($veids === 'istermina_ire') {
+        $sakumaDatums = trim((string)($_POST['sakuma_datums'] ?? ''));
+        $beiguDatums = trim((string)($_POST['beigu_datums'] ?? ''));
+        if ($sakumaDatums === '' || $beiguDatums === '') {
+            json_out(['ok' => false, 'error' => 'Norādiet sākuma un beigu datumu.'], 422);
+        }
+        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $sakumaDatums) || !preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $beiguDatums)) {
+            json_out(['ok' => false, 'error' => 'Nederīgs datuma formāts.'], 422);
+        }
+        if (strtotime($beiguDatums) <= strtotime($sakumaDatums)) {
+            json_out(['ok' => false, 'error' => 'Beigu datumam jābūt pēc sākuma datuma.'], 422);
+        }
+
+        $overlapStmt = $savienojums->prepare("
+            SELECT id
+            FROM est_pieteikumi
+            WHERE sludinajuma_id = ?
+              AND statuss IN ('Apstiprinats', 'Rezervets')
+              AND sakuma_datums IS NOT NULL
+              AND beigu_datums IS NOT NULL
+              AND sakuma_datums < ?
+              AND beigu_datums > ?
+            LIMIT 1
+        ");
+        if ($overlapStmt) {
+            $overlapStmt->bind_param('iss', $homeId, $beiguDatums, $sakumaDatums);
+            $overlapStmt->execute();
+            $overlap = $overlapStmt->get_result()->fetch_assoc();
+            $overlapStmt->close();
+            if ($overlap) {
+                json_out(['ok' => false, 'error' => 'Izvēlētie datumi nav pieejami.'], 409);
+            }
+        }
+    } else {
+        $piedavataRaw = trim((string)($_POST['piedavata_summa'] ?? ''));
+        $piedavataSumma = $piedavataRaw === '' ? null : (float)$piedavataRaw;
+        $finansesanasVeids = trim((string)($_POST['finansesanas_veids'] ?? ''));
+        if ($finansesanasVeids === '') {
+            $finansesanasVeids = null;
+        }
+    }
+
+    $statuss = 'Jauns';
+
+    $ins = $savienojums->prepare("
+        INSERT INTO est_pieteikumi (
+            sludinajuma_id,
+            sludinajuma_veids,
+            lietotaja_id,
+            vards_uzvards,
+            epasts,
+            telefons,
+            komentars,
+            ires_menesi,
+            nav_zinams,
+            ires_sakuma_datums,
+            sakuma_datums,
+            beigu_datums,
+            piedavata_summa,
+            finansesanas_veids,
+            statuss,
+            created_at
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()
+        )
+    ");
+
+    if (!$ins) {
+        json_out(['ok' => false, 'error' => 'Failed to prepare insert'], 500);
+    }
+
+    $ins->bind_param(
+        'isissssiisssdss',
+        $homeId,
+        $veids,
+        $lietotajaId,
+        $vardsUzvards,
+        $epasts,
+        $telefons,
+        $komentars,
+        $iresMenesi,
+        $navZinams,
+        $iresSakumaDatums,
+        $sakumaDatums,
+        $beiguDatums,
+        $piedavataSumma,
+        $finansesanasVeids,
+        $statuss
+    );
+
+    if (!$ins->execute()) {
+        $err = $ins->error ?: 'Insert failed';
+        $ins->close();
+        json_out(['ok' => false, 'error' => $err], 500);
+    }
+
+    $newId = (int)$ins->insert_id;
+    $ins->close();
+    $savienojums->close();
+    json_out(['ok' => true, 'id' => $newId]);
 }
 
 $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
@@ -17,22 +224,12 @@ $select = "SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, 
         apraksts, galvenais_attels, statuss, kategorija
     FROM est_homes";
 
-$where = $userId > 0 ? " WHERE statuss = 'Aktivs' OR ipasnieka_id = ?" : " WHERE statuss = 'Aktivs'";
+$where = " WHERE statuss = 'Aktivs'";
 $order = " ORDER BY created_at DESC";
 
 $stmt = null;
-$result = false;
+$result = $savienojums->query($select . $where . $order);
 
-if ($userId > 0) {
-    $stmt = $savienojums->prepare($select . $where . $order);
-    if ($stmt) {
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-    }
-} else {
-    $result = $savienojums->query($select . $where);
-}
 
 $homes = [];
 $fallbackImg = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';

@@ -488,13 +488,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         <div class="property-footer">
-                            <span class="property-price">${formatPrice(item)}</span>
+                            <div class="property-price">${formatPrice(item)}</div>
                             <a href="${propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
                         </div>
                     </div>
                 `;
                 resultsWrap.appendChild(card);
             });
+            if (window.initMiniCalendars) window.initMiniCalendars(resultsWrap);
         }
 
         function initPriceSlider() {
@@ -827,13 +828,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         <div class="property-footer">
-                            <span class="property-price">${formatPrice(item)}</span>
+                            <div class="property-price">${formatPrice(item)}</div>
                             <a href="${api.propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
                         </div>
                     </div>
                 `;
                 wrap.appendChild(card);
             });
+            if (window.initMiniCalendars) window.initMiniCalendars(wrap);
 
             list.forEach(item => {
                 const id = parseInt(item.id || 0, 10) || 0;
@@ -854,6 +856,77 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.hash === '#favorites-modal') {
         loadFavoritesIntoModal();
     }
+
+    (function () {
+        const apiUrl = document.body.getAttribute('data-homes-api') || '';
+        if (!apiUrl) return;
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth() + 1;
+        const monthKey = `${y}-${pad2(m)}`;
+        const monthStart = new Date(y, m - 1, 1);
+        const monthEnd = new Date(y, m, 0);
+        const startDow = (monthStart.getDay() + 6) % 7;
+        const daysInMonth = monthEnd.getDate();
+        const dateKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+        const cells = [];
+        for (let i = 0; i < startDow; i++) {
+            const d = new Date(y, m - 1, 1 - (startDow - i));
+            cells.push({ day: d.getDate(), key: dateKey(d), out: true });
+        }
+        for (let day = 1; day <= daysInMonth; day++) {
+            const d = new Date(y, m - 1, day);
+            cells.push({ day, key: dateKey(d), out: false });
+        }
+        const total = Math.ceil(cells.length / 7) * 7;
+        for (let i = 1; cells.length < total; i++) {
+            const d = new Date(y, m - 1, daysInMonth + i);
+            cells.push({ day: d.getDate(), key: dateKey(d), out: true });
+        }
+
+        const isTaken = (key, ranges) => {
+            const ts = new Date(key + 'T00:00:00').getTime();
+            for (const r of ranges) {
+                if (!r.from || !r.to) continue;
+                const a = new Date(r.from + 'T00:00:00').getTime();
+                const b = new Date(r.to + 'T00:00:00').getTime();
+                if (ts >= a && ts < b) return true;
+            }
+            return false;
+        };
+
+        window.initMiniCalendars = async (scope) => {
+            const root = scope && scope.querySelectorAll ? scope : document;
+            const minis = Array.from(root.querySelectorAll('.mini-calendar[data-home-id]'));
+            if (minis.length === 0) return;
+            await Promise.all(minis.map(async (el) => {
+                if (el.getAttribute('data-inited') === '1') return;
+                const id = parseInt(el.getAttribute('data-home-id') || '0', 10);
+                if (!id) return;
+                el.setAttribute('data-inited', '1');
+                el.innerHTML = cells.map(c => `<div class="mini-day${c.out ? ' is-out' : ''}" data-date="${c.key}">${c.day}</div>`).join('');
+                try {
+                    const url = new URL(apiUrl, window.location.href);
+                    url.searchParams.set('action', 'availability');
+                    url.searchParams.set('home_id', String(id));
+                    url.searchParams.set('month', monthKey);
+                    const res = await fetch(url.toString(), { credentials: 'same-origin' });
+                    const data = await res.json().catch(() => null);
+                    if (!res.ok || !data || data.ok !== true) return;
+                    const ranges = Array.isArray(data.ranges) ? data.ranges : [];
+                    el.querySelectorAll('.mini-day').forEach(d => {
+                        const k = d.getAttribute('data-date') || '';
+                        if (k && isTaken(k, ranges)) d.classList.add('is-taken');
+                    });
+                } catch (_) {
+                }
+            }));
+        };
+
+        window.initMiniCalendars(document);
+    })();
 
     loadFavoriteIds();
 });

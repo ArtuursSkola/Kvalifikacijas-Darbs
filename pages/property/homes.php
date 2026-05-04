@@ -19,27 +19,13 @@ $initialHomes = [];
 $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 $sql = "SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas, galvenais_attels, statuss
     FROM est_homes
-    WHERE statuss = 'Aktivs'"
-    . ($currentUserId > 0 ? " OR ipasnieka_id = ?" : "")
-    . " ORDER BY created_at DESC";
+    WHERE statuss = 'Aktivs' ORDER BY created_at DESC";
 
-if ($currentUserId > 0) {
-    $stmt = $savienojums->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param('i', $currentUserId);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        while ($res && $row = $res->fetch_assoc()) {
-            $initialHomes[] = $row;
-        }
-        $stmt->close();
-    }
-} else {
-    $res = $savienojums->query($sql);
-    while ($res && $row = $res->fetch_assoc()) {
-        $initialHomes[] = $row;
-    }
+$res = $savienojums->query($sql);
+while ($res && $row = $res->fetch_assoc()) {
+    $initialHomes[] = $row;
 }
+
 $activeHomesCount = 0;
 $resActive = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Aktivs'");
 if ($resActive && $row = $resActive->fetch_row()) $activeHomesCount = (int)$row[0];
@@ -237,7 +223,7 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                             <span><i class="fas fa-bath"></i> <?php echo (int)($home['vannasistabas'] ?? 0); ?> vannas</span>
                         </div>
                         <div class="property-footer">
-                            <span class="property-price"><?php echo htmlspecialchars($priceLabel); ?></span>
+	                            <div class="property-price"><?php echo htmlspecialchars($priceLabel); ?></div>
                             <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
                         </div>
                     </div>

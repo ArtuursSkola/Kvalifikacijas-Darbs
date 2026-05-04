@@ -38,10 +38,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         list.forEach(item => {
+            const isSold = item.status === 'Pardots';
             const card = document.createElement('div');
-            card.className = 'property-card';
+            card.className = `property-card ${isSold ? 'sold' : ''}`;
             card.innerHTML = `
                 <div class="property-image">
+                    ${isSold ? '<div class="status-sold-label">Pārdots</div>' : ''}
                     <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
                     <span class="property-badge ${item.type === 'ire' ? 'ire' : 'sale'}">${item.badge}</span>
                     <button class="property-favorite active" title="Noņemt no favorītiem" type="button" data-home-id="${item.id}">
@@ -58,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     <div class="property-footer">
                         <span class="property-price">${item.type === 'ire' ? `${Number(item.price || 0).toLocaleString('lv-LV')} € / mēn` : `${Number(item.price || 0).toLocaleString('lv-LV')} €`}</span>
-                        <a href="${api.propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>
+                        ${isSold ? '<span class="btn-view-property disabled" style="background:#ccc;cursor:default;">Izslēgts</span>' : `<a href="${api.propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>`}
                     </div>
                 </div>
             `;

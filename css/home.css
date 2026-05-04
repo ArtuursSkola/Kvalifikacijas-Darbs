@@ -456,6 +456,41 @@
             box-shadow: 0 8px 25px rgba(48,182,7,0.4);
         }
 
+        .sidebar-calendar {
+            width: 100%;
+            margin-top: 14px;
+        }
+
+        .sidebar-calendar__grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+            width: 100%;
+        }
+
+        .sidebar-day {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border: 1px solid rgba(0,0,0,0.08);
+            background: rgba(255,255,255,0.9);
+            color: rgba(44, 62, 80, 0.92);
+        }
+
+        .sidebar-day.is-out {
+            opacity: 0.35;
+        }
+
+        .sidebar-day.is-taken {
+            background: rgba(231, 76, 60, 0.12);
+            border-color: rgba(231, 76, 60, 0.28);
+            color: #b02014;
+        }
+
 
         .sidebar-agent h4 {
             font-size: 1rem;

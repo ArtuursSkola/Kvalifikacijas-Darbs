@@ -66,6 +66,123 @@
     background: var(--light-bg);
 }
 
+.myhomes-info {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 26px;
+    box-shadow: var(--shadow-sm);
+}
+
+.myhomes-info__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.myhomes-info__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 980px) {
+    .myhomes-info__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.myhomes-metric {
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: #fafafa;
+}
+
+.myhomes-metric span {
+    display: block;
+    font-weight: 700;
+    color: rgba(44, 62, 80, 0.7);
+    font-size: 0.88rem;
+}
+
+.myhomes-metric strong {
+    display: block;
+    font-size: 1.25rem;
+    margin-top: 4px;
+    color: var(--primary);
+}
+
+.myhomes-info__title {
+    margin-top: 18px;
+    margin-bottom: 12px;
+}
+
+.myhomes-empty {
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px dashed var(--gray-200);
+    background: #fbfbfb;
+    font-weight: 700;
+    color: rgba(44, 62, 80, 0.7);
+}
+
+.myhomes-pieteikumi {
+    display: grid;
+    gap: 12px;
+}
+
+.pieteikums-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 14px;
+    background: #fff;
+}
+
+.pieteikums-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.pieteikums-status {
+    font-weight: 800;
+    color: rgba(44, 62, 80, 0.65);
+}
+
+.pieteikums-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    color: rgba(44, 62, 80, 0.7);
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.pieteikums-line {
+    margin-top: 10px;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.pieteikums-comment {
+    margin-top: 10px;
+    color: rgba(44, 62, 80, 0.85);
+    font-weight: 600;
+}
+
+.pieteikums-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 @media (max-width: 768px) {
     .myhomes-page .myhomes-hero {
         padding: 120px 20px 70px;
@@ -74,4 +191,48 @@
     .myhomes-hero__inner h1 {
         font-size: 2.2rem;
     }
+}
+
+.btn-owner-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--gray-100);
+    color: var(--primary);
+    border: 1px solid var(--gray-200);
+}
+
+.btn-owner-action:hover {
+    background: var(--gray-200);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.btn-owner-edit {
+    background: rgba(48, 182, 7, 0.05);
+    color: var(--accent-dark);
+    border-color: rgba(48, 182, 7, 0.2);
+}
+
+.btn-owner-edit:hover {
+    background: rgba(48, 182, 7, 0.1);
+    border-color: var(--accent);
+}
+
+.btn-owner-info {
+    background: var(--primary);
+    color: var(--white);
+    border-color: var(--primary);
+}
+
+.btn-owner-info:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-light);
+    color: var(--white);
 }

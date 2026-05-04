@@ -22,6 +22,7 @@ $bodyClass = 'owner-page myhomes-page';
 include __DIR__ . '/../../includes/header.php';
 
 $ownerId = (int)($currentUser['lietotaja_id'] ?? $_SESSION['user_id'] ?? 0);
+
 $myHomes = [];
 if ($ownerId > 0) {
     $sql = "SELECT id, nosaukums, pilseta, statuss, cena, veids, galvenais_attels, created_at
@@ -44,7 +45,7 @@ if ($ownerId > 0) {
 <header class="myhomes-hero">
     <div class="myhomes-hero__inner">
         <p class="badge-pill"><i class="fas fa-folder-open"></i> Panelis</p>
-        <h1>Mani <span>sludinājumi</span></h1>
+        <h1>Mani <span>sludinājumi</span> (<?php echo count($myHomes); ?>)</h1>
         <p>Pārvaldi savus aktīvos sludinājumus un melnrakstus vienuviet.</p>
 
         <div class="myhomes-hero__actions">
@@ -74,6 +75,7 @@ if ($ownerId > 0) {
                 <a href="<?php echo main_route('property.create'); ?>" class="btn-owner-add"><i class="fas fa-plus"></i> Izveidot pirmo</a>
             </div>
         <?php else: ?>
+
             <div class="owner-grid">
                 <?php foreach ($myHomes as $home): ?>
                     <?php
@@ -110,8 +112,9 @@ if ($ownerId > 0) {
                             <div class="owner-card__footer">
                                 <span class="price"><?php echo htmlspecialchars($price); ?></span>
                                 <div class="owner-card__actions">
-                                    <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-sm-view">Skatīt</a>
-                                    <a href="<?php echo main_route('property.create', ['id' => (int)$home['id']]); ?>" class="btn-sm-view btn-sm-edit">Rediģēt</a>
+                                    <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-owner-action">Skatīt</a>
+                                    <a href="<?php echo main_route('property.create', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-edit">Rediģēt</a>
+                                    <a href="<?php echo main_route('property.stats', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-info">Info</a>
                                 </div>
                             </div>
                         </div>

@@ -50,7 +50,17 @@ if ($ownerId > 0) {
 $pageTitle = htmlspecialchars($home['nosaukums']) . ' - HomeEstate';
 $extraStyles = ['home'];
 $bodyClass = 'property-detail-page';
+$bodyData = [
+    'homes-api' => main_route('api.homes'),
+    'home-id' => (int)$homeId,
+    'home-type' => (string)($home['veids'] ?? ''),
+];
 include __DIR__ . '/../../includes/header.php';
+
+$viewerId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+$isOwnerViewer = $viewerId > 0 && $viewerId === $ownerId;
+$canApply = $viewerId > 0 && !$isOwnerViewer;
+$applyHref = $canApply ? '#application-form' : ($viewerId <= 0 ? main_route('login') : '#');
 
 $ownerName = trim((string)($owner['lietotajvards'] ?? ''));
 $ownerEmail = trim((string)($owner['epasts'] ?? ''));
@@ -210,12 +220,16 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                         <span>Īpašnieks</span>
                     </div>
                 </div>
-                <?php if ($ownerEmail !== ''): ?>
-                    <a href="#application-form" class="agent-contact">
+                <?php if ($canApply): ?>
+                    <a href="<?php echo $applyHref; ?>" class="agent-contact">
+                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
+                    </a>
+                <?php elseif ($viewerId <= 0): ?>
+                    <a href="<?php echo htmlspecialchars($applyHref, ENT_QUOTES); ?>" class="agent-contact">
                         <i class="fas fa-envelope"></i> Izveidot pieteikumu
                     </a>
                 <?php else: ?>
-                    <a href="#application-form" class="agent-contact">
+                    <a href="#" class="agent-contact" onclick="return false;" style="opacity:0.55; cursor:not-allowed;">
                         <i class="fas fa-envelope"></i> Izveidot pieteikumu
                     </a>
                 <?php endif; ?>
@@ -238,12 +252,26 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                     </div>
                 <?php else: ?>
                     <span class="price"><?php echo $priceDisplay; ?></span>
+                    <?php if (($home['veids'] ?? '') === 'istermina_ire'): ?>
+                        <div id="sidebar-calendar" class="sidebar-calendar" data-home-id="<?php echo (int)$homeId; ?>"></div>
+                    <?php endif; ?>
                 <?php endif; ?>
-                <a href="#application-form" class="btn-primary">
-                    <i class="fas fa-envelope"></i> Izveidot pieteikumu
-                </a>
+                <?php if ($canApply): ?>
+                    <a href="<?php echo $applyHref; ?>" class="btn-primary">
+                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
+                    </a>
+                <?php elseif ($viewerId <= 0): ?>
+                    <a href="<?php echo htmlspecialchars($applyHref, ENT_QUOTES); ?>" class="btn-primary">
+                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
+                    </a>
+                <?php else: ?>
+                    <a href="#" class="btn-primary" onclick="return false;" style="opacity:0.55; cursor:not-allowed;">
+                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
+                    </a>
+                <?php endif; ?>
             </div>
 
+            <?php if ($canApply): ?>
             <div id="application-form" class="settings-modal">
 
                 <div style="background: white; padding: 20px; margin: auto;" class="application-modal">
@@ -255,6 +283,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                     <p style="font-size: 15px">Izveidot pieteikumu sludinājumam</p>
                     </div>
                     <div class="application-input">
+                        <div id="application-alert" style="display:none; margin: 0 0 12px 0; padding: 10px 12px; border-radius: 10px; font-weight: 600;"></div>
 
                         <?php if (($home['veids'] ?? '') === 'ire'): ?>
 
@@ -336,22 +365,22 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>Vārds un uzvārds</h4>
-                            <input type="text" placeholder="...">
+                            <input type="text" name="sale_full_name" placeholder="...">
                         </div>
 
                         <div class="application-input-group">
                             <h4>E-pasts</h4>
-                            <input type="email" placeholder="...">
+                            <input type="email" name="sale_email" placeholder="...">
                         </div>
 
                         <div class="application-input-group">
                             <h4>Telefona nr.</h4>
-                            <input type="tel" placeholder="+371 ">
+                            <input type="tel" name="sale_phone" placeholder="+371 ">
                         </div>
 
                         <div class="application-input-group">
                             <h4>Piedāvātā summa</h4>
-                            <input type="number" placeholder="...">
+                            <input type="number" name="sale_offer" placeholder="...">
                         </div>
 
                         <div class="application-input-group">
@@ -367,7 +396,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>Papildu komentārs</h4>
-                            <input type="text" placeholder="...">
+                            <input type="text" name="sale_comment" placeholder="...">
                         </div>
 
                         <div class="application-input-group">
@@ -378,6 +407,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                 </div>
             </div>
+            <?php endif; ?>
             
             <div class="sidebar-widget sidebar-agent">
                 <h4>Kontaktpersona</h4>
@@ -456,6 +486,150 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
             document.querySelectorAll('.thumb-images img').forEach(img => img.classList.remove('active'));
             thumb.classList.add('active');
         }
+
+        (function () {
+            const api = document.body.getAttribute('data-homes-api') || '';
+            const homeId = parseInt(document.body.getAttribute('data-home-id') || '0', 10);
+            const homeType = (document.body.getAttribute('data-home-type') || '').trim();
+            const cal = document.getElementById('sidebar-calendar');
+            const modal = document.getElementById('application-form');
+            if (!api || !homeId) return;
+
+            (async function () {
+                if (!cal || homeType !== 'istermina_ire') return;
+                const pad2 = (n) => String(n).padStart(2, '0');
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = now.getMonth() + 1;
+                const monthKey = `${y}-${pad2(m)}`;
+
+                const monthStart = new Date(y, m - 1, 1);
+                const monthEnd = new Date(y, m, 0);
+                const startDow = (monthStart.getDay() + 6) % 7;
+                const daysInMonth = monthEnd.getDate();
+                const dateKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+                const cells = [];
+                for (let i = 0; i < startDow; i++) {
+                    const d = new Date(y, m - 1, 1 - (startDow - i));
+                    cells.push({ day: d.getDate(), key: dateKey(d), out: true });
+                }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const d = new Date(y, m - 1, day);
+                    cells.push({ day, key: dateKey(d), out: false });
+                }
+                const total = Math.ceil(cells.length / 7) * 7;
+                for (let i = 1; cells.length < total; i++) {
+                    const d = new Date(y, m - 1, daysInMonth + i);
+                    cells.push({ day: d.getDate(), key: dateKey(d), out: true });
+                }
+
+                cal.innerHTML = `<div class="sidebar-calendar__grid">${cells.map(c => `<div class="sidebar-day${c.out ? ' is-out' : ''}" data-date="${c.key}">${c.day}</div>`).join('')}</div>`;
+
+                const isTaken = (key, ranges) => {
+                    const ts = new Date(key + 'T00:00:00').getTime();
+                    for (const r of ranges) {
+                        if (!r.from || !r.to) continue;
+                        const a = new Date(r.from + 'T00:00:00').getTime();
+                        const b = new Date(r.to + 'T00:00:00').getTime();
+                        if (ts >= a && ts < b) return true;
+                    }
+                    return false;
+                };
+
+                try {
+                    const url = new URL(api, window.location.href);
+                    url.searchParams.set('action', 'availability');
+                    url.searchParams.set('home_id', String(homeId));
+                    url.searchParams.set('month', monthKey);
+                    const res = await fetch(url.toString(), { credentials: 'same-origin' });
+                    const data = await res.json().catch(() => null);
+                    if (!res.ok || !data || data.ok !== true) return;
+                    const ranges = Array.isArray(data.ranges) ? data.ranges : [];
+                    cal.querySelectorAll('.sidebar-day').forEach(d => {
+                        const k = d.getAttribute('data-date') || '';
+                        if (k && isTaken(k, ranges)) d.classList.add('is-taken');
+                    });
+                } catch (_) {
+                }
+            })();
+
+            if (!modal) return;
+
+            const alertBox = document.getElementById('application-alert');
+            const showAlert = (msg, ok) => {
+                if (!alertBox) return;
+                alertBox.style.display = 'block';
+                alertBox.style.border = ok ? '1px solid rgba(48,182,7,0.35)' : '1px solid rgba(231,76,60,0.35)';
+                alertBox.style.background = ok ? 'rgba(48,182,7,0.08)' : 'rgba(231,76,60,0.08)';
+                alertBox.style.color = ok ? '#1f7a1f' : '#b02014';
+                alertBox.textContent = msg;
+            };
+
+            const submitBtn = modal.querySelector('.btn-submit');
+            if (!submitBtn) return;
+
+            submitBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (alertBox) alertBox.style.display = 'none';
+
+                const fd = new FormData();
+                fd.set('action', 'pieteikums_create');
+                fd.set('home_id', String(homeId));
+
+                const pick = (name) => {
+                    const el = modal.querySelector(`[name="${name}"]`);
+                    return el ? (el.value || '').trim() : '';
+                };
+
+                let vards = '';
+                let epasts = '';
+                let telefons = '';
+                let komentars = '';
+
+                if (homeType === 'ire') {
+                    vards = pick('lt_full_name');
+                    epasts = pick('lt_email');
+                    telefons = pick('lt_phone');
+                    komentars = (modal.querySelector('[name="lt_comment"]')?.value || '').trim();
+                    fd.set('ires_menesi', pick('lt_rent_months'));
+                    fd.set('nav_zinams', modal.querySelector('[name="lt_rent_unknown"]')?.checked ? '1' : '0');
+                    fd.set('ires_sakuma_datums', pick('lt_start_date'));
+                } else if (homeType === 'istermina_ire') {
+                    vards = pick('st_full_name');
+                    epasts = pick('st_email');
+                    telefons = pick('st_phone');
+                    komentars = (modal.querySelector('[name="st_comment"]')?.value || '').trim();
+                    fd.set('sakuma_datums', pick('st_start_date'));
+                    fd.set('beigu_datums', pick('st_end_date'));
+                } else {
+                    vards = pick('sale_full_name');
+                    epasts = pick('sale_email');
+                    telefons = pick('sale_phone');
+                    komentars = pick('sale_comment');
+                    fd.set('piedavata_summa', pick('sale_offer'));
+                    fd.set('finansesanas_veids', (document.getElementById('pay-method')?.value || '').trim());
+                }
+
+                fd.set('vards_uzvards', vards);
+                fd.set('epasts', epasts);
+                fd.set('telefons', telefons);
+                fd.set('komentars', komentars);
+
+                try {
+                    const res = await fetch(api, { method: 'POST', body: fd, credentials: 'same-origin' });
+                    const data = await res.json().catch(() => null);
+                    if (!res.ok || !data || data.ok !== true) {
+                        showAlert((data && data.error) ? data.error : 'Neizdevās nosūtīt pieteikumu.', false);
+                        return;
+                    }
+                    showAlert('Pieteikums nosūtīts.', true);
+                    setTimeout(() => { window.location.hash = '#'; }, 700);
+                } catch (_) {
+                    showAlert('Neizdevās nosūtīt pieteikumu.', false);
+                }
+            });
+        })();
     </script>
     <script src="<?php echo asset_path('script.js'); ?>"></script>
 </body>
