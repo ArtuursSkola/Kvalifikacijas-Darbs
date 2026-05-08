@@ -76,6 +76,7 @@ ul {
 
 .navbar.navbar--hero:not(.scrolled) {
     background-color: transparent !important;
+    background: transparent !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
 }
@@ -102,6 +103,7 @@ ul {
     background: rgba(48, 182, 7, 0.15) !important;
     color: var(--accent) !important;
 }
+
 
 
 .navbar.scrolled {
@@ -153,6 +155,7 @@ ul {
     left: 50%;
     transform: translateX(-50%);
     align-items: center;
+    white-space: nowrap;
 }
 
 .nav-links a {

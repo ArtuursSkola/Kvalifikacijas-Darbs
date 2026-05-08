@@ -1773,53 +1773,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nosūtīt sūdzību'; }
                 });
         });
-    }
+    };
 });
-
-    // FAQ form submission
-    var form = document.getElementById('faqForm');
-    var alertBox  = document.getElementById('faqAlert');
-    var apiUrl    = '/api/submit_palidziba';
-
-    function showAlert(msg, type) {
-        if (!alertBox) return;
-        alertBox.className = 'palidziba-alert palidziba-alert--' + type;
-        alertBox.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' + msg;
-        alertBox.style.display = 'flex';
-        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (alertBox) alertBox.style.display = 'none';
-            var tema = document.getElementById('faqTema');
-            var apraksts = document.getElementById('faqApraksts');
-            if (!tema || tema.value === '') { showAlert('Lūdzu izvēlieties tēmu.', 'error'); return; }
-            if (!apraksts || apraksts.value.trim() === '') { showAlert('Lūdzu aizpildiet jautājuma aprakstu.', 'error'); return; }
-            var fd = new FormData(form);
-            fd.append('files', JSON.stringify(selFiles.map(function(f) { return {name: f.name, size: f.size, type: f.type}; })));
-            var submitBtn = document.getElementById('faqSubmit');
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Nosūta...'; }
-            fetch(apiUrl, {method: 'POST', body: fd})
-                .then(function (d) {
-                    if (d.success) {
-                        closeModal();
-                        showPageAlert('Jūsu jautājums ir veiksmīgi nosūtīts! Mēs ar jums sazināsimies drīzumā.', 'success');
-                        form.reset(); selFiles = []; if (previewsBox) previewsBox.innerHTML = ''; if (charCount) charCount.textContent = '0';
-                    } else {
-                        showAlert(d.message || 'Kļūda.', 'error');
-                    }
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nosūtīt sūdzību'; }
-                })
-                .catch(function (err) {
-                    console.error('Fetch error:', err);
-                    showAlert('Sistēmas kļūda. Mēģiniet vēlāk.', 'error');
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nosūtīt sūdzību'; }
-                });
-        });
-    }
-}
 
 // Admin Palidziba JavaScript
 if (document.getElementById('replyOverlay')) {

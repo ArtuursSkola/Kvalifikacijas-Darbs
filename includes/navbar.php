@@ -32,7 +32,7 @@ $renewPlanPrice = $renewPlanName === 'Zelta' ? 2999 : ($renewPlanName === 'Sudra
 $myHomesUrl = main_route('property.myhomes');
 ?>
 
-<nav class="navbar<?php echo $navbarClass !== '' ? ' ' . htmlspecialchars($navbarClass) : ''; ?>" id="navbar"
+<nav class="navbar navbar--hero<?php echo $navbarClass !== '' ? ' ' . htmlspecialchars($navbarClass) : ''; ?>" id="navbar"
      data-fav-ids-api="<?php echo htmlspecialchars(main_route_absolute('api.favorites_ids'), ENT_QUOTES); ?>"
      data-fav-toggle-api="<?php echo htmlspecialchars(main_route_absolute('api.favorites_toggle'), ENT_QUOTES); ?>"
      data-fav-api="<?php echo htmlspecialchars(main_route_absolute('api.favorites'), ENT_QUOTES); ?>"
@@ -55,6 +55,9 @@ $myHomesUrl = main_route('property.myhomes');
             <li><a href="<?php echo main_route('property.create'); ?>" class="<?php echo isActive('newhome.php'); ?>">Izveidot sludinājumu</a></li>
         <?php endif; ?>
         <li><a href="<?php echo main_route('about'); ?>" class="<?php echo isActive('about.php'); ?>">Par mums</a></li>
+        <?php if ($currentUser): ?>
+            <li><a href="/pages/myapplications.php" class="<?php echo isActive('myapplications.php'); ?>">Mani pieteikumi</a></li>
+        <?php endif; ?>
 
         <li class="auth-buttons-mobile">
             <?php if ($currentUser): ?>
@@ -70,7 +73,7 @@ $myHomesUrl = main_route('property.myhomes');
     <div class="auth-buttons">
         <?php if ($currentUser): ?>
             <?php if (in_array(($currentUser['loma'] ?? ''), ['admin', 'moderator'], true)): ?>
-                <a href="<?php echo admin_route('dashboard'); ?>" class="btn-login" style="margin-right: 12px; background: #1d2733; color: #fff; border: none; font-size: 0.9rem; padding: 10px 16px;">Admin panelis</a>
+                <a href="<?php echo admin_route('dashboard'); ?>" class="btn-admin-panel" style="margin-right: 12px; background: #1d2733; color: #fff; border: none; font-size: 0.9rem; padding: 10px 16px;">Admin panelis</a>
             <?php endif; ?>
             <details class="profile-menu">
                 <summary

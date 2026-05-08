@@ -1,0 +1,229 @@
+:root {
+    --myapplications-hero-bg: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 55%, #183624 100%);
+}
+
+.myapplications-page .myapplications-hero {
+    background: var(--myapplications-hero-bg);
+    padding: 150px 24px 90px;
+    position: relative;
+    overflow: hidden;
+}
+
+.myapplications-page .myapplications-hero::before {
+    content: '';
+    position: absolute;
+    inset: -40% -30%;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(48,182,7,0.18), transparent 45%),
+        radial-gradient(circle at 80% 20%, rgba(255,215,0,0.08), transparent 44%);
+    filter: blur(0px);
+    display: none;
+}
+
+.myapplications-hero__inner {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    color: var(--white);
+}
+
+.myapplications-page .myapplications-hero {
+    margin-top: -80px;
+    padding-top: 160px;
+}
+
+.myapplications-page .navbar {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.myapplications-page .navbar.scrolled {
+    background: var(--primary) !important;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.15) !important;
+}
+
+.badge-pill {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    color: var(--white);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.myapplications-hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.2;
+}
+
+.myapplications-hero h1 span {
+    color: var(--accent);
+}
+
+.myapplications-hero p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.applications-section, .help-section {
+    margin-bottom: 60px;
+}
+
+.section-header {
+    margin-bottom: 32px;
+}
+
+.section-header h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--gray-50);
+    border-radius: 12px;
+    border: 2px dashed var(--gray-200);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: var(--gray-400);
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 1.4rem;
+    color: var(--gray-600);
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    color: var(--gray-500);
+    margin-bottom: 24px;
+}
+
+.applications-grid, .help-messages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 24px;
+}
+
+.application-card, .help-message-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid var(--gray-100);
+    transition: all 0.3s ease;
+}
+
+.application-card:hover, .help-message-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.application-header, .message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.application-header h3, .message-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-pending, .status-Iesūtīts {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.status-approved, .status-Atbildēts {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.status-rejected, .status-Aizvērts {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.application-details, .message-content, .message-details {
+    margin-bottom: 16px;
+}
+
+.application-details p, .message-content p, .message-details p {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.message-reply {
+    background: var(--gray-50);
+    padding: 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+}
+
+.message-reply h4 {
+    color: var(--primary);
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.message-reply p {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+.application-actions, .message-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .myapplications-hero {
+        padding: 120px 20px 60px;
+    }
+    
+    .myapplications-hero h1 {
+        font-size: 2.2rem;
+    }
+    
+    .applications-grid, .help-messages-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .application-header, .message-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}

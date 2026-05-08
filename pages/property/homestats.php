@@ -124,6 +124,13 @@ $bodyClass = 'owner-page homestats-page';
 include __DIR__ . '/../../includes/header.php';
 ?>
 
+<header class="homestats-hero">
+    <div class="homestats-hero__inner">
+        <p class="badge-pill"><i class="fas fa-chart-bar"></i> Statistika</p>
+        <h1><span><?php echo htmlspecialchars((string)($infoHome['nosaukums'] ?? '')); ?></span></h1>
+        <p>Apskatiet sava īpašuma skatījumu statistiku un darbības analīzi</p>
+    </div>
+</header>
 
 <div class="homestats-container">
     <div class="homestats-header">
