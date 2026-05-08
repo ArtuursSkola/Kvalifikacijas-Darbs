@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     initConfig();
-    
+
     function formatPrice(item) {
         if (item.type === 'istermina_ire') return `${item.price.toLocaleString('lv-LV')} \u20ac / nakti`;
         return (item.type === 'ire' || item.type === 'rent') ? `${item.price.toLocaleString('lv-LV')} € / mēn` : `${item.price.toLocaleString('lv-LV')} €`;
@@ -1480,7 +1480,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 showAlert((data && data.error) ? data.error : 'Neizdevās nosūtīt pieteikumu.', false);
                                 return;
                             }
-                            showAlert('Pieteikums nosūtīts.', true);
+                            showPageAlert('Pieteikums veiksmīgi nosūtīts', 'success');
                             setTimeout(() => { window.location.hash = '#'; }, 700);
                         } catch (_) {
                             showAlert('Neizdevās nosūtīt pieteikumu.', false);
@@ -1647,6 +1647,203 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadFavoriteIds();
 });
+
+// FAQ Page JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    var overlay  = document.getElementById('faqOverlay');
+    var openBtn  = document.getElementById('faqOpenBtn');
+    var closeBtn = document.getElementById('faqCloseBtn');
+
+    function openModal() {
+        if (!overlay) return;
+        overlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+        if (!overlay) return;
+        overlay.classList.remove('is-open');
+        document.body.style.overflow = '';
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (overlay) overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+    var textarea  = document.getElementById('faqApraksts');
+    var charCount = document.getElementById('faqCharCount');
+    if (textarea && charCount) {
+        textarea.addEventListener('input', function () { charCount.textContent = this.value.length; });
+    }
+
+    var fileInput   = document.getElementById('faqFails');
+    var previewsBox = document.getElementById('faqPreviews');
+    var uploadZone  = document.getElementById('faqUploadZone');
+    var selFiles    = [];
+
+    function renderPreviews() {
+        if (!previewsBox) return;
+        previewsBox.innerHTML = '';
+        selFiles.forEach(function (file, idx) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var wrap = document.createElement('div');
+                wrap.className = 'palidziba-upload-preview';
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                var rm = document.createElement('button');
+                rm.type = 'button';
+                rm.className = 'palidziba-upload-preview__remove';
+                rm.innerHTML = '<i class="fas fa-times"></i>';
+                rm.onclick = function () { selFiles.splice(idx, 1); renderPreviews(); syncInput(); };
+                wrap.appendChild(img); wrap.appendChild(rm);
+                previewsBox.appendChild(wrap);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    function syncInput() {
+        if (!fileInput) return;
+        var dt = new DataTransfer();
+        selFiles.forEach(function (f) { dt.items.add(f); });
+        fileInput.files = dt.files;
+    }
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            var files = Array.from(fileInput.files);
+            files.forEach(function (file) {
+                if (file.type.startsWith('image/')) {
+                    selFiles.push(file);
+                }
+            });
+            renderPreviews();
+        });
+    }
+
+    var faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach(function (item) {
+        var trigger = item.querySelector('.faq-item__trigger');
+        if (!trigger) return;
+        trigger.addEventListener('click', function () {
+            var isOpen = item.classList.contains('open');
+            faqItems.forEach(function (i) { i.classList.remove('open'); });
+            if (!isOpen) item.classList.add('open');
+        });
+    });
+
+    // FAQ form submission
+    var form = document.getElementById('faqForm');
+    var alertBox  = document.getElementById('faqAlert');
+    var apiUrl    = '/api/submit_palidziba';
+
+    function showAlert(msg, type) {
+        if (!alertBox) return;
+        alertBox.className = 'palidziba-alert palidziba-alert--' + type;
+        alertBox.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' + msg;
+        alertBox.style.display = 'flex';
+        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (alertBox) alertBox.style.display = 'none';
+            var tema = document.getElementById('faqTema');
+            var apraksts = document.getElementById('faqApraksts');
+            if (!tema || tema.value === '') { showAlert('Lūdzu izvēlieties tēmu.', 'error'); return; }
+            if (!apraksts || apraksts.value.trim() === '') { showAlert('Lūdzu aizpildiet jautājuma aprakstu.', 'error'); return; }
+            var fd = new FormData(form);
+            fd.append('files', JSON.stringify(selFiles.map(function(f) { return {name: f.name, size: f.size, type: f.type}; })));
+            var submitBtn = document.getElementById('faqSubmit');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Nosūta...'; }
+            fetch(apiUrl, {method: 'POST', body: fd})
+                .then(function (d) {
+                    if (d.success) {
+                        closeModal();
+                        showPageAlert('Jūsu jautājums ir veiksmīgi nosūtīts! Mēs ar jums sazināsimies drīzumā.', 'success');
+                        form.reset(); selFiles = []; if (previewsBox) previewsBox.innerHTML = ''; if (charCount) charCount.textContent = '0';
+                    } else {
+                        showAlert(d.message || 'Kļūda.', 'error');
+                    }
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nosūtīt sūdzību'; }
+                })
+                .catch(function (err) {
+                    console.error('Fetch error:', err);
+                    showAlert('Sistēmas kļūda. Mēģiniet vēlāk.', 'error');
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nosūtīt sūdzību'; }
+                });
+        });
+    }
+});
+
+    // FAQ form submission
+    var form = document.getElementById('faqForm');
+    var alertBox  = document.getElementById('faqAlert');
+    var apiUrl    = '/api/submit_palidziba';
+
+    function showAlert(msg, type) {
+        if (!alertBox) return;
+        alertBox.className = 'palidziba-alert palidziba-alert--' + type;
+        alertBox.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' + msg;
+        alertBox.style.display = 'flex';
+        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (alertBox) alertBox.style.display = 'none';
+            var tema = document.getElementById('faqTema');
+            var apraksts = document.getElementById('faqApraksts');
+            if (!tema || tema.value === '') { showAlert('Lūdzu izvēlieties tēmu.', 'error'); return; }
+            if (!apraksts || apraksts.value.trim() === '') { showAlert('Lūdzu aizpildiet jautājuma aprakstu.', 'error'); return; }
+            var fd = new FormData(form);
+            fd.append('files', JSON.stringify(selFiles.map(function(f) { return {name: f.name, size: f.size, type: f.type}; })));
+            var submitBtn = document.getElementById('faqSubmit');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Nosūta...'; }
+            fetch(apiUrl, {method: 'POST', body: fd})
+                .then(function (d) {
+                    if (d.success) {
+                        closeModal();
+                        showPageAlert('Jūsu jautājums ir veiksmīgi nosūtīts! Mēs ar jums sazināsimies drīzumā.', 'success');
+                        form.reset(); selFiles = []; if (previewsBox) previewsBox.innerHTML = ''; if (charCount) charCount.textContent = '0';
+                    } else {
+                        showAlert(d.message || 'Kļūda.', 'error');
+                    }
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nosūtīt sūdzību'; }
+                })
+                .catch(function (err) {
+                    console.error('Fetch error:', err);
+                    showAlert('Sistēmas kļūda. Mēģiniet vēlāk.', 'error');
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nosūtīt sūdzību'; }
+                });
+        });
+    }
+}
+
+// Admin Palidziba JavaScript
+if (document.getElementById('replyOverlay')) {
+    function openReplyModal(id, question, existing) {
+        document.getElementById('replyMsgId').value = id;
+        document.getElementById('replyQuestion').innerText = question;
+        document.getElementById('replyText').value = existing || '';
+        document.getElementById('replyOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeReplyModal() {
+        document.getElementById('replyOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    
+    function closeLightbox() {
+        document.getElementById('imgLightbox').classList.remove('open');
+    }
+    
+    document.getElementById('replyOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeReplyModal();
+    });
+}
 
 
 

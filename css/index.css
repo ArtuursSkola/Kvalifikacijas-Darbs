@@ -325,17 +325,17 @@
 }
 
 .badge.rent {
-    background: linear-gradient(135deg, #3498db, #2980b9);
+    background: #2980b9;
     color: #fff;
 }
 
 .badge.sale {
-    background: linear-gradient(135deg, #30b607, #259106);
+    background: var(--accent);
     color: #fff;
 }
 
 .badge.short-rent {
-    background: linear-gradient(135deg, #f39c12, #d35400);
+    background: #ac8003;
     color: #fff;
 }
 

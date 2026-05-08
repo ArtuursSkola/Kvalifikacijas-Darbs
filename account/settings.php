@@ -24,6 +24,16 @@ include __DIR__ . '/../includes/header.php';
 $flash = $_SESSION['settings_flash'] ?? null;
 unset($_SESSION['settings_flash']);
 
+if (isset($_SESSION['profile_update_success'])) {
+    unset($_SESSION['profile_update_success']);
+    echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Profila dati veiksmīgi atjaunoti', 'success'); });</script>";
+}
+
+if (isset($_SESSION['password_change_success'])) {
+    unset($_SESSION['password_change_success']);
+    echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Parole veiksmīgi nomainīta', 'success'); });</script>";
+}
+
 $currentPlanLabel = getCurrentPlanLabel($currentUser);
 $planDaysLeft = getPlanDaysLeft($currentUser);
 $planHistory = fetchUserPlanHistory($savienojums, (int)$currentUser['lietotaja_id'], $currentUser);

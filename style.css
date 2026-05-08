@@ -60,7 +60,6 @@ ul {
 
 .navbar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 24px 48px;
     background-color: var(--white);
@@ -150,6 +149,10 @@ ul {
     display: flex;
     gap: 8px;
     list-style: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    align-items: center;
 }
 
 .nav-links a {
@@ -164,6 +167,8 @@ ul {
     display: flex;
     align-items: center;
     gap: 12px;
+    position: absolute;
+    right: 48px;
 }
 
 

@@ -25,6 +25,7 @@ if ($_SESSION['role'] === 'admin' && isset($_GET['delete']) && is_numeric($_GET[
         $stmt->bind_param('i', $delId);
         if ($stmt->execute()) {
             $success = 'Lietotājs dzēsts.';
+            $_SESSION['admin_success'] = 'delete_user';
         } else {
             $errors[] = 'Neizdevās dzēst: ' . $stmt->error;
         }
@@ -75,6 +76,7 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
             $ins->bind_param('sssss', $newUsername, $newEmail, $hash, $newRole, $newPlan);
             if ($ins->execute()) {
                 $success = 'Lietotājs izveidots.';
+                $_SESSION['admin_success'] = 'create_user';
             } else {
                 $errors[] = 'Neizdevās izveidot: ' . $ins->error;
             }
@@ -132,6 +134,7 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['edit_user'])) {
                 }
                 if ($upd->execute()) {
                     $success = 'Lietotājs atjaunināts.';
+                    $_SESSION['admin_success'] = 'edit_user';
                 } else {
                     $errors[] = 'Neizdevās atjaunināt: ' . $upd->error;
                 }
@@ -200,6 +203,22 @@ $stmt->close();
 $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji")->fetch_row()[0];
 $ownersCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE loma='ipasnieks'")->fetch_row()[0];
 $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE(created_at)=CURDATE()")->fetch_row()[0];
+
+if (isset($_SESSION['admin_success'])) {
+    $successType = $_SESSION['admin_success'];
+    unset($_SESSION['admin_success']);
+    $popupMessage = '';
+    if ($successType === 'delete_user') {
+        $popupMessage = 'Lietotājs veiksmīgi dzēsts';
+    } elseif ($successType === 'create_user') {
+        $popupMessage = 'Lietotājs veiksmīgi izveidots';
+    } elseif ($successType === 'edit_user') {
+        $popupMessage = 'Lietotājs veiksmīgi atjaunināts';
+    }
+    if ($popupMessage !== '') {
+        echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('$popupMessage', 'success'); });</script>";
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="lv">
@@ -239,6 +258,7 @@ if (!empty($errors)) {
                 <li><a href="<?php echo admin_route('moderators'); ?>"><i class="fas fa-user-shield"></i> Moderatori</a></li>
             <?php endif; ?>
             <li><a href="<?php echo admin_route('listings'); ?>"><i class="fas fa-building"></i> Sludinājumi</a></li>
+            <li><a href="<?php echo admin_route('palidziba'); ?>"><i class="fas fa-headset"></i> Palīdzības centrs</a></li>
             <li><a href="#"><i class="fas fa-shopping-cart"></i> Pirkumi</a></li>
             <li><a href="#"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>

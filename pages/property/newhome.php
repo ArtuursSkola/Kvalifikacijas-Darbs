@@ -335,6 +335,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($stmt) {
             if ($stmt->execute()) {
+                $_SESSION['property_success'] = $isEdit ? 'edit' : 'create';
                 main_redirect('property.myhomes');
             } else {
                 $errors[] = 'Neizdevās saglabāt sludinājumu: ' . $stmt->error;

@@ -8,6 +8,16 @@ $pageTitle = 'HomeEstate - Tavs mājoklis';
 $extraStyles = ['index'];
 include 'includes/header.php';
 
+if (isset($_SESSION['login_success'])) {
+    unset($_SESSION['login_success']);
+    echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Jūs veiksmīgi pieteicāties', 'success'); });</script>";
+}
+
+if (isset($_SESSION['register_success'])) {
+    unset($_SESSION['register_success']);
+    echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Jūs veiksmīgi reģistrējāties', 'success'); });</script>";
+}
+
 
 $newestHomes = [];
 $sql = "SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas, galvenais_attels 
@@ -214,7 +224,7 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
     <section class ="help-section">
     <h2>Vai ir kādi jautājumi, vai vajadzīga palīdzība?</h2>
         <p>Mēs atbildam uz visiem jūsu dotajiem jautājumiem un jums ir iespēja apskatīt biežāk uzdotos jautājumus</p>
-        <a href="" class="btn-cta">
+        <a href="<?php echo main_route('faq'); ?>" class="btn-cta">
             <i class="fa-solid fa-question"></i>
                 Palīdzības centrs
         </a>

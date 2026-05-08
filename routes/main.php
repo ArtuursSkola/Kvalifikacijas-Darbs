@@ -141,6 +141,8 @@ function main_routes(): array
         'api.favorites_ids' => 'api/favorites_ids.php',
         'api.favorites_toggle' => 'api/toggle_favorite.php',
         'api.favorites' => 'api/get_favorites.php',
+        'faq' => 'pages/faq.php',
+        'api.submit_palidziba' => 'api/submit_palidziba.php',
     ];
 
     return $routes;

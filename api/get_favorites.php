@@ -22,7 +22,6 @@ if ($userId > 0 && isset($savienojums) && $savienojums instanceof mysqli) {
     }
 
     if (!empty($homeIds)) {
-        // Step 2: Fetch home details
         $safeIds = implode(',', array_map('intval', $homeIds));
         $homeStmt = $savienojums->prepare("SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas, apraksts, galvenais_attels, statuss, kategorija FROM est_homes WHERE id IN ($safeIds)");
         
@@ -41,7 +40,7 @@ if ($userId > 0 && isset($savienojums) && $savienojums instanceof mysqli) {
             $homeStmt->close();
         }
 
-        // Step 3: Fetch owner details gracefully
+
         $ownersMap = [];
         if (!empty($ownerIds)) {
             $uniqueOwnerIds = array_unique($ownerIds);

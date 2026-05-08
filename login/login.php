@@ -40,6 +40,7 @@ if (isset($_POST['login_btn'])) {
             $_SESSION['user_type'] = 'user';
             $_SESSION['plans'] = $plans_no_db !== '' ? $plans_no_db : 'Nekads';
 
+            $_SESSION['login_success'] = true;
             header("Location: " . main_route('home'));
             exit();
         } else {

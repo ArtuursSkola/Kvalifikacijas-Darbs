@@ -69,6 +69,7 @@ $stmt = $savienojums->prepare("UPDATE $table SET parole = ? WHERE $idCol = ?");
 if ($stmt) {
     $stmt->bind_param('si', $newHash, $userId);
     if ($stmt->execute()) {
+        $_SESSION['password_change_success'] = true;
         $_SESSION['settings_flash'] = ['type' => 'success', 'message' => 'Parole nomainīta veiksmīgi.', 'section' => 'password'];
     } else {
         $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Sistēmas kļūda, mēģiniet vēlreiz.', 'section' => 'password'];

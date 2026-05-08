@@ -73,6 +73,7 @@ if (isset($_POST['register_btn'])) {
                 $_SESSION['user_id'] = mysqli_insert_id($savienojums);
                 $_SESSION['username'] = $lietotajvards;
                 $_SESSION['role'] = $atlasita_loma;
+                $_SESSION['register_success'] = true;
                 
                 header('Location: ' . main_route('home'));
                 exit;

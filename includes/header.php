@@ -50,4 +50,5 @@ if (isset($bodyAttributes) && is_string($bodyAttributes) && trim($bodyAttributes
 <body class="<?php echo htmlspecialchars($resolvedBodyClass, ENT_QUOTES); ?>"<?php echo $resolvedBodyAttributes; ?>>
 
 <?php include __DIR__ . '/navbar.php'; ?>
+<?php include __DIR__ . '/popup_system.php'; ?>
 

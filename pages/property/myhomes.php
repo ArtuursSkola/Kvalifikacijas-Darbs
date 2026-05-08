@@ -24,6 +24,16 @@ include __DIR__ . '/../../includes/header.php';
 $flash = $_SESSION['owner_flash'] ?? null;
 unset($_SESSION['owner_flash']);
 
+if (isset($_SESSION['property_success'])) {
+    $successType = $_SESSION['property_success'];
+    unset($_SESSION['property_success']);
+    if ($successType === 'create') {
+        echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Sludinājums veiksmīgi izveidots', 'success'); });</script>";
+    } elseif ($successType === 'edit') {
+        echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Sludinājums veiksmīgi rediģēts', 'success'); });</script>";
+    }
+}
+
 $ownerId = (int)($currentUser['lietotaja_id'] ?? $_SESSION['user_id'] ?? 0);
 
 $myHomes = [];

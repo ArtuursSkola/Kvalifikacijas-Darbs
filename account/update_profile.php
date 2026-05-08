@@ -74,6 +74,7 @@ if ($updatedUser) {
     storeUserSessionData($updatedUser);
 }
 
+$_SESSION['profile_update_success'] = true;
 $_SESSION['settings_flash'] = ['type' => 'success', 'message' => 'Profila dati atjaunoti.'];
 header('Location: ' . $redirectTo);
 exit;

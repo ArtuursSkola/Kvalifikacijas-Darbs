@@ -24,6 +24,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
         $stmt->bind_param('i', $delId);
         if ($stmt->execute()) {
             $success = 'Sludinājums dzēsts.';
+            $_SESSION['admin_success'] = 'delete_property';
         }
         $stmt->close();
     }
@@ -36,6 +37,7 @@ if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
         $stmt->bind_param('i', $approveId);
         if ($stmt->execute()) {
             $success = 'Sludinājums apstiprināts un tagad ir aktīvs!';
+            $_SESSION['admin_success'] = 'approve_property';
         }
         $stmt->close();
     }
@@ -48,6 +50,7 @@ if (isset($_GET['reject']) && is_numeric($_GET['reject'])) {
         $stmt->bind_param('i', $rejectId);
         if ($stmt->execute()) {
             $success = 'Sludinājums noraidīts.';
+            $_SESSION['admin_success'] = 'reject_property';
         }
         $stmt->close();
     }
@@ -162,6 +165,22 @@ function buildUrl($overrides = []) {
     unset($params['delete']);
     return '?' . http_build_query($params);
 }
+
+if (isset($_SESSION['admin_success'])) {
+    $successType = $_SESSION['admin_success'];
+    unset($_SESSION['admin_success']);
+    $popupMessage = '';
+    if ($successType === 'delete_property') {
+        $popupMessage = 'Sludinājums veiksmīgi dzēsts';
+    } elseif ($successType === 'approve_property') {
+        $popupMessage = 'Sludinājums veiksmīgi apstiprināts';
+    } elseif ($successType === 'reject_property') {
+        $popupMessage = 'Sludinājums veiksmīgi noraidīts';
+    }
+    if ($popupMessage !== '') {
+        echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('$popupMessage', 'success'); });</script>";
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="lv">
@@ -184,6 +203,7 @@ function buildUrl($overrides = []) {
                 <li><a href="<?php echo admin_route('moderators'); ?>"><i class="fas fa-user-shield"></i> Moderatori</a></li>
             <?php endif; ?>
             <li><a href="<?php echo admin_route('listings'); ?>" class="active"><i class="fas fa-building"></i> Sludinājumi</a></li>
+            <li><a href="<?php echo admin_route('palidziba'); ?>"><i class="fas fa-headset"></i> Palīdzības centrs</a></li>
             <li><a href="#"><i class="fas fa-shopping-cart"></i> Pirkumi</a></li>
             <li><a href="#"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>
