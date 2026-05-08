@@ -426,7 +426,9 @@ function buildUrl($overrides = []) {
         </div>
     </div>
 
-    <script>
+    <script src="../script.js"></script>
+    <!--
+
     function openModal(id) {
         document.getElementById(id).classList.add('active');
     }
@@ -448,6 +450,7 @@ function buildUrl($overrides = []) {
             if (e.target === overlay) overlay.classList.remove('active');
         });
     });
-    </script>
+    -->
+
 </body>
 </html>

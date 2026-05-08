@@ -32,8 +32,8 @@ $propertyHistory = fetchUserPropertyTransactions($savienojums, (int)$currentUser
 $profileImageUrl = userProfileImageUrl($currentUser['profila_bilde'] ?? null);
 $profileInitial = strtoupper(substr((string)($currentUser['lietotajvards'] ?? 'U'), 0, 1));
 
-$renewPlanName = in_array($currentPlanLabel, ['Silver', 'Gold'], true) ? $currentPlanLabel : null;
-$renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver' ? 999 : null);
+$renewPlanName = in_array($currentPlanLabel, ['Sudraba', 'Zelta'], true) ? $currentPlanLabel : null;
+$renewPlanPrice = $renewPlanName === 'Zelta' ? 2999 : ($renewPlanName === 'Sudraba' ? 999 : null);
 ?>
 
 <main class="settings-shell">
@@ -71,7 +71,7 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
             <label for="username">Lietotājvārds</label>
             <input type="text" name="username" id="username" value="<?php echo htmlspecialchars((string)($currentUser['lietotajvards'] ?? '')); ?>" required>
 
-            <button type="submit" class="btn-register">Saglabāt izmaiņas</button>
+            <button type="submit" class="btn-submit">Saglabāt izmaiņas</button>
         </form>
     </section>
 
@@ -94,7 +94,7 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
             <label for="new_password_repeat">Atkārtot jauno paroli</label>
             <input type="password" name="new_password_repeat" id="new_password_repeat" autocomplete="new-password" required>
 
-            <button type="submit" class="btn-register">Mainīt paroli</button>
+            <button type="submit" class="btn-submit">Mainīt paroli</button>
         </form>
     </section>
 
@@ -110,8 +110,10 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
                 <span>Plāns beidzas</span>
                 <strong>
                     <?php
-                    if (!empty($currentUser['plan_expires_at']) && strtotime((string)$currentUser['plan_expires_at']) !== false) {
-                        echo htmlspecialchars(date('d.m.Y H:i', strtotime((string)$currentUser['plan_expires_at'])));
+                    if ($currentPlanLabel === 'Nekads') {
+                        echo 'Nav plāna';
+                    } elseif ($currentPlanLabel === 'Bezmaksas') {
+                        echo 'Bez termiņa';
                     } else {
                         echo 'Nav aktīva plāna';
                     }
@@ -120,15 +122,13 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
             </div>
             <div class="settings-plan-item">
                 <span>Dienas līdz beigām</span>
-                <strong><?php echo $planDaysLeft !== null ? (int)$planDaysLeft . ' dienas' : 'Nav aktīva plāna'; ?></strong>
+                <strong><?php echo $planDaysLeft !== null ? (int)$planDaysLeft . ' dienas' : ($currentPlanLabel === 'Bezmaksas' ? 'Bez termiņa' : 'Nav plāna'); ?></strong>
             </div>
         </div>
 
         <div class="settings-plan-actions">
             <?php if ($renewPlanName && $renewPlanPrice !== null): ?>
-                <a class="btn-login" href="<?php echo main_route('payment.checkout', ['plan' => $renewPlanName, 'price' => $renewPlanPrice]); ?>">Atjaunot plānu</a>
-            <?php else: ?>
-                <a class="btn-login" href="<?php echo main_route('owner'); ?>#plans">Izvēlēties plānu</a>
+                <a class="btn-submit" href="<?php echo main_route('payment.checkout', ['plan' => $renewPlanName, 'price' => $renewPlanPrice]); ?>">Atjaunot plānu</a>
             <?php endif; ?>
         </div>
     </section>
@@ -142,7 +142,7 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
                 <?php foreach ($planHistory as $purchase): ?>
                     <div class="settings-history__row">
                         <div>
-                            <strong><?php echo htmlspecialchars((string)($purchase['plan_name'] ?? 'Free')); ?></strong>
+                            <strong><?php echo htmlspecialchars((string)($purchase['plan_name'] ?? 'Nekads')); ?></strong>
                             <div class="muted">
                                 <?php echo !empty($purchase['purchased_at']) ? htmlspecialchars(date('d.m.Y H:i', strtotime((string)$purchase['purchased_at']))) : 'Nav datu'; ?>
                             </div>
@@ -172,7 +172,7 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
         <h2>Kļūt par īpašnieku</h2>
         <p>Vai vēlaties kļūt par īpašnieku?</p>
         <form method="POST" action="<?php echo main_route('account.become_owner'); ?>">
-            <button type="submit" class="btn-register">Kļūt par īpašnieku</button>
+            <button type="submit" class="btn-submit">Kļūt par īpašnieku</button>
         </form>
     </section>
     <?php endif; ?>
@@ -228,4 +228,3 @@ $renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver
 </main>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
-

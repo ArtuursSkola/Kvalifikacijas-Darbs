@@ -250,10 +250,9 @@ if ($result && $result instanceof mysqli_result) {
 $ownersMap = [];
 if ($ownerIds !== []) {
     $uniqueOwnerIds = array_unique($ownerIds);
-    $placeholders = implode(',', array_fill(0, count($uniqueOwnerIds), '?'));
-    $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plan FROM est_lietotaji WHERE lietotaja_id IN ($placeholders)");
+    $safeOwnerIds = implode(',', array_map('intval', $uniqueOwnerIds));
+    $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plans FROM est_lietotaji WHERE lietotaja_id IN ($safeOwnerIds)");
     if ($ownerStmt) {
-        $ownerStmt->bind_param(str_repeat('i', count($uniqueOwnerIds)), ...array_values($uniqueOwnerIds));
         $ownerStmt->execute();
         $ownerRes = $ownerStmt->get_result();
         while ($o = $ownerRes->fetch_assoc()) {
@@ -298,7 +297,7 @@ foreach ($rawHomes as $row) {
         'desc' => $descShort,
         'owner_username' => (string)($owner['lietotajvards'] ?? ''),
         'owner_pfp' => media_absolute_url($owner['profila_bilde'] ?? ''),
-        'owner_plan' => (string)($owner['plan'] ?? '')
+        'owner_plan' => (string)($owner['plans'] ?? '')
     ];
 }
 

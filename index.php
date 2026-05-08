@@ -24,7 +24,7 @@ if ($newestHomes !== []) {
     $ownerIds = array_filter(array_unique(array_column($newestHomes, 'ipasnieka_id')));
     if ($ownerIds !== []) {
         $placeholders = implode(',', array_fill(0, count($ownerIds), '?'));
-        $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plan FROM est_lietotaji WHERE lietotaja_id IN ($placeholders)");
+        $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plans FROM est_lietotaji WHERE lietotaja_id IN ($placeholders)");
         if ($ownerStmt) {
             $ownerStmt->bind_param(str_repeat('i', count($ownerIds)), ...array_values($ownerIds));
             $ownerStmt->execute();
@@ -139,7 +139,7 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
                         $ownerName = $owner['lietotajvards'] ?? 'Īpašnieks';
                         $ownerPfp = userProfileImageUrl($owner['profila_bilde'] ?? '');
                         $ownerInitial = strtoupper(substr($ownerName, 0, 1));
-                        $hasShield = in_array($owner['plan'] ?? '', ['Silver', 'Gold'], true);
+                        $hasShield = in_array($owner['plans'] ?? '', ['Sudraba', 'Zelta'], true);
                         if (($home['veids'] ?? '') === 'istermina_ire') {
                             $priceDisplay = number_format($home['cena'], 0, ',', ' ') . ' € / nakti';
                             $badgeClass = 'short-rent';

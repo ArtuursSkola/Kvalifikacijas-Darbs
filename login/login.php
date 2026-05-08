@@ -30,7 +30,7 @@ if (isset($_POST['login_btn'])) {
     if (mysqli_num_rows($result) === 1) {
         $row = mysqli_fetch_assoc($result);
         $loma_no_db = ($roleColumnExists && isset($row['loma'])) ? $row['loma'] : 'lietotajs';
-        $plan_no_db = isset($row['plan']) ? $row['plan'] : null;
+        $plans_no_db = isset($row['plans']) ? $row['plans'] : 'Nekads';
 
         if (password_verify($parole_raw, $row['parole'])) {
             // Veiksmīga ielogošanās to saglabā sesijā
@@ -38,9 +38,7 @@ if (isset($_POST['login_btn'])) {
             $_SESSION['username'] = $row['lietotajvards'];
             $_SESSION['role'] = $loma_no_db;
             $_SESSION['user_type'] = 'user';
-            if ($plan_no_db !== null) {
-                $_SESSION['plan'] = $plan_no_db;
-            }
+            $_SESSION['plans'] = $plans_no_db !== '' ? $plans_no_db : 'Nekads';
 
             header("Location: " . main_route('home'));
             exit();

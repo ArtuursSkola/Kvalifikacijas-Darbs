@@ -39,7 +39,7 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
     $newEmail = trim($_POST['new_email'] ?? '');
     $newPassword = $_POST['new_password'] ?? '';
     $newRole = $_POST['new_role'] ?? 'lietotajs';
-    $newPlan = $_POST['new_plan'] ?? '';
+    $newPlan = $_POST['new_plan'] ?? 'Nekads';
     
     $allowedRoles = ['lietotajs', 'ipasnieks'];
     if (!in_array($newRole, $allowedRoles, true)) $newRole = 'lietotajs';
@@ -69,9 +69,10 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
             $errors[] = 'Lietotājvārds vai e-pasts jau eksistē.';
         } else {
             $hash = password_hash($newPassword, PASSWORD_DEFAULT);
-            $ins = $savienojums->prepare("INSERT INTO est_lietotaji (lietotajvards, epasts, parole, loma, plan) VALUES (?, ?, ?, ?, ?)");
-            $planVal = $newPlan !== '' ? $newPlan : null;
-            $ins->bind_param('sssss', $newUsername, $newEmail, $hash, $newRole, $planVal);
+            $allowedPlans = ['Nekads', 'Bezmaksas', 'Sudraba', 'Zelta'];
+            if (!in_array($newPlan, $allowedPlans, true)) $newPlan = 'Nekads';
+            $ins = $savienojums->prepare("INSERT INTO est_lietotaji (lietotajvards, epasts, parole, loma, plans) VALUES (?, ?, ?, ?, ?)");
+            $ins->bind_param('sssss', $newUsername, $newEmail, $hash, $newRole, $newPlan);
             if ($ins->execute()) {
                 $success = 'Lietotājs izveidots.';
             } else {
@@ -90,7 +91,7 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['edit_user'])) {
     $editUsername = trim($_POST['edit_username'] ?? '');
     $editEmail = trim($_POST['edit_email'] ?? '');
     $editRole = $_POST['edit_role'] ?? 'lietotajs';
-    $editPlan = $_POST['edit_plan'] ?? '';
+    $editPlan = $_POST['edit_plan'] ?? 'Nekads';
     $editPassword = $_POST['edit_password'] ?? '';
     
     $allowedRoles = ['lietotajs', 'ipasnieks'];
@@ -119,14 +120,15 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['edit_user'])) {
             if ($chk->get_result()->num_rows > 0) {
                 $errors[] = 'Lietotājvārds vai e-pasts jau aizņemts.';
             } else {
-                $planVal = $editPlan !== '' ? $editPlan : null;
+                $allowedPlans = ['Nekads', 'Bezmaksas', 'Sudraba', 'Zelta'];
+                if (!in_array($editPlan, $allowedPlans, true)) $editPlan = 'Nekads';
                 if ($editPassword !== '') {
                     $hash = password_hash($editPassword, PASSWORD_DEFAULT);
-                    $upd = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards=?, epasts=?, parole=?, loma=?, plan=? WHERE lietotaja_id=?");
-                    $upd->bind_param('sssssi', $editUsername, $editEmail, $hash, $editRole, $planVal, $editId);
+                    $upd = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards=?, epasts=?, parole=?, loma=?, plans=? WHERE lietotaja_id=?");
+                    $upd->bind_param('sssssi', $editUsername, $editEmail, $hash, $editRole, $editPlan, $editId);
                 } else {
-                    $upd = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards=?, epasts=?, loma=?, plan=? WHERE lietotaja_id=?");
-                    $upd->bind_param('ssssi', $editUsername, $editEmail, $editRole, $planVal, $editId);
+                    $upd = $savienojums->prepare("UPDATE est_lietotaji SET lietotajvards=?, epasts=?, loma=?, plans=? WHERE lietotaja_id=?");
+                    $upd->bind_param('ssssi', $editUsername, $editEmail, $editRole, $editPlan, $editId);
                 }
                 if ($upd->execute()) {
                     $success = 'Lietotājs atjaunināts.';
@@ -177,7 +179,7 @@ $totalPages = max(1, ceil($totalUsers / $perPage));
 
 // Get users
 $users = [];
-$sql = "SELECT lietotaja_id, lietotajvards, epasts, loma, plan, plan_expires_at, created_at FROM est_lietotaji $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?";
+$sql = "SELECT lietotaja_id, lietotajvards, epasts, loma, plans, plan_expires_at, created_at FROM est_lietotaji $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?";
 if ($search !== '') {
     $stmt = $savienojums->prepare($sql);
     $stmt->bind_param($types . 'ii', ...[...$params, $perPage, $offset]);
@@ -209,7 +211,25 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../css/admin.css">
 </head>
-<body>
+<?php
+$autoModal = '';
+$autoModalData = null;
+if (!empty($errors)) {
+    if ($form_type === 'create') {
+        $autoModal = 'createModal';
+    } elseif ($form_type === 'edit') {
+        $autoModal = 'edit';
+        $autoModalData = [
+            'lietotaja_id' => $_POST['edit_id'] ?? 0,
+            'lietotajvards' => $_POST['edit_username'] ?? '',
+            'epasts' => $_POST['edit_email'] ?? '',
+            'loma' => $_POST['edit_role'] ?? 'lietotajs',
+            'plans' => $_POST['edit_plan'] ?? 'Nekads'
+        ];
+    }
+}
+?>
+<body <?php echo $autoModal ? 'data-auto-modal="' . $autoModal . '"' : ''; ?> <?php echo $autoModalData ? 'data-auto-modal-data=\'' . htmlspecialchars(json_encode($autoModalData), ENT_QUOTES) . '\'' : ''; ?>>
     <aside class="sidebar">
         <div class="sidebar-logo">Home<span>Estate</span></div>
         <ul class="sidebar-menu">
@@ -313,15 +333,15 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
                                         <span class="badge <?php echo $roleBadge; ?>"><?php echo htmlspecialchars($u['loma'] ?? 'lietotajs'); ?></span>
                                     </td>
                                     <td>
-                                        <?php if (!empty($u['plan'])): ?>
-                                            <span class="badge <?php echo $u['plan'] === 'Gold' ? 'orange' : 'blue'; ?>"><?php echo htmlspecialchars($u['plan']); ?></span>
+                                        <?php if (!empty($u['plans']) && $u['plans'] !== 'Nekads'): ?>
+                                            <span class="badge <?php echo $u['plans'] === 'Zelta' ? 'orange' : 'blue'; ?>"><?php echo htmlspecialchars($u['plans']); ?></span>
                                         <?php else: ?>
                                             <span class="badge gray">—</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php 
-                                        if (!empty($u['plan']) && !empty($u['plan_expires_at'])) {
+                                        if (!empty($u['plans']) && !empty($u['plan_expires_at'])) {
                                             $expires = strtotime($u['plan_expires_at']);
                                             $now = time();
                                             if ($expires > $now) {
@@ -405,9 +425,10 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
                         <div class="form-group">
                             <label>Plāns</label>
                             <select name="new_plan">
-                                <option value="">Nav</option>
-                                <option value="Silver">Silver</option>
-                                <option value="Gold">Gold</option>
+                                <option value="Nekads">Nekads</option>
+                                <option value="Bezmaksas">Bezmaksas</option>
+                                <option value="Sudraba">Sudraba</option>
+                                <option value="Zelta">Zelta</option>
                             </select>
                         </div>
                     </div>
@@ -456,9 +477,10 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
                         <div class="form-group">
                             <label>Plāns</label>
                             <select name="edit_plan" id="edit_plan">
-                                <option value="">Nav</option>
-                                <option value="Silver">Silver</option>
-                                <option value="Gold">Gold</option>
+                                <option value="Nekads">Nekads</option>
+                                <option value="Bezmaksas">Bezmaksas</option>
+                                <option value="Sudraba">Sudraba</option>
+                                <option value="Zelta">Zelta</option>
                             </select>
                         </div>
                     </div>
@@ -470,42 +492,6 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
             </form>
         </div>
     </div>
-
-    <script>
-    function openModal(id) {
-        document.getElementById(id).classList.add('active');
-    }
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('active');
-    }
-    function openEditModal(user) {
-        document.getElementById('edit_id').value = user.lietotaja_id;
-        document.getElementById('edit_username').value = user.lietotajvards;
-        document.getElementById('edit_email').value = user.epasts;
-        document.getElementById('edit_password').value = '';
-        document.getElementById('edit_role').value = user.loma || 'lietotajs';
-        document.getElementById('edit_plan').value = user.plan || '';
-        openModal('editModal');
-    }
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) overlay.classList.remove('active');
-        });
-    });
-
-    <?php if (!empty($errors)): ?>
-        <?php if ($form_type === 'create'): ?>
-            openModal('createModal');
-        <?php elseif ($form_type === 'edit'): ?>
-            openEditModal(<?php echo json_encode([
-                'lietotaja_id' => $_POST['edit_id'] ?? 0,
-                'lietotajvards' => $_POST['edit_username'] ?? '',
-                'epasts' => $_POST['edit_email'] ?? '',
-                'loma' => $_POST['edit_role'] ?? 'lietotajs',
-                'plan' => $_POST['edit_plan'] ?? ''
-            ]); ?>);
-        <?php endif; ?>
-    <?php endif; ?>
-    </script>
+    <script src="../script.js"></script>
 </body>
 </html>

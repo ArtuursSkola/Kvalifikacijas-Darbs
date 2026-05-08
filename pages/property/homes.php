@@ -3,8 +3,8 @@ session_start();
 require_once __DIR__ . '/../../routes/main.php';
 
 $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
-$plan = $_SESSION['plan'] ?? '';
-$canCreate = $isOwner && in_array($plan, ['Silver', 'Gold']);
+$plan = $_SESSION['plans'] ?? 'Nekads';
+$canCreate = $isOwner && in_array($plan, ['Bezmaksas', 'Sudraba', 'Zelta'], true);
 
 $pageTitle = 'Meklēt īpašumus - HomeEstate';
 $extraStyles = ['homes'];

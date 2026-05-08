@@ -508,7 +508,6 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             background-size: 200% 200%;
-            animation: goldShine 3s ease infinite;
         }
 
         .plan-card.gold .plan-features li i {
@@ -534,12 +533,6 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-
-
-        .plan-card.gold .plan-name::before {
-            content: '👑 ';
-        }
-
 
         .cta-strip {
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
@@ -785,6 +778,11 @@
             font-weight: 700;
             color: var(--accent);
             font-size: 1.1rem;
+        }
+        .owner-card__actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
         .btn-sm-view {
             color: var(--primary);

@@ -201,7 +201,7 @@
         }
 
         .property-meta .type-badge {
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            background: var(--accent);
             color: var(--white);
             padding: 8px 20px;
             border-radius: 50px;

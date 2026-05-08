@@ -104,13 +104,11 @@ body.homes-page {
     border: none;
     cursor: pointer;
     transition: all 0.3s;
-    box-shadow: 0 8px 30px rgba(48,182,7,0.4);
 }
 
 .btn-hero-search:hover {
     background: var(--accent-dark);
     transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(48,182,7,0.5);
 }
 
 .hero-note {
@@ -253,7 +251,7 @@ body.homes-page {
 }
 
 .btn-filter {
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    background: var(--accent);
     color: var(--white);
     border: none;
     padding: 14px 28px;
@@ -266,12 +264,10 @@ body.homes-page {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    box-shadow: 0 6px 20px rgba(48,182,7,0.3);
 }
 
 .btn-filter:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(48,182,7,0.4);
 }
 
 .filter-hint {
@@ -673,6 +669,7 @@ footer {
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--gray-200);
+    padding: 0;
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
@@ -714,17 +711,17 @@ footer {
 }
 
 .property-badge.rent {
-    background: linear-gradient(135deg, #3498db, #2980b9);
+    background: #2980b9;
     color: var(--white);
 }
 
 .property-badge.sale {
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    background: var(--accent);
     color: var(--white);
 }
 
 .property-badge.short-rent {
-    background: linear-gradient(135deg, #f39c12, #d35400);
+    background: #ac8003;
     color: var(--white);
 }
 

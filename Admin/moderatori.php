@@ -181,7 +181,24 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../css/admin.css">
 </head>
-<body>
+<?php
+$autoModal = '';
+$autoModalData = null;
+if (!empty($errors)) {
+    if ($form_type === 'create') {
+        $autoModal = 'createModal';
+    } elseif ($form_type === 'edit') {
+        $autoModal = 'edit';
+        $autoModalData = [
+            'admin_id' => $_POST['edit_id'] ?? 0,
+            'lietotajvards' => $_POST['edit_username'] ?? '',
+            'epasts' => $_POST['edit_email'] ?? '',
+            'loma' => $_POST['edit_role'] ?? 'moderator'
+        ];
+    }
+}
+?>
+<body <?php echo $autoModal ? 'data-auto-modal="' . $autoModal . '"' : ''; ?> <?php echo $autoModalData ? 'data-auto-modal-data=\'' . htmlspecialchars(json_encode($autoModalData), ENT_QUOTES) . '\'' : ''; ?>>
     <aside class="sidebar">
         <div class="sidebar-logo">Home<span>Estate</span></div>
         <ul class="sidebar-menu">
@@ -368,37 +385,6 @@ $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma
             </form>
         </div>
     </div>
-
-    <script>
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        
-        function openEditModal(data) {
-            document.getElementById('edit_id').value = data.admin_id;
-            document.getElementById('edit_username').value = data.lietotajvards;
-            document.getElementById('edit_email').value = data.epasts;
-            document.getElementById('edit_role').value = data.loma;
-            openModal('editModal');
-        }
-
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal-overlay')) {
-                event.target.classList.remove('active');
-            }
-        }
-
-        <?php if (!empty($errors)): ?>
-            <?php if ($form_type === 'create'): ?>
-                openModal('createModal');
-            <?php elseif ($form_type === 'edit'): ?>
-                openEditModal(<?php echo json_encode([
-                    'admin_id' => $_POST['edit_id'] ?? 0,
-                    'lietotajvards' => $_POST['edit_username'] ?? '',
-                    'epasts' => $_POST['edit_email'] ?? '',
-                    'loma' => $_POST['edit_role'] ?? 'moderator'
-                ]); ?>);
-            <?php endif; ?>
-        <?php endif; ?>
-    </script>
+    <script src="../script.js"></script>
 </body>
 </html>

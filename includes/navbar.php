@@ -21,18 +21,25 @@ $planDaysLeft = getPlanDaysLeft($currentUser);
 $profileImageUrl = userProfileImageUrl($currentUser['profila_bilde'] ?? null);
 $profileInitial = strtoupper(substr((string)($currentUser['lietotajvards'] ?? $currentUser['username'] ?? 'U'), 0, 1));
 $isOwner = $currentUser ? (($currentUser['loma'] ?? '') === 'ipasnieks') : false;
-$canCreate = userHasActivePaidPlan($currentUser);
+$canCreate = userHasActiveOwnerPlan($currentUser);
 $profileBadge = $isOwner ? 'Īpašnieks' : 'Lietotājs';
 $settingsUrl = main_route('account.settings_page');
 $planHistory = $currentUser ? fetchUserPlanHistory($savienojums, (int)($currentUser['lietotaja_id'] ?? 0), $currentUser) : [];
 $propertyHistory = $currentUser ? fetchUserPropertyTransactions($savienojums, (int)($currentUser['lietotaja_id'] ?? 0)) : [];
 
-$renewPlanName = in_array($currentPlanLabel, ['Silver', 'Gold'], true) ? $currentPlanLabel : null;
-$renewPlanPrice = $renewPlanName === 'Gold' ? 2999 : ($renewPlanName === 'Silver' ? 999 : null);
+$renewPlanName = in_array($currentPlanLabel, ['Sudraba', 'Zelta'], true) ? $currentPlanLabel : null;
+$renewPlanPrice = $renewPlanName === 'Zelta' ? 2999 : ($renewPlanName === 'Sudraba' ? 999 : null);
 $myHomesUrl = main_route('property.myhomes');
 ?>
 
-<nav class="navbar<?php echo $navbarClass !== '' ? ' ' . htmlspecialchars($navbarClass) : ''; ?>" id="navbar">
+<nav class="navbar<?php echo $navbarClass !== '' ? ' ' . htmlspecialchars($navbarClass) : ''; ?>" id="navbar"
+     data-fav-ids-api="<?php echo htmlspecialchars(main_route_absolute('api.favorites_ids'), ENT_QUOTES); ?>"
+     data-fav-toggle-api="<?php echo htmlspecialchars(main_route_absolute('api.favorites_toggle'), ENT_QUOTES); ?>"
+     data-fav-api="<?php echo htmlspecialchars(main_route_absolute('api.favorites'), ENT_QUOTES); ?>"
+     data-login-url="<?php echo htmlspecialchars(main_route_absolute('login'), ENT_QUOTES); ?>"
+     data-property-route="<?php echo htmlspecialchars(main_route_absolute('property.show'), ENT_QUOTES); ?>"
+    data-logged-in="<?php echo $currentUser ? 'true' : 'false'; ?>"
+>
     <div class="logo">Home<span>Estate</span></div>
 
     <ul class="nav-links">
@@ -129,15 +136,7 @@ $myHomesUrl = main_route('property.myhomes');
     </div>
 </nav>
 
-<script>
-window.__homeest = window.__homeest || {};
-window.__homeest.favoritesIdsApi = "<?php echo htmlspecialchars(main_route('api.favorites_ids'), ENT_QUOTES); ?>";
-window.__homeest.favoritesToggleApi = "<?php echo htmlspecialchars(main_route('api.favorites_toggle'), ENT_QUOTES); ?>";
-window.__homeest.favoritesApi = "<?php echo htmlspecialchars(main_route('api.favorites'), ENT_QUOTES); ?>";
-window.__homeest.loginUrl = "<?php echo htmlspecialchars(main_route('login'), ENT_QUOTES); ?>";
-window.__homeest.propertyRoute = "<?php echo htmlspecialchars(main_route('property.show'), ENT_QUOTES); ?>";
-window.__homeest.isLoggedIn = <?php echo $currentUser ? 'true' : 'false'; ?>;
-</script>
+
 
 <?php if ($currentUser): ?>
     <div class="settings-modal" id="settings-modal">
@@ -174,7 +173,7 @@ window.__homeest.isLoggedIn = <?php echo $currentUser ? 'true' : 'false'; ?>;
                         <label for="username_nav">Lietotājvārds</label>
                         <input type="text" name="username" id="username_nav" value="<?php echo htmlspecialchars((string)($currentUser['lietotajvards'] ?? '')); ?>" required>
 
-                        <button type="submit" class="btn-register">Saglabāt izmaiņas</button>
+                        <button type="submit" class="btn-submit">Saglabāt izmaiņas</button>
                     </form>
                 </section>
 
@@ -201,7 +200,7 @@ window.__homeest.isLoggedIn = <?php echo $currentUser ? 'true' : 'false'; ?>;
                         <label for="new_password_repeat_nav">Atkārtot jauno paroli</label>
                         <input type="password" name="new_password_repeat" id="new_password_repeat_nav" autocomplete="new-password" required>
 
-                        <button type="submit" class="btn-register">Mainīt paroli</button>
+                        <button type="submit" class="btn-submit">Mainīt paroli</button>
                     </form>
                 </section>
 
@@ -217,27 +216,29 @@ window.__homeest.isLoggedIn = <?php echo $currentUser ? 'true' : 'false'; ?>;
                             <span>Plāns beidzas</span>
                             <strong>
                                 <?php
-                                if (!empty($currentUser['plan_expires_at']) && strtotime((string)$currentUser['plan_expires_at']) !== false) {
+                                if ($currentPlanLabel === 'Nekads') {
+                                    echo 'Nav plāna';
+                                } elseif ($currentPlanLabel === 'Bezmaksas') {
+                                    echo 'Nav aktīva plāna';
+                                } elseif (!empty($currentUser['plan_expires_at']) && isValidMysqlDateTime((string)$currentUser['plan_expires_at'])) {
                                     echo htmlspecialchars(date('d.m.Y H:i', strtotime((string)$currentUser['plan_expires_at'])));
                                 } else {
-                                    echo 'Nav aktīva plāna';
+                                    echo 'Nav plāna';
                                 }
                                 ?>
                             </strong>
                         </div>
                         <div class="settings-stat">
                             <span>Dienas līdz beigām</span>
-                            <strong><?php echo $planDaysLeft !== null ? (int)$planDaysLeft . ' dienas' : 'Nav aktīva plāna'; ?></strong>
+                            <strong><?php echo $planDaysLeft !== null ? (int)$planDaysLeft . ' dienas' : ($currentPlanLabel === 'Bezmaksas' ? 'Bez termiņa' : 'Nav plāna'); ?></strong>
                         </div>
                     </div>
 
                     <div style="margin-top: 12px; display:flex; gap:10px; flex-wrap:wrap;">
                         <?php if ($renewPlanName && $renewPlanPrice !== null): ?>
-                            <a class="btn-login" href="<?php echo main_route('payment.checkout', ['plan' => $renewPlanName, 'price' => $renewPlanPrice]); ?>">Atjaunot plānu</a>
-                        <?php else: ?>
-                            <a class="btn-login" href="<?php echo main_route('owner'); ?>#plans">Izvēlēties plānu</a>
+                            <a class="btn-submit" href="<?php echo main_route('payment.checkout', ['plan' => $renewPlanName, 'price' => $renewPlanPrice]); ?>">Atjaunot plānu</a>
                         <?php endif; ?>
-                        <a class="btn-login" href="<?php echo $settingsUrl; ?>">Atvērt iestatījumus</a>
+
                     </div>
                 </section>
 
@@ -250,7 +251,7 @@ window.__homeest.isLoggedIn = <?php echo $currentUser ? 'true' : 'false'; ?>;
                             <?php foreach ($planHistory as $purchase): ?>
                                 <div class="settings-history__item">
                                     <div>
-                                        <strong><?php echo htmlspecialchars((string)($purchase['plan_name'] ?? 'Free')); ?></strong>
+                                        <strong><?php echo htmlspecialchars((string)($purchase['plan_name'] ?? 'Nekads')); ?></strong>
                                         <span><?php echo !empty($purchase['purchased_at']) ? htmlspecialchars(date('d.m.Y H:i', strtotime((string)$purchase['purchased_at']))) : 'Nav datu'; ?></span>
                                     </div>
                                     <div>
@@ -276,10 +277,10 @@ window.__homeest.isLoggedIn = <?php echo $currentUser ? 'true' : 'false'; ?>;
                     <h3>Kļūt par īpašnieku</h3>
                     <p>Vai vēlaties kļūt par īpašnieku?</p>
                     <form method="POST" action="<?php echo main_route('account.become_owner'); ?>">
-                        <button type="submit" class="btn-register">Kļūt par īpašnieku</button>
+                        <button type="submit" class="btn-submit">Kļūt par īpašnieku</button>
                     </form>
                     <div style="margin-top: 12px;">
-                        <a class="btn-login" href="<?php echo $settingsUrl; ?>">Atvērt iestatījumus</a>
+
                     </div>
                 </section>
                 <?php endif; ?>

@@ -153,19 +153,7 @@ if (isset($_POST['register_btn'])) {
         </div>
     </div>
 
-    <script>
-    (function() {
-        const radios = document.querySelectorAll('input[name="role"]');
-        const note = document.getElementById('role-note-register');
-        if (!note || !radios.length) return;
-        const update = () => {
-            const val = Array.from(radios).find(r => r.checked)?.value;
-            note.textContent = val === 'ipasnieks' ? 'Pašlaik izvēlēts: Īpašnieks' : 'Pašlaik izvēlēts: Lietotājs';
-        };
-        radios.forEach(r => r.addEventListener('change', update));
-        update();
-    })();
-    </script>
+
 
     <script src="../script.js"></script>
 

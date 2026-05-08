@@ -467,28 +467,6 @@ function buildUrl($overrides = []) {
         </div>
     </div>
 
-    <script>
-    function openModal(id) {
-        document.getElementById(id).classList.add('active');
-    }
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('active');
-    }
-    function openEditModal(listing) {
-        document.getElementById('edit_id').value = listing.id;
-        document.getElementById('edit_title').value = listing.nosaukums || '';
-        document.getElementById('edit_city').value = listing.pilseta || '';
-        document.getElementById('edit_price').value = listing.cena || '';
-        document.getElementById('edit_type').value = listing.veids || 'ire';
-        document.getElementById('edit_status').value = listing.statuss || 'Melnraksts';
-        document.getElementById('edit_description').value = listing.apraksts || '';
-        openModal('editModal');
-    }
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) overlay.classList.remove('active');
-        });
-    });
-    </script>
+    <script src="../script.js"></script>
 </body>
 </html>

@@ -11,6 +11,9 @@ $pageTitle = 'Kļūsti par īpašnieku - HomeEstate';
 $extraStyles = ['owner'];
 $bodyClass = 'owner-page';
 include __DIR__ . '/../includes/header.php';
+
+$flash = $_SESSION['owner_flash'] ?? null;
+unset($_SESSION['owner_flash']);
 ?>
 
 <header class="owner-hero">
@@ -55,10 +58,15 @@ include __DIR__ . '/../includes/header.php';
     <div class="container">
         <h2>Plāni īpašniekiem</h2>
         <p class="owner-plans__sub">Izvēlies sev ērtāko Pay-to-List plānu. Cenas bez slēptām komisijām.</p>
+        <?php if (is_array($flash) && !empty($flash['message'])): ?>
+            <div class="settings-flash settings-flash--<?php echo htmlspecialchars((string)($flash['type'] ?? 'info')); ?>" style="margin: 0 auto 20px; max-width: 900px;">
+                <?php echo htmlspecialchars((string)$flash['message']); ?>
+            </div>
+        <?php endif; ?>
         <div class="plans-grid">
             <div class="plan-card">
                 <div class="plan-head">
-                    <span class="plan-name">Free</span>
+                    <span class="plan-name">Bezmaksas</span>
                     <span class="plan-price">€0</span>
                     <span class="plan-period">1 aktīvs sludinājums</span>
                 </div>
@@ -68,13 +76,16 @@ include __DIR__ . '/../includes/header.php';
                     <li><i class="fas fa-check"></i> Standarta publikācija</li>
                     <li class="muted"><i class="fas fa-minus"></i> Nav prioritātes meklēšanā</li>
                 </ul>
-                <a class="plan-btn ghost" href="#plans">Sākt bez maksas</a>
+                <form method="POST" action="<?php echo main_route('account.become_owner'); ?>">
+                    <input type="hidden" name="plan" value="Bezmaksas">
+                    <button type="submit" class="plan-btn ghost">Sākt bezmaksas</button>
+                </form>
             </div>
 
             <div class="plan-card silver">
                 <div class="plan-head">
                     <span class="plan-badge">Visbiežāk izvēlas</span>
-                    <span class="plan-name">Silver</span>
+                    <span class="plan-name">Sudraba</span>
                     <span class="plan-price">€9.99</span>
                     <span class="plan-period">mēnesī · 5 sludinājumi</span>
                 </div>
@@ -84,12 +95,12 @@ include __DIR__ . '/../includes/header.php';
                     <li><i class="fas fa-check"></i> Standarta meklēšanas ranga līmenis</li>
                     <li><i class="fas fa-check"></i> Īpašnieka badge profilā</li>
                 </ul>
-                <a class="plan-btn" href="<?php echo main_route('payment.checkout', ['plan' => 'Silver', 'price' => 999]); ?>">Pirkt ar Stripe</a>
+                <a class="plan-btn" href="<?php echo main_route('payment.checkout', ['plan' => 'Sudraba', 'price' => 999]); ?>">Pirkt ar Stripe</a>
             </div>
 
             <div class="plan-card gold">
                 <div class="plan-head">
-                    <span class="plan-name">Gold</span>
+                    <span class="plan-name">Zelta</span>
                     <span class="plan-price">€29.99</span>
                     <span class="plan-period">mēnesī · Bez limita</span>
                 </div>
@@ -99,7 +110,7 @@ include __DIR__ . '/../includes/header.php';
                     <li><i class="fas fa-check"></i> Featured meklēšanā (top pozīcijas)</li>
                     <li><i class="fas fa-check"></i> Verified Owner badge</li>
                 </ul>
-                <a class="plan-btn" href="<?php echo main_route('payment.checkout', ['plan' => 'Gold', 'price' => 2999]); ?>">Pirkt ar Stripe</a>
+                <a class="plan-btn" href="<?php echo main_route('payment.checkout', ['plan' => 'Zelta', 'price' => 2999]); ?>">Pirkt ar Stripe</a>
             </div>
         </div>
     </div>
@@ -107,4 +118,3 @@ include __DIR__ . '/../includes/header.php';
 
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
-

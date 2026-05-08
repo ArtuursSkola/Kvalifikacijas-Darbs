@@ -1,15 +1,16 @@
 <?php
 session_start();
 require_once __DIR__ . '/../../routes/main.php';
+require_once dirname(__DIR__, 2) . '/con_db.php';
+require_once dirname(__DIR__, 2) . '/includes/account.php';
 
-
-$plan = $_SESSION['plan'] ?? '';
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'ipasnieks' || !in_array($plan, ['Silver', 'Gold'], true)) {
+$currentUser = loadCurrentUserContext($savienojums);
+if (!$currentUser || ($currentUser['loma'] ?? '') !== 'ipasnieks' || !userHasActiveOwnerPlan($currentUser)) {
     header('Location: ' . main_route('owner') . '#plans');
     exit;
 }
 
-require_once dirname(__DIR__, 2) . '/con_db.php';
+$plan = (string)($currentUser['plans'] ?? 'Nekads');
 
 $errors = [];
 $success = '';
@@ -47,6 +48,25 @@ function handleUploadOrUrl(string $fileKey, string $fallbackUrl, string $uploadD
 $editId = (int)($_GET['id'] ?? $_POST['edit_id'] ?? 0);
 $isEdit = $editId > 0;
 $existingHome = null;
+
+if (!$isEdit && $plan === 'Bezmaksas') {
+    $activeCount = 0;
+    $cntStmt = $savienojums->prepare("SELECT COUNT(*) as c FROM est_homes WHERE ipasnieka_id = ? AND statuss = 'Aktivs'");
+    if ($cntStmt) {
+        $uid = (int)($currentUser['lietotaja_id'] ?? 0);
+        $cntStmt->bind_param('i', $uid);
+        $cntStmt->execute();
+        $r = $cntStmt->get_result();
+        $row = $r ? $r->fetch_assoc() : null;
+        $activeCount = (int)($row['c'] ?? 0);
+        $cntStmt->close();
+    }
+    if ($activeCount >= 1) {
+        $_SESSION['owner_flash'] = ['type' => 'error', 'message' => 'Bezmaksas plānā var būt tikai 1 aktīvs sludinājums.'];
+        header('Location: ' . main_route('property.myhomes'));
+        exit;
+    }
+}
 
 if ($isEdit) {
     $stmt = $savienojums->prepare("SELECT * FROM est_homes WHERE id = ? LIMIT 1");
@@ -115,9 +135,9 @@ if ($type === 'ire') {
 
 
 $galleryLimit = 2;
-if ($plan === 'Silver') {
+if ($plan === 'Sudraba') {
     $galleryLimit = 9;
-} elseif ($plan === 'Gold') {
+} elseif ($plan === 'Zelta') {
     $galleryLimit = 50;
 }
 
@@ -329,6 +349,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $pageTitle = ($isEdit ? 'Rediģēt sludinājumu' : 'Izveidot sludinājumu') . ' - HomeEstate';
 $extraStyles = ['newhome'];
 $bodyClass = 'owner-page newhome-page';
+$bodyData = [
+    'gallery-limit' => $galleryLimit,
+    'gallery-json' => $gallery_json,
+    'has-existing-main' => $main_image ? 'true' : 'false',
+    'app-url' => app_url("")
+];
 include __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -348,69 +374,6 @@ include __DIR__ . '/../../includes/header.php';
     </div>
 </header>
 
-<style>
-    .image-preview-container {
-        margin-top: 15px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-    .preview-item {
-        width: 120px;
-        height: 120px;
-        position: relative;
-        border-radius: var(--radius-sm);
-        overflow: hidden;
-        border: 2px solid var(--gray-200);
-        transition: transform 0.2s;
-    }
-    .preview-item:hover {
-        border-color: var(--accent);
-    }
-    .preview-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        cursor: pointer;
-    }
-    .preview-item .remove-btn {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background: rgba(231, 76, 60, 0.9);
-        color: white;
-        border: none;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        transition: all 0.2s;
-        z-index: 10;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .preview-item .remove-btn:hover {
-        background: #c0392b;
-        transform: scale(1.1);
-    }
-    .main-preview-item {
-        width: 100%;
-        max-width: 300px;
-        height: 180px;
-    }
-    .gallery-counter {
-        margin-top: 8px;
-        font-weight: 600;
-        color: var(--primary);
-        font-size: 0.9rem;
-    }
-    .gallery-counter span {
-        color: var(--accent);
-    }
-</style>
 
 <div class="newhome-shell">
     <?php if ($success): ?>
@@ -616,360 +579,5 @@ include __DIR__ . '/../../includes/header.php';
     </form>
 </div>
 
-<script>
-(function() {
-    const form = document.getElementById('newhome-form');
-    const steps = Array.from(document.querySelectorAll('.step'));
-    const status = document.getElementById('step-status');
-    const dealType = document.getElementById('deal-type');
-    const priceLabel = document.getElementById('price-label');
-    const propertyCategory = document.getElementById('property-category');
-    const rentBlocks = document.querySelectorAll('.rent-only');
-    const buyBlocks = document.querySelectorAll('.buy-only');
-    const shortRentBlocks = document.querySelectorAll('.short-rent-only');
-    const aptBlocks = document.querySelectorAll('.apartment-only');
-    const floorTotalLabel = document.getElementById('floor-total-label');
-    const nextBtns = document.querySelectorAll('.btn-next');
-    const backBtns = document.querySelectorAll('.btn-back');
-    
-    const mainPriceInput = document.getElementById('main-price');
-    const rentDisplay = document.getElementById('rent-price-display');
-    const buyDisplay = document.getElementById('buy-price-display');
-    const shortRentDisplay = document.getElementById('short-rent-price-display');
-    const utilitiesInput = document.getElementById('utilities-price');
-    const totalCalcInput = document.getElementById('total-price-calc');
-
-    const hasPirts = document.getElementById('has-pirts');
-    const pirtsWrap = document.getElementById('pirts-price-wrap');
-    const pirtsPrice = document.getElementById('pirts-price-per-day');
-    const hasBalla = document.getElementById('has-balla');
-    const ballaWrap = document.getElementById('balla-price-wrap');
-    const ballaPrice = document.getElementById('balla-price-per-day');
-    
-    const mainImageInput = document.getElementById('main-image-input');
-    const mainImageUrlInput = document.getElementById('main-image-url');
-    const mainPreview = document.getElementById('main-preview');
-    const galleryInput = document.getElementById('gallery-input');
-	    const galleryPreview = document.getElementById('gallery-preview');
-	    const galleryCounterText = document.getElementById('gallery-counter-text');
-	    const galleryLimit = <?php echo $galleryLimit; ?>;
-	    const titleInput = form.querySelector('input[name="title"]');
-	    const cityInput = form.querySelector('input[name="city"]');
-	    const locationInput = form.querySelector('input[name="location_text"]');
-	    const addressInput = form.querySelector('input[name="address"]');
-
-    let currentStep = 0;
-    const stepNames = ['Pamatinformācija', 'Apraksti', 'Priekšrocības', 'Mediji', 'Cenas'];
-
-	    let galleryFiles = [];
-	    let existingGallery = <?php echo $gallery_json; ?>;
-	    const existingKeepInput = document.getElementById('existing-gallery-keep');
-	    const hasExistingMain = <?php echo $main_image ? 'true' : 'false'; ?>;
-
-    const setStep = (idx) => {
-        steps.forEach((step, i) => step.classList.toggle('active', i === idx));
-        currentStep = idx;
-        if (status) {
-            let name = stepNames[idx] || '';
-            if (idx === 4 && dealType && dealType.value === 'istermina_ire') name = 'Rezervacijas info';
-            status.textContent = `${idx + 1}/5: ${name}`;
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-	    const cpLen = (v) => Array.from(String(v || '')).length;
-	    const lettersOnlyRe = /^[\p{L}\s]+$/u;
-	    const countLetters = (v) => (String(v || '').match(/\p{L}/gu) || []).length;
-	    const sliceCp = (v, max) => Array.from(String(v || '')).slice(0, max).join('');
-
-	    const sanitizeTextOnly = (el) => {
-	        if (!el) return;
-	        const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
-	        let v = String(el.value || '');
-	        v = v.replace(/[^\p{L}\s]/gu, '');
-	        v = v.replace(/\s+/g, ' ');
-	        v = v.replace(/^\s+/, '');
-	        if (maxLen > 0 && cpLen(v) > maxLen) v = sliceCp(v, maxLen);
-	        el.value = v;
-	    };
-
-	    [titleInput, cityInput, locationInput].forEach(el => {
-	        if (!el) return;
-	        el.addEventListener('input', () => sanitizeTextOnly(el));
-	        el.addEventListener('blur', () => {
-	            el.value = String(el.value || '').trim();
-	        });
-	    });
-
-	    const validateStep = (idx) => {
-	        const step = steps[idx];
-	        if (!step) return true;
-	        let ok = true;
-
-	        const checkEl = (el) => {
-	            const visible = el.offsetParent !== null;
-	            if (!visible) return true;
-
-	            const val = String(el.value || '');
-	            const trimmed = val.trim();
-	            let good = true;
-
-	            if (el.getAttribute('data-required') === '1' && trimmed === '') good = false;
-
-	            const minLen = parseInt(el.getAttribute('data-minlen') || '0', 10) || 0;
-	            if (good && minLen > 0 && cpLen(trimmed) < minLen) good = false;
-
-	            if (good && (el.name === 'title' || el.name === 'city' || el.name === 'location_text')) {
-	                const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
-	                if (!lettersOnlyRe.test(trimmed)) good = false;
-	                if (maxLen > 0 && cpLen(trimmed) > maxLen) good = false;
-	            }
-
-	            if (good && el.name === 'address' && trimmed !== '') {
-	                const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
-	                if (maxLen > 0 && cpLen(trimmed) > maxLen) good = false;
-	                if (countLetters(trimmed) < 4) good = false;
-	            }
-
-	            if (!good) {
-	                ok = false;
-	                el.classList.add('invalid');
-	            } else {
-	                el.classList.remove('invalid');
-	            }
-	            return good;
-	        };
-
-	        step.querySelectorAll('[data-required=\"1\"], [data-minlen], input[name=\"title\"], input[name=\"city\"], input[name=\"location_text\"], input[name=\"address\"]').forEach(checkEl);
-
-	        if (idx === 3) {
-	            const hasFile = mainImageInput && mainImageInput.files && mainImageInput.files.length > 0;
-	            const hasUrl = mainImageUrlInput && String(mainImageUrlInput.value || '').trim() !== '';
-	            if (!hasFile && !hasUrl && !hasExistingMain) {
-	                ok = false;
-	                if (mainImageInput) mainImageInput.classList.add('invalid');
-	                if (mainImageUrlInput) mainImageUrlInput.classList.add('invalid');
-	            } else {
-	                if (mainImageInput) mainImageInput.classList.remove('invalid');
-	                if (mainImageUrlInput) mainImageUrlInput.classList.remove('invalid');
-	            }
-	        }
-
-	        return ok;
-	    };
-
-    const calculateTotal = () => {
-        const p = parseFloat(mainPriceInput.value) || 0;
-        const u = parseFloat(utilitiesInput.value) || 0;
-        if (dealType.value === 'ire') {
-            totalCalcInput.value = (p + u).toFixed(2);
-        } else {
-            totalCalcInput.value = p.toFixed(2);
-        }
-        if (rentDisplay) rentDisplay.value = p;
-        if (buyDisplay) buyDisplay.value = p;
-        if (shortRentDisplay) shortRentDisplay.value = p;
-    };
-
-    const toggleDealFields = () => {
-        const mode = dealType.value;
-        const isRent = mode === 'ire';
-        const isBuy = mode === 'pardod';
-        const isShort = mode === 'istermina_ire';
-
-        if (priceLabel) {
-            priceLabel.textContent = isRent ? 'Cena (EUR / men.) *' : (isShort ? 'Cena (EUR / nakti) *' : 'Cena (EUR) *');
-        }
-
-        rentBlocks.forEach(block => block.classList.toggle('hidden', !isRent));
-        buyBlocks.forEach(block => block.classList.toggle('hidden', !isBuy));
-        shortRentBlocks.forEach(block => block.classList.toggle('hidden', !isShort));
-
-        if (!isRent && utilitiesInput) utilitiesInput.value = '0';
-        calculateTotal();
-        if (status && currentStep === 4) setStep(4);
-    };
-
-    const syncShortRentExtras = () => {
-        if (hasPirts && pirtsWrap && pirtsPrice) {
-            pirtsWrap.style.display = hasPirts.checked ? '' : 'none';
-            if (hasPirts.checked) {
-                pirtsPrice.setAttribute('data-required', '1');
-            } else {
-                pirtsPrice.removeAttribute('data-required');
-                pirtsPrice.value = '';
-            }
-        }
-        if (hasBalla && ballaWrap && ballaPrice) {
-            ballaWrap.style.display = hasBalla.checked ? '' : 'none';
-            if (hasBalla.checked) {
-                ballaPrice.setAttribute('data-required', '1');
-            } else {
-                ballaPrice.removeAttribute('data-required');
-                ballaPrice.value = '';
-            }
-        }
-    };
-
-    const toggleCategoryFields = () => {
-        const cat = propertyCategory.value;
-        const isApt = cat === 'dzivoklis';
-        const isHouse = cat === 'maja';
-        aptBlocks.forEach(block => block.classList.toggle('hidden', !isApt));
-        if (isHouse) {
-            floorTotalLabel.textContent = 'Stāvu skaits mājā';
-        } else if (isApt) {
-            floorTotalLabel.textContent = 'Stāvu skaits ēkā';
-        } else {
-            floorTotalLabel.textContent = 'Stāvu skaits';
-        }
-    };
-
-    const renderGallery = () => {
-        galleryPreview.innerHTML = '';
-
-        existingGallery.forEach((url, index) => {
-            const div = document.createElement('div');
-            div.className = 'preview-item';
-            
-            const img = document.createElement('img');
-            img.src = '<?php echo app_url(""); ?>' + '/' + url;
-            img.onclick = () => window.open(img.src, '_blank');
-            
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-btn';
-            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-            removeBtn.type = 'button';
-            removeBtn.onclick = (e) => {
-                e.stopPropagation();
-                existingGallery.splice(index, 1);
-                renderGallery();
-            };
-            
-            const badge = document.createElement('div');
-            badge.style = "position:absolute; bottom:0; background:rgba(0,0,0,0.5); color:white; width:100%; font-size:9px; text-align:center; padding:2px;";
-            badge.textContent = "Saglabāts";
-
-            div.appendChild(img);
-            div.appendChild(removeBtn);
-            div.appendChild(badge);
-            galleryPreview.appendChild(div);
-        });
-
-        galleryFiles.forEach((file, index) => {
-            const div = document.createElement('div');
-            div.className = 'preview-item';
-            
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            img.onclick = () => window.open(img.src, '_blank');
-            
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-btn';
-            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-            removeBtn.type = 'button';
-            removeBtn.onclick = (e) => {
-                e.stopPropagation();
-                galleryFiles.splice(index, 1);
-                renderGallery();
-            };
-            
-            div.appendChild(img);
-            div.appendChild(removeBtn);
-            galleryPreview.appendChild(div);
-        });
-        
-        galleryCounterText.querySelector('span').textContent = existingGallery.length + galleryFiles.length;
-    };
-
-    mainImageInput.addEventListener('change', () => {
-        mainPreview.innerHTML = '';
-        if (mainImageInput.files && mainImageInput.files[0]) {
-            const file = mainImageInput.files[0];
-            const div = document.createElement('div');
-            div.className = 'preview-item main-preview-item';
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            img.onclick = () => window.open(img.src, '_blank');
-            div.appendChild(img);
-            mainPreview.appendChild(div);
-        }
-    });
-
-    mainImageUrlInput.addEventListener('input', () => {
-        if (mainImageUrlInput.value.trim() !== '') {
-            mainPreview.innerHTML = `<div class="preview-item main-preview-item"><img src="${mainImageUrlInput.value}" onerror="this.src='https://via.placeholder.com/300x180?text=Invalid+URL'"></div>`;
-        }
-    });
-
-    galleryInput.addEventListener('change', () => {
-        const newFiles = Array.from(galleryInput.files);
-        newFiles.forEach(file => {
-            if ((existingGallery.length + galleryFiles.length) < galleryLimit) {
-                const exists = galleryFiles.some(f => f.name === file.name && f.size === file.size);
-                if (!exists) galleryFiles.push(file);
-            }
-        });
-        
-        galleryInput.value = '';
-        renderGallery();
-    });
-
-	    form.addEventListener('submit', (e) => {
-	        for (let i = 0; i < steps.length; i++) {
-	            if (!validateStep(i)) {
-	                e.preventDefault();
-	                setStep(i);
-	                const first = steps[i].querySelector('.invalid');
-	                if (first) first.focus();
-	                return;
-	            }
-	        }
-	        if (galleryFiles.length > 0) {
-	            const dt = new DataTransfer();
-	            galleryFiles.forEach(file => dt.items.add(file));
-	            galleryInput.files = dt.files;
-	        }
-        if (existingKeepInput) {
-            existingKeepInput.value = JSON.stringify(existingGallery);
-        }
-    });
-
-    mainPriceInput.addEventListener('input', calculateTotal);
-    utilitiesInput.addEventListener('input', calculateTotal);
-
-	    nextBtns.forEach(btn => btn.addEventListener('click', () => {
-	        const target = parseInt(btn.dataset.next, 10) - 1;
-	        if (validateStep(currentStep)) {
-	            setStep(target);
-	        } else {
-	            const step = steps[currentStep];
-	            const first = step ? step.querySelector('.invalid') : null;
-	            if (first) first.focus();
-	        }
-	    }));
-
-    backBtns.forEach(btn => btn.addEventListener('click', () => {
-        const target = parseInt(btn.dataset.prev, 10) - 1;
-        setStep(target);
-    }));
-
-    document.querySelectorAll('input, textarea, select').forEach(el => {
-        el.addEventListener('input', () => el.classList.remove('invalid'));
-        el.addEventListener('change', () => el.classList.remove('invalid'));
-    });
-
-    if (dealType) dealType.addEventListener('change', toggleDealFields);
-    if (propertyCategory) propertyCategory.addEventListener('change', toggleCategoryFields);
-    if (hasPirts) hasPirts.addEventListener('change', syncShortRentExtras);
-    if (hasBalla) hasBalla.addEventListener('change', syncShortRentExtras);
-
-    toggleDealFields();
-    syncShortRentExtras();
-    toggleCategoryFields();
-    renderGallery();
-    setStep(0);
-})();
-</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

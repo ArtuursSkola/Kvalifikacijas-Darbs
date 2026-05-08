@@ -1,4 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const initConfig = () => {
+        if (window.__homeest && window.__homeest.favoritesIdsApi) return;
+        const nav = document.getElementById('navbar');
+        if (nav) {
+            window.__homeest = window.__homeest || {};
+            window.__homeest.favoritesIdsApi = nav.getAttribute('data-fav-ids-api');
+            window.__homeest.favoritesToggleApi = nav.getAttribute('data-fav-toggle-api');
+            window.__homeest.favoritesApi = nav.getAttribute('data-fav-api');
+            window.__homeest.loginUrl = nav.getAttribute('data-login-url');
+            window.__homeest.propertyRoute = nav.getAttribute('data-property-route');
+            window.__homeest.isLoggedIn = nav.getAttribute('data-logged-in') === 'true';
+        }
+    };
+    initConfig();
+    
+    function formatPrice(item) {
+        if (item.type === 'istermina_ire') return `${item.price.toLocaleString('lv-LV')} \u20ac / nakti`;
+        return (item.type === 'ire' || item.type === 'rent') ? `${item.price.toLocaleString('lv-LV')} € / mēn` : `${item.price.toLocaleString('lv-LV')} €`;
+    }
+
+    function badgeClass(type) {
+        if (type === 'ire' || type === 'rent') return 'rent';
+        if (type === 'istermina_ire') return 'short-rent';
+        return 'sale';
+    }
+
 
     const cursor = document.querySelector('.custom-cursor');
 
@@ -435,16 +461,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-	        function formatPrice(item) {
-	            if (item.type === 'istermina_ire') return `${item.price.toLocaleString('lv-LV')} \u20ac / nakti`;
-	            return (item.type === 'ire' || item.type === 'rent') ? `${item.price.toLocaleString('lv-LV')} € / mēn` : `${item.price.toLocaleString('lv-LV')} €`;
-	        }
-
-	        function badgeClass(type) {
-	            if (type === 'ire' || type === 'rent') return 'rent';
-	            if (type === 'istermina_ire') return 'short-rent';
-	            return 'sale';
-	        }
 
         function renderListings(list) {
             resultsWrap.innerHTML = '';
@@ -457,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (emptyMsg) emptyMsg.style.display = 'none';
 
             list.forEach(item => {
-                const shieldIcon = (item.owner_plan === 'Gold' || item.owner_plan === 'Silver') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
+                const shieldIcon = (item.owner_plan === 'Zelta' || item.owner_plan === 'Sudraba') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
                 const ownerInitial = (item.owner_username || 'U').charAt(0).toUpperCase();
                 const ownerPfpHtml = item.owner_pfp
                     ? `<img src="${item.owner_pfp}" alt="${item.owner_username}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\'owner-mini-initial\'>${ownerInitial}</span>';">`
@@ -622,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (areaMin !== null && !isNaN(areaMin) && item.size < areaMin) return false;
                 if (areaMax !== null && !isNaN(areaMax) && item.size > areaMax) return false;
                 if (category && item.category !== category) return false;
-                if (verifiedOnly && !(item.owner_plan === 'Gold' || item.owner_plan === 'Silver')) return false;
+                if (verifiedOnly && !(item.owner_plan === 'Zelta' || item.owner_plan === 'Sudraba')) return false;
                 return true;
             });
             renderListings(filtered);
@@ -735,7 +751,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             favoriteIds = new Set((Array.isArray(data) ? data : []).map(n => parseInt(n, 10)).filter(n => n > 0));
             syncFavoriteButtons();
-        } catch (_) {
+        } catch (e) {
+            console.error(e);
         }
     }
 
@@ -797,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             list.forEach(item => {
-                const shieldIcon = (item.owner_plan === 'Gold' || item.owner_plan === 'Silver') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
+                const shieldIcon = (item.owner_plan === 'Zelta' || item.owner_plan === 'Sudraba') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
                 const ownerInitial = (item.owner_username || 'U').charAt(0).toUpperCase();
                 const ownerPfpHtml = item.owner_pfp
                     ? `<img src="${item.owner_pfp}" alt="${item.owner_username || ''}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\\'owner-mini-initial\\'>${ownerInitial}</span>';">`
@@ -928,5 +945,710 @@ document.addEventListener('DOMContentLoaded', () => {
         window.initMiniCalendars(document);
     })();
 
+
+    (function() {
+        const form = document.getElementById('newhome-form');
+        if (!form) return;
+
+        const steps = Array.from(document.querySelectorAll('.step'));
+        const status = document.getElementById('step-status');
+        const dealType = document.getElementById('deal-type');
+        const priceLabel = document.getElementById('price-label');
+        const propertyCategory = document.getElementById('property-category');
+        const rentBlocks = document.querySelectorAll('.rent-only');
+        const buyBlocks = document.querySelectorAll('.buy-only');
+        const shortRentBlocks = document.querySelectorAll('.short-rent-only');
+        const aptBlocks = document.querySelectorAll('.apartment-only');
+        const floorTotalLabel = document.getElementById('floor-total-label');
+        const nextBtns = document.querySelectorAll('.btn-next');
+        const backBtns = document.querySelectorAll('.btn-back');
+        
+        const mainPriceInput = document.getElementById('main-price');
+        const rentDisplay = document.getElementById('rent-price-display');
+        const buyDisplay = document.getElementById('buy-price-display');
+        const shortRentDisplay = document.getElementById('short-rent-price-display');
+        const utilitiesInput = document.getElementById('utilities-price');
+        const totalCalcInput = document.getElementById('total-price-calc');
+
+        const hasPirts = document.getElementById('has-pirts');
+        const pirtsWrap = document.getElementById('pirts-price-wrap');
+        const pirtsPrice = document.getElementById('pirts-price-per-day');
+        const hasBalla = document.getElementById('has-balla');
+        const ballaWrap = document.getElementById('balla-price-wrap');
+        const ballaPrice = document.getElementById('balla-price-per-day');
+        
+        const mainImageInput = document.getElementById('main-image-input');
+        const mainImageUrlInput = document.getElementById('main-image-url');
+        const mainPreview = document.getElementById('main-preview');
+        const galleryInput = document.getElementById('gallery-input');
+        const galleryPreview = document.getElementById('gallery-preview');
+        const galleryCounterText = document.getElementById('gallery-counter-text');
+
+        const body = document.body;
+        const galleryLimit = parseInt(body.dataset.galleryLimit || '2', 10);
+        let existingGallery = JSON.parse(body.dataset.galleryJson || '[]');
+        const hasExistingMain = body.dataset.hasExistingMain === 'true';
+        const appUrl = body.dataset.appUrl || '';
+
+        const titleInput = form.querySelector('input[name="title"]');
+        const cityInput = form.querySelector('input[name="city"]');
+        const locationInput = form.querySelector('input[name="location_text"]');
+        const addressInput = form.querySelector('input[name="address"]');
+
+        const existingKeepInput = document.getElementById('existing-gallery-keep');
+
+        let currentStep = 0;
+        const stepNames = ['Pamatinformācija', 'Apraksti', 'Priekšrocības', 'Mediji', 'Cenas'];
+
+        let galleryFiles = [];
+
+        const setStep = (idx) => {
+            steps.forEach((step, i) => step.classList.toggle('active', i === idx));
+            currentStep = idx;
+            if (status) {
+                let name = stepNames[idx] || '';
+                if (idx === 4 && dealType && dealType.value === 'istermina_ire') name = 'Rezervacijas info';
+                status.textContent = `${idx + 1}/5: ${name}`;
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        const cpLen = (v) => Array.from(String(v || '')).length;
+        const lettersOnlyRe = /^[\p{L}\s]+$/u;
+        const countLetters = (v) => (String(v || '').match(/\p{L}/gu) || []).length;
+        const sliceCp = (v, max) => Array.from(String(v || '')).slice(0, max).join('');
+
+        const sanitizeTextOnly = (el) => {
+            if (!el) return;
+            const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
+            let v = String(el.value || '');
+            v = v.replace(/[^\p{L}\s]/gu, '');
+            v = v.replace(/\s+/g, ' ');
+            v = v.replace(/^\s+/, '');
+            if (maxLen > 0 && cpLen(v) > maxLen) v = sliceCp(v, maxLen);
+            el.value = v;
+        };
+
+        if (titleInput) {
+            titleInput.addEventListener('input', () => sanitizeTextOnly(titleInput));
+            titleInput.addEventListener('blur', () => { titleInput.value = String(titleInput.value || '').trim(); });
+        }
+        if (cityInput) {
+            cityInput.addEventListener('input', () => sanitizeTextOnly(cityInput));
+            cityInput.addEventListener('blur', () => { cityInput.value = String(cityInput.value || '').trim(); });
+        }
+        if (locationInput) {
+            locationInput.addEventListener('input', () => sanitizeTextOnly(locationInput));
+            locationInput.addEventListener('blur', () => { locationInput.value = String(locationInput.value || '').trim(); });
+        }
+
+        const validateStep = (idx) => {
+            const step = steps[idx];
+            if (!step) return true;
+            let ok = true;
+
+            const checkEl = (el) => {
+                const visible = el.offsetParent !== null;
+                if (!visible) return true;
+
+                const val = String(el.value || '');
+                const trimmed = val.trim();
+                let good = true;
+
+                if (el.getAttribute('data-required') === '1' && trimmed === '') good = false;
+
+                const minLen = parseInt(el.getAttribute('data-minlen') || '0', 10) || 0;
+                if (good && minLen > 0 && cpLen(trimmed) < minLen) good = false;
+
+                if (good && (el.name === 'title' || el.name === 'city' || el.name === 'location_text')) {
+                    const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
+                    if (!lettersOnlyRe.test(trimmed)) good = false;
+                    if (maxLen > 0 && cpLen(trimmed) > maxLen) good = false;
+                }
+
+                if (good && el.name === 'address' && trimmed !== '') {
+                    const maxLen = parseInt(el.getAttribute('maxlength') || '0', 10) || 0;
+                    if (maxLen > 0 && cpLen(trimmed) > maxLen) good = false;
+                    if (countLetters(trimmed) < 4) good = false;
+                }
+
+                if (!good) {
+                    ok = false;
+                    el.classList.add('invalid');
+                } else {
+                    el.classList.remove('invalid');
+                }
+                return good;
+            };
+
+            step.querySelectorAll('[data-required="1"], [data-minlen], input[name="title"], input[name="city"], input[name="location_text"], input[name="address"]').forEach(checkEl);
+
+            if (idx === 3) {
+                const hasFile = mainImageInput && mainImageInput.files && mainImageInput.files.length > 0;
+                const hasUrl = mainImageUrlInput && String(mainImageUrlInput.value || '').trim() !== '';
+                if (!hasFile && !hasUrl && !hasExistingMain) {
+                    ok = false;
+                    if (mainImageInput) mainImageInput.classList.add('invalid');
+                    if (mainImageUrlInput) mainImageUrlInput.classList.add('invalid');
+                } else {
+                    if (mainImageInput) mainImageInput.classList.remove('invalid');
+                    if (mainImageUrlInput) mainImageUrlInput.classList.remove('invalid');
+                }
+            }
+
+            return ok;
+        };
+
+        const calculateTotal = () => {
+            const p = parseFloat(mainPriceInput.value) || 0;
+            const u = parseFloat(utilitiesInput.value) || 0;
+            if (dealType.value === 'ire') {
+                totalCalcInput.value = (p + u).toFixed(2);
+            } else {
+                totalCalcInput.value = p.toFixed(2);
+            }
+            if (rentDisplay) rentDisplay.value = p;
+            if (buyDisplay) buyDisplay.value = p;
+            if (shortRentDisplay) shortRentDisplay.value = p;
+        };
+
+        const toggleDealFields = () => {
+            const mode = dealType.value;
+            const isRent = mode === 'ire';
+            const isBuy = mode === 'pardod';
+            const isShort = mode === 'istermina_ire';
+
+            if (priceLabel) {
+                priceLabel.textContent = isRent ? 'Cena (EUR / men.) *' : (isShort ? 'Cena (EUR / nakti) *' : 'Cena (EUR) *');
+            }
+
+            rentBlocks.forEach(block => block.classList.toggle('hidden', !isRent));
+            buyBlocks.forEach(block => block.classList.toggle('hidden', !isBuy));
+            shortRentBlocks.forEach(block => block.classList.toggle('hidden', !isShort));
+
+            if (!isRent && utilitiesInput) utilitiesInput.value = '0';
+            calculateTotal();
+            if (status && currentStep === 4) setStep(4);
+        };
+
+        const syncShortRentExtras = () => {
+            if (hasPirts && pirtsWrap && pirtsPrice) {
+                pirtsWrap.style.display = hasPirts.checked ? '' : 'none';
+                if (hasPirts.checked) {
+                    pirtsPrice.setAttribute('data-required', '1');
+                } else {
+                    pirtsPrice.removeAttribute('data-required');
+                    pirtsPrice.value = '';
+                }
+            }
+            if (hasBalla && ballaWrap && ballaPrice) {
+                ballaWrap.style.display = hasBalla.checked ? '' : 'none';
+                if (hasBalla.checked) {
+                    ballaPrice.setAttribute('data-required', '1');
+                } else {
+                    ballaPrice.removeAttribute('data-required');
+                    ballaPrice.value = '';
+                }
+            }
+        };
+
+        const toggleCategoryFields = () => {
+            const cat = propertyCategory.value;
+            const isApt = cat === 'dzivoklis';
+            const isHouse = cat === 'maja';
+            aptBlocks.forEach(block => block.classList.toggle('hidden', !isApt));
+            if (isHouse) {
+                floorTotalLabel.textContent = 'Stāvu skaits mājā';
+            } else if (isApt) {
+                floorTotalLabel.textContent = 'Stāvu skaits ēkā';
+            } else {
+                floorTotalLabel.textContent = 'Stāvu skaits';
+            }
+        };
+
+        const renderGallery = () => {
+            if (!galleryPreview) return;
+            galleryPreview.innerHTML = '';
+
+            existingGallery.forEach((url, index) => {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                
+                const img = document.createElement('img');
+                img.src = appUrl + '/' + url;
+                img.onclick = () => window.open(img.src, '_blank');
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                removeBtn.type = 'button';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    existingGallery.splice(index, 1);
+                    renderGallery();
+                };
+                
+                const badge = document.createElement('div');
+                badge.style = "position:absolute; bottom:0; background:rgba(0,0,0,0.5); color:white; width:100%; font-size:9px; text-align:center; padding:2px;";
+                badge.textContent = "Saglabāts";
+
+                div.appendChild(img);
+                div.appendChild(removeBtn);
+                div.appendChild(badge);
+                galleryPreview.appendChild(div);
+            });
+
+            galleryFiles.forEach((file, index) => {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.onclick = () => window.open(img.src, '_blank');
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                removeBtn.type = 'button';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    galleryFiles.splice(index, 1);
+                    renderGallery();
+                };
+                
+                div.appendChild(img);
+                div.appendChild(removeBtn);
+                galleryPreview.appendChild(div);
+            });
+            
+            if (galleryCounterText) {
+                const span = galleryCounterText.querySelector('span');
+                if (span) span.textContent = existingGallery.length + galleryFiles.length;
+            }
+        };
+
+        if (mainImageInput) {
+            mainImageInput.addEventListener('change', () => {
+                if (!mainPreview) return;
+                mainPreview.innerHTML = '';
+                if (mainImageInput.files && mainImageInput.files[0]) {
+                    const file = mainImageInput.files[0];
+                    const div = document.createElement('div');
+                    div.className = 'preview-item main-preview-item';
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.onclick = () => window.open(img.src, '_blank');
+                    div.appendChild(img);
+                    mainPreview.appendChild(div);
+                }
+            });
+        }
+
+        if (mainImageUrlInput) {
+            mainImageUrlInput.addEventListener('input', () => {
+                if (!mainPreview) return;
+                if (mainImageUrlInput.value.trim() !== '') {
+                    mainPreview.innerHTML = `<div class="preview-item main-preview-item"><img src="${mainImageUrlInput.value}" onerror="this.src='https://via.placeholder.com/300x180?text=Invalid+URL'"></div>`;
+                }
+            });
+        }
+
+        if (galleryInput) {
+            galleryInput.addEventListener('change', () => {
+                const newFiles = Array.from(galleryInput.files);
+                newFiles.forEach(file => {
+                    if ((existingGallery.length + galleryFiles.length) < galleryLimit) {
+                        const exists = galleryFiles.some(f => f.name === file.name && f.size === file.size);
+                        if (!exists) galleryFiles.push(file);
+                    }
+                });
+                
+                galleryInput.value = '';
+                renderGallery();
+            });
+        }
+
+        form.addEventListener('submit', (e) => {
+            for (let i = 0; i < steps.length; i++) {
+                if (!validateStep(i)) {
+                    e.preventDefault();
+                    setStep(i);
+                    const first = steps[i].querySelector('.invalid');
+                    if (first) first.focus();
+                    return;
+                }
+            }
+            if (galleryFiles.length > 0 && galleryInput) {
+                const dt = new DataTransfer();
+                galleryFiles.forEach(file => dt.items.add(file));
+                galleryInput.files = dt.files;
+            }
+            if (existingKeepInput) {
+                existingKeepInput.value = JSON.stringify(existingGallery);
+            }
+        });
+
+        if (mainPriceInput) mainPriceInput.addEventListener('input', calculateTotal);
+        if (utilitiesInput) utilitiesInput.addEventListener('input', calculateTotal);
+
+        nextBtns.forEach(btn => btn.addEventListener('click', () => {
+            const target = parseInt(btn.dataset.next, 10) - 1;
+            if (validateStep(currentStep)) {
+                setStep(target);
+            } else {
+                const step = steps[currentStep];
+                const first = step ? step.querySelector('.invalid') : null;
+                if (first) first.focus();
+            }
+        }));
+
+        backBtns.forEach(btn => btn.addEventListener('click', () => {
+            const target = parseInt(btn.dataset.prev, 10) - 1;
+            setStep(target);
+        }));
+
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            el.addEventListener('input', () => el.classList.remove('invalid'));
+            el.addEventListener('change', () => el.classList.remove('invalid'));
+        });
+
+        if (dealType) dealType.addEventListener('change', toggleDealFields);
+        if (propertyCategory) propertyCategory.addEventListener('change', toggleCategoryFields);
+        if (hasPirts) hasPirts.addEventListener('change', syncShortRentExtras);
+        if (hasBalla) hasBalla.addEventListener('change', syncShortRentExtras);
+
+        toggleDealFields();
+        syncShortRentExtras();
+        toggleCategoryFields();
+        renderGallery();
+        setStep(0);
+    })();
+
+
+    (function() {
+        const detailPage = document.querySelector('.property-detail-page');
+        if (!detailPage) return;
+
+        document.querySelectorAll('.tab-link').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-link').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        window.changeImage = function(thumb) {
+            const main = document.getElementById('gallery-main');
+            if (main) {
+                main.src = thumb.src.replace('w=600', 'w=1200');
+                document.querySelectorAll('.thumb-images img').forEach(img => img.classList.remove('active'));
+                thumb.classList.add('active');
+            }
+        };
+
+        const api = document.body.getAttribute('data-homes-api') || '';
+        const homeId = parseInt(document.body.getAttribute('data-home-id') || '0', 10);
+        const homeType = (document.body.getAttribute('data-home-type') || '').trim();
+        const cal = document.getElementById('sidebar-calendar');
+        const modal = document.getElementById('application-form');
+
+        if (api && homeId) {
+            (async function () {
+                if (!cal || homeType !== 'istermina_ire') return;
+                const pad2 = (n) => String(n).padStart(2, '0');
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = now.getMonth() + 1;
+                const monthKey = `${y}-${pad2(m)}`;
+
+                const monthStart = new Date(y, m - 1, 1);
+                const monthEnd = new Date(y, m, 0);
+                const startDow = (monthStart.getDay() + 6) % 7;
+                const daysInMonth = monthEnd.getDate();
+                const dateKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+                const cells = [];
+                for (let i = 0; i < startDow; i++) {
+                    const d = new Date(y, m - 1, 1 - (startDow - i));
+                    cells.push({ day: d.getDate(), key: dateKey(d), out: true });
+                }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const d = new Date(y, m - 1, day);
+                    cells.push({ day, key: dateKey(d), out: false });
+                }
+                const total = Math.ceil(cells.length / 7) * 7;
+                for (let i = 1; cells.length < total; i++) {
+                    const d = new Date(y, m - 1, daysInMonth + i);
+                    cells.push({ day: d.getDate(), key: dateKey(d), out: true });
+                }
+
+                cal.innerHTML = `<div class="sidebar-calendar__grid">${cells.map(c => `<div class="sidebar-day${c.out ? ' is-out' : ''}" data-date="${c.key}">${c.day}</div>`).join('')}</div>`;
+
+                const isTaken = (key, ranges) => {
+                    const ts = new Date(key + 'T00:00:00').getTime();
+                    for (const r of ranges) {
+                        if (!r.from || !r.to) continue;
+                        const a = new Date(r.from + 'T00:00:00').getTime();
+                        const b = new Date(r.to + 'T00:00:00').getTime();
+                        if (ts >= a && ts < b) return true;
+                    }
+                    return false;
+                };
+
+                try {
+                    const url = new URL(api, window.location.href);
+                    url.searchParams.set('action', 'availability');
+                    url.searchParams.set('home_id', String(homeId));
+                    url.searchParams.set('month', monthKey);
+                    const res = await fetch(url.toString(), { credentials: 'same-origin' });
+                    const data = await res.json().catch(() => null);
+                    if (!res.ok || !data || data.ok !== true) return;
+                    const ranges = Array.isArray(data.ranges) ? data.ranges : [];
+                    cal.querySelectorAll('.sidebar-day').forEach(d => {
+                        const k = d.getAttribute('data-date') || '';
+                        if (k && isTaken(k, ranges)) d.classList.add('is-taken');
+                    });
+                } catch (_) {
+                }
+            })();
+
+            if (modal) {
+                const alertBox = document.getElementById('application-alert');
+                const showAlert = (msg, ok) => {
+                    if (!alertBox) return;
+                    alertBox.style.display = 'block';
+                    alertBox.style.border = ok ? '1px solid rgba(48,182,7,0.35)' : '1px solid rgba(231,76,60,0.35)';
+                    alertBox.style.background = ok ? 'rgba(48,182,7,0.08)' : 'rgba(231,76,60,0.08)';
+                    alertBox.style.color = ok ? '#1f7a1f' : '#b02014';
+                    alertBox.textContent = msg;
+                };
+
+                const submitBtn = modal.querySelector('.btn-submit');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        if (alertBox) alertBox.style.display = 'none';
+
+                        const fd = new FormData();
+                        fd.set('action', 'pieteikums_create');
+                        fd.set('home_id', String(homeId));
+
+                        const pick = (name) => {
+                            const el = modal.querySelector(`[name="${name}"]`);
+                            return el ? (el.value || '').trim() : '';
+                        };
+
+                        let vards = '';
+                        let epasts = '';
+                        let telefons = '';
+                        let komentars = '';
+
+                        if (homeType === 'ire') {
+                            vards = pick('lt_full_name');
+                            epasts = pick('lt_email');
+                            telefons = pick('lt_phone');
+                            komentars = (modal.querySelector('[name="lt_comment"]')?.value || '').trim();
+                            fd.set('ires_menesi', pick('lt_rent_months'));
+                            fd.set('nav_zinams', modal.querySelector('[name="lt_rent_unknown"]')?.checked ? '1' : '0');
+                            fd.set('ires_sakuma_datums', pick('lt_start_date'));
+                        } else if (homeType === 'istermina_ire') {
+                            vards = pick('st_full_name');
+                            epasts = pick('st_email');
+                            telefons = pick('st_phone');
+                            komentars = (modal.querySelector('[name="st_comment"]')?.value || '').trim();
+                            fd.set('sakuma_datums', pick('st_start_date'));
+                            fd.set('beigu_datums', pick('st_end_date'));
+                        } else {
+                            vards = pick('sale_full_name');
+                            epasts = pick('sale_email');
+                            telefons = pick('sale_phone');
+                            komentars = pick('sale_comment');
+                            fd.set('piedavata_summa', pick('sale_offer'));
+                            fd.set('finansesanas_veids', (document.getElementById('pay-method')?.value || '').trim());
+                        }
+
+                        fd.set('vards_uzvards', vards);
+                        fd.set('epasts', epasts);
+                        fd.set('telefons', telefons);
+                        fd.set('komentars', komentars);
+
+                        try {
+                            const res = await fetch(api, { method: 'POST', body: fd, credentials: 'same-origin' });
+                            const data = await res.json().catch(() => null);
+                            if (!res.ok || !data || data.ok !== true) {
+                                showAlert((data && data.error) ? data.error : 'Neizdevās nosūtīt pieteikumu.', false);
+                                return;
+                            }
+                            showAlert('Pieteikums nosūtīts.', true);
+                            setTimeout(() => { window.location.hash = '#'; }, 700);
+                        } catch (_) {
+                            showAlert('Neizdevās nosūtīt pieteikumu.', false);
+                        }
+                    });
+                }
+            }
+        }
+    })();
+
+
+    (function() {
+        if (!document.querySelector('.favorites-page')) return;
+
+        (async function() {
+            const api = (window.__homeest || {});
+            const wrap = document.getElementById('favorites-page-results');
+            const empty = document.getElementById('favorites-page-empty');
+            if (!wrap || !empty || !api.favoritesApi) return;
+            try {
+                const res = await fetch(api.favoritesApi, { credentials: 'same-origin' });
+                const list = await res.json();
+                if (!Array.isArray(list) || list.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+                list.forEach(item => {
+                    const isSold = item.status === 'Pardots';
+                    const card = document.createElement('div');
+                    card.className = `property-card ${isSold ? 'sold' : ''}`;
+                    card.innerHTML = `
+                        <div class="property-image">
+                            ${isSold ? '<div class="status-sold-label">Pārdots</div>' : ''}
+                            <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
+                            <span class="property-badge ${item.type === 'ire' ? 'ire' : 'sale'}">${item.badge}</span>
+                            <button class="property-favorite active" title="Noņemt no favorītiem" type="button" data-home-id="${item.id}">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                        <div class="property-details">
+                            <h3>${item.title}</h3>
+                            <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${item.location}</p>
+                            <div class="property-features">
+                                <span><i class="fas fa-bed"></i> ${item.beds} guļamist.</span>
+                                <span><i class="fas fa-ruler-combined"></i> ${item.size} m²</span>
+                                <span><i class="fas fa-bath"></i> ${item.baths || 1} vannas</span>
+                            </div>
+                            <div class="property-footer">
+                                <span class="property-price">${item.type === 'ire' ? `${Number(item.price || 0).toLocaleString('lv-LV')} € / mēn` : `${Number(item.price || 0).toLocaleString('lv-LV')} €`}</span>
+                                ${isSold ? '<span class="btn-view-property disabled" style="background:#ccc;cursor:default;">Izslēgts</span>' : `<a href="${api.propertyRoute}?id=${item.id}" class="btn-view-property">Skatīt <i class="fas fa-arrow-right"></i></a>`}
+                            </div>
+                        </div>
+                    `;
+                    wrap.appendChild(card);
+                });
+            } catch (_) {
+                empty.textContent = 'Neizdevās ielādēt favorītus.';
+                empty.style.display = 'block';
+            }
+        })();
+    })();
+
+
+    (function() {
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+
+        window.openModal = function(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.add('active');
+        };
+
+        window.closeModal = function(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.remove('active');
+        };
+
+        window.openEditModal = function(data) {
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+            };
+
+            setVal('edit_id', data.id || data.admin_id || data.lietotaja_id || '');
+            setVal('edit_title', data.nosaukums || '');
+            setVal('edit_city', data.pilseta || '');
+            setVal('edit_price', data.cena || '');
+            setVal('edit_type', data.veids || '');
+            setVal('edit_status', data.statuss || '');
+            setVal('edit_description', data.apraksts || '');
+            setVal('edit_username', data.lietotajvards || '');
+            setVal('edit_email', data.epasts || '');
+            setVal('edit_role', data.loma || '');
+            setVal('edit_plan', data.plans || data.plan || '');
+            setVal('edit_password', '');
+
+            openModal('editModal');
+        };
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.classList.remove('active');
+            });
+        });
+
+        const autoModal = document.body.getAttribute('data-auto-modal');
+        if (autoModal) {
+            if (autoModal === 'edit' && document.body.hasAttribute('data-auto-modal-data')) {
+                try {
+                    const data = JSON.parse(document.body.getAttribute('data-auto-modal-data'));
+                    openEditModal(data);
+                } catch(_) {}
+            } else {
+                openModal(autoModal);
+            }
+        }
+    })();
+
+
+    (function() {
+        const radios = document.querySelectorAll('input[name="role"]');
+        const note = document.getElementById('role-note-register');
+        if (!note || !radios.length) return;
+        const update = () => {
+            const val = Array.from(radios).find(r => r.checked)?.value;
+            note.textContent = val === 'ipasnieks' ? 'Pašlaik izvēlēts: Īpašnieks' : 'Pašlaik izvēlēts: Lietotājs';
+        };
+        radios.forEach(r => r.addEventListener('change', update));
+        update();
+    })();
+
+
+    (function() {
+        const fadeElements = document.querySelectorAll('.fade-up');
+        if (!fadeElements.length) return;
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, index * 100);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        fadeElements.forEach(el => observer.observe(el));
+    })();
+
+    (function() {
+        const cards = document.querySelectorAll('.mission-card, .value-card');
+        if (!cards.length) return;
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
+                const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
+                card.style.transform = `translateY(-8px) perspective(1000px) rotateX(${y * -5}deg) rotateY(${x * 5}deg)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+            });
+        });
+    })();
+
     loadFavoriteIds();
 });
+
+
+
+
+

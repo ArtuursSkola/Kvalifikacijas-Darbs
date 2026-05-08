@@ -11,7 +11,7 @@ if (!$currentUser) {
     exit;
 }
 
-if (!userHasActivePaidPlan($currentUser)) {
+if (!userHasActiveOwnerPlan($currentUser)) {
     header('Location: ' . main_route('owner') . '#plans');
     exit;
 }
@@ -20,6 +20,9 @@ $pageTitle = 'Mani sludinājumi - HomeEstate';
 $extraStyles = ['owner', 'myhomes'];
 $bodyClass = 'owner-page myhomes-page';
 include __DIR__ . '/../../includes/header.php';
+
+$flash = $_SESSION['owner_flash'] ?? null;
+unset($_SESSION['owner_flash']);
 
 $ownerId = (int)($currentUser['lietotaja_id'] ?? $_SESSION['user_id'] ?? 0);
 
@@ -47,6 +50,12 @@ if ($ownerId > 0) {
         <p class="badge-pill"><i class="fas fa-folder-open"></i> Panelis</p>
         <h1>Mani <span>sludinājumi</span> (<?php echo count($myHomes); ?>)</h1>
         <p>Pārvaldi savus aktīvos sludinājumus un melnrakstus vienuviet.</p>
+
+        <?php if (is_array($flash) && !empty($flash['message'])): ?>
+            <div class="settings-flash settings-flash--<?php echo htmlspecialchars((string)($flash['type'] ?? 'info')); ?>" style="margin-top: 14px; max-width: 720px;">
+                <?php echo htmlspecialchars((string)$flash['message']); ?>
+            </div>
+        <?php endif; ?>
 
         <div class="myhomes-hero__actions">
             <a href="<?php echo main_route('property.create'); ?>" class="btn-owner-add">
@@ -112,9 +121,9 @@ if ($ownerId > 0) {
                             <div class="owner-card__footer">
                                 <span class="price"><?php echo htmlspecialchars($price); ?></span>
                                 <div class="owner-card__actions">
-                                    <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-owner-action">Skatīt</a>
-                                    <a href="<?php echo main_route('property.create', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-edit">Rediģēt</a>
-                                    <a href="<?php echo main_route('property.stats', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-info">Info</a>
+                                    <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-owner-action" title="Skatīt"><i class="fas fa-eye"></i></a>
+                                    <a href="<?php echo main_route('property.create', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-edit" title="Rediģēt"><i class="fas fa-edit"></i></a>
+                                    <a href="<?php echo main_route('property.stats', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-info" title="Info"><i class="fas fa-info"></i></a>
                                 </div>
                             </div>
                         </div>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $host = "sql100.ezyro.com";
 $user = "ezyro_41234376";
 $pass = "2adfc4c8763c5361";
@@ -12,4 +12,3 @@ if (!$savienojums) {
 
 
 mysqli_set_charset($savienojums, "utf8mb4");
-?>

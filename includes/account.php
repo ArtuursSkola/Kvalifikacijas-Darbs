@@ -2,6 +2,22 @@
 
 
 
+function isValidMysqlDateTime(?string $value): bool
+{
+    $value = trim((string)$value);
+    if ($value === '') {
+        return false;
+    }
+    if (str_starts_with($value, '0000-00-00')) {
+        return false;
+    }
+    $ts = strtotime($value);
+    if ($ts === false) {
+        return false;
+    }
+    return $ts >= 0;
+}
+
 function fetchUserById(mysqli $conn, int $userId, string $type = 'user'): ?array
 {
     $table = ($type === 'admin') ? 'est_admin' : 'est_lietotaji';
@@ -30,7 +46,7 @@ function storeUserSessionData(array $user): void
     $_SESSION['user_id'] = (int)($user['lietotaja_id'] ?? $_SESSION['user_id'] ?? 0);
     $_SESSION['username'] = $user['lietotajvards'] ?? $_SESSION['username'] ?? '';
     $_SESSION['role'] = $user['loma'] ?? $_SESSION['role'] ?? 'lietotajs';
-    $_SESSION['plan'] = $user['plan'] ?? null;
+    $_SESSION['plans'] = $user['plans'] ?? 'Nekads';
     $_SESSION['profile_picture'] = $user['profila_bilde'] ?? null;
     $_SESSION['plan_activated_at'] = $user['plan_activated_at'] ?? null;
     $_SESSION['plan_expires_at'] = $user['plan_expires_at'] ?? null;
@@ -38,19 +54,24 @@ function storeUserSessionData(array $user): void
 
 function expirePlanIfNeeded(mysqli $conn, array $user): array
 {
-    $plan = $user['plan'] ?? null;
+    $plan = $user['plans'] ?? 'Nekads';
     $expiresAt = $user['plan_expires_at'] ?? null;
 
-    if (!in_array($plan, ['Silver', 'Gold'], true) || empty($expiresAt)) {
+    if (!in_array($plan, ['Sudraba', 'Zelta'], true) || empty($expiresAt)) {
         return $user;
     }
 
-    $expiresTimestamp = strtotime($expiresAt);
-    if ($expiresTimestamp === false || $expiresTimestamp >= time()) {
+    if (!isValidMysqlDateTime($expiresAt)) {
+        $expiresTimestamp = 0;
+    } else {
+        $expiresTimestamp = strtotime($expiresAt);
+    }
+
+    if ($expiresTimestamp >= time()) {
         return $user;
     }
 
-    $stmt = $conn->prepare("UPDATE est_lietotaji SET plan = NULL, plan_activated_at = NULL, plan_expires_at = NULL WHERE lietotaja_id = ?");
+    $stmt = $conn->prepare("UPDATE est_lietotaji SET plans = 'Nekads', plan_activated_at = NULL, plan_expires_at = NULL WHERE lietotaja_id = ?");
     if ($stmt) {
         $userId = (int)$user['lietotaja_id'];
         $stmt->bind_param('i', $userId);
@@ -58,7 +79,7 @@ function expirePlanIfNeeded(mysqli $conn, array $user): array
         $stmt->close();
     }
 
-    $user['plan'] = null;
+    $user['plans'] = 'Nekads';
     $user['plan_activated_at'] = null;
     $user['plan_expires_at'] = null;
 
@@ -88,28 +109,46 @@ function userHasActivePaidPlan(?array $user): bool
         return false;
     }
 
-    $plan = $user['plan'] ?? null;
+    $plan = $user['plans'] ?? 'Nekads';
     $expiresAt = $user['plan_expires_at'] ?? null;
 
-    return in_array($plan, ['Silver', 'Gold'], true)
+    return in_array($plan, ['Sudraba', 'Zelta'], true)
         && !empty($expiresAt)
-        && strtotime($expiresAt) !== false
+        && isValidMysqlDateTime($expiresAt)
         && strtotime($expiresAt) >= time();
+}
+
+function userHasActiveOwnerPlan(?array $user): bool
+{
+    if (!$user) {
+        return false;
+    }
+
+    $plan = (string)($user['plans'] ?? 'Nekads');
+    if ($plan === '' || $plan === 'Nekads') {
+        return false;
+    }
+
+    if (in_array($plan, ['Sudraba', 'Zelta'], true)) {
+        return userHasActivePaidPlan($user);
+    }
+
+    return $plan === 'Bezmaksas';
 }
 
 function getCurrentPlanLabel(?array $user): string
 {
     if (!$user) {
-        return 'Free';
+        return 'Nekads';
     }
 
-    $plan = trim((string)($user['plan'] ?? ''));
+    $plan = trim((string)($user['plans'] ?? ''));
     if ($plan === '') {
-        return 'Free';
+        return 'Nekads';
     }
 
-    if (in_array($plan, ['Silver', 'Gold'], true) && !userHasActivePaidPlan($user)) {
-        return 'Free';
+    if (in_array($plan, ['Sudraba', 'Zelta'], true) && !userHasActivePaidPlan($user)) {
+        return 'Nekads';
     }
 
     return $plan;
@@ -118,6 +157,10 @@ function getCurrentPlanLabel(?array $user): string
 function getPlanDaysLeft(?array $user): ?int
 {
     if (!userHasActivePaidPlan($user)) {
+        return null;
+    }
+
+    if (!isValidMysqlDateTime((string)$user['plan_expires_at'])) {
         return null;
     }
 
@@ -154,20 +197,28 @@ function fetchUserPlanHistory(mysqli $conn, int $userId, ?array $currentUser = n
         $stmt->execute();
         $result = $stmt->get_result();
         while ($result && $row = $result->fetch_assoc()) {
+            if (in_array($row['plan_name'], ['Bezmaksas', 'Nekads'], true)) {
+                continue;
+            }
             $history[] = $row;
         }
         $stmt->close();
     }
 
-    if ($history === [] && $currentUser && !empty($currentUser['plan_activated_at'])) {
-        $history[] = [
-            'plan_name' => getCurrentPlanLabel($currentUser),
-            'amount_paid' => null,
-            'currency' => 'EUR',
-            'purchased_at' => $currentUser['plan_activated_at'],
-            'expires_at' => $currentUser['plan_expires_at'] ?? null,
-            'payment_status' => userHasActivePaidPlan($currentUser) ? 'active' : 'expired',
-        ];
+    if ($history === [] && $currentUser) {
+        $currentPlan = getCurrentPlanLabel($currentUser);
+        $activatedAt = (string)($currentUser['plan_activated_at'] ?? '');
+        if (in_array($currentPlan, ['Sudraba', 'Zelta'], true) && isValidMysqlDateTime($activatedAt)) {
+            $expiresAt = (string)($currentUser['plan_expires_at'] ?? '');
+            $history[] = [
+                'plan_name' => $currentPlan,
+                'amount_paid' => null,
+                'currency' => 'EUR',
+                'purchased_at' => $activatedAt,
+                'expires_at' => isValidMysqlDateTime($expiresAt) ? $expiresAt : null,
+                'payment_status' => userHasActivePaidPlan($currentUser) ? 'active' : 'expired',
+            ];
+        }
     }
 
     return $history;

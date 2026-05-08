@@ -11,7 +11,7 @@ if (!isset($_SESSION['username'])) {
 }
 
 $username = $_SESSION['username'];
-$allowed_plans = ['Silver', 'Gold'];
+$allowed_plans = ['Sudraba', 'Zelta'];
 
 $session_id = $_GET['session_id'] ?? '';
 if (!$session_id) {
@@ -40,7 +40,7 @@ try {
     }
 
     if ($payment_intent->status === 'succeeded') {
-        $stmt = $savienojums->prepare("SELECT lietotaja_id, loma, plan FROM est_lietotaji WHERE lietotajvards=? LIMIT 1");
+        $stmt = $savienojums->prepare("SELECT lietotaja_id, loma, plans FROM est_lietotaji WHERE lietotajvards=? LIMIT 1");
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -58,7 +58,7 @@ try {
 
         if ($userId > 0) {
             $stmtUp = $savienojums->prepare("UPDATE est_lietotaji
-                SET loma='ipasnieks', plan=?, plan_activated_at=NOW(), plan_expires_at=DATE_ADD(NOW(), INTERVAL 30 DAY)
+                SET loma='ipasnieks', plans=?, plan_activated_at=NOW(), plan_expires_at=DATE_ADD(NOW(), INTERVAL 30 DAY)
                 WHERE lietotajvards=?");
             if ($stmtUp) {
                 $stmtUp->bind_param("ss", $plan_name, $username);
