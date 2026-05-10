@@ -21,6 +21,7 @@ if ($roleColumnCheck && mysqli_num_rows($roleColumnCheck) > 0) {
 if (isset($_POST['register_btn'])) {
     $lietotajvards = mysqli_real_escape_string($savienojums, $_POST['username']);
     $epasts = mysqli_real_escape_string($savienojums, $_POST['email']);
+    $telefons = mysqli_real_escape_string($savienojums, $_POST['telefons']);
     $parole_raw = $_POST['password'];
     $parole_repeat = $_POST['password_repeat'];
     $atlasita_loma = isset($_POST['role']) && $_POST['role'] === 'ipasnieks' ? 'ipasnieks' : 'lietotajs';
@@ -38,6 +39,13 @@ if (isset($_POST['register_btn'])) {
 
     if (strpos($epasts, '@') === false) {
         $errors[] = "E-pastam jāsatur @ simbols";
+    }
+
+    if (strlen($telefons) !== 8) {
+        $errors[] = "Telefona numuram jābūt tieši 8 cipari";
+    }
+    if (!preg_match('/^[0-9]{8}$/', $telefons)) {
+        $errors[] = "Telefona numurs drīkst saturēt tikai ciparus";
     }
 
     if (strlen($parole_raw) < 8) {
@@ -64,9 +72,9 @@ if (isset($_POST['register_btn'])) {
             $parole_hash = password_hash($parole_raw, PASSWORD_DEFAULT);
 
             if ($roleColumnExists) {
-                $sql = "INSERT INTO est_lietotaji (lietotajvards, epasts, parole, loma) VALUES ('$lietotajvards', '$epasts', '$parole_hash', '$atlasita_loma')";
+                $sql = "INSERT INTO est_lietotaji (lietotajvards, epasts, telefons, parole, loma) VALUES ('$lietotajvards', '$epasts', '$telefons', '$parole_hash', '$atlasita_loma')";
             } else {
-                $sql = "INSERT INTO est_lietotaji (lietotajvards, epasts, parole) VALUES ('$lietotajvards', '$epasts', '$parole_hash')";
+                $sql = "INSERT INTO est_lietotaji (lietotajvards, epasts, telefons, parole) VALUES ('$lietotajvards', '$epasts', '$telefons', '$parole_hash')";
             }
             
             if (mysqli_query($savienojums, $sql)) {
@@ -125,6 +133,10 @@ if (isset($_POST['register_btn'])) {
                 <div class="form-group">
                     <label>E-pasts</label>
                     <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefona numurs</label>
+                    <input type="tel" name="telefons" pattern="[0-9]{8}" maxlength="8" required>
                 </div>
                 <div class="form-group">
                     <label>Parole</label>

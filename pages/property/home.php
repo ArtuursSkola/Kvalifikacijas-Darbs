@@ -62,6 +62,22 @@ $isOwnerViewer = $viewerId > 0 && $viewerId === $ownerId;
 $canApply = $viewerId > 0 && !$isOwnerViewer;
 $applyHref = $canApply ? '#application-form' : ($viewerId <= 0 ? main_route('login') : '#');
 
+// Get user's phone and email for auto-fill
+$userPhone = '';
+$userEmail = '';
+if ($viewerId > 0) {
+    $userStmt = $savienojums->prepare("SELECT telefons, epasts FROM est_lietotaji WHERE lietotaja_id = ? LIMIT 1");
+    if ($userStmt) {
+        $userStmt->bind_param('i', $viewerId);
+        $userStmt->execute();
+        $userResult = $userStmt->get_result();
+        $userData = $userResult->fetch_assoc();
+        $userPhone = $userData['telefons'] ?? '';
+        $userEmail = $userData['epasts'] ?? '';
+        $userStmt->close();
+    }
+}
+
 $ownerName = trim((string)($owner['lietotajvards'] ?? ''));
 $ownerEmail = trim((string)($owner['epasts'] ?? ''));
 $ownerAvatarUrl = userProfileImageUrl($owner['profila_bilde'] ?? '');
@@ -220,19 +236,27 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                         <span>Īpašnieks</span>
                     </div>
                 </div>
-                <?php if ($canApply): ?>
-                    <a href="<?php echo $applyHref; ?>" class="agent-contact">
-                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
-                    </a>
-                <?php elseif ($viewerId <= 0): ?>
-                    <a href="<?php echo htmlspecialchars($applyHref, ENT_QUOTES); ?>" class="agent-contact">
-                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
-                    </a>
-                <?php else: ?>
-                    <a href="#" class="agent-contact" onclick="return false;" style="opacity:0.55; cursor:not-allowed;">
-                        <i class="fas fa-envelope"></i> Izveidot pieteikumu
-                    </a>
-                <?php endif; ?>
+                <div class="agent-actions">
+                    <?php if ($canApply): ?>
+                        <a href="<?php echo $applyHref; ?>" class="agent-contact">
+                            <i class="fas fa-envelope"></i> Izveidot pieteikumu
+                        </a>
+                        <button class="chat-icon-btn" onclick="startChatWithUser(<?php echo $ownerId; ?>, '<?php echo htmlspecialchars($ownerName, ENT_QUOTES); ?>')" title="Sazināties ar īpašnieku">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                    <?php elseif ($viewerId <= 0): ?>
+                        <a href="<?php echo htmlspecialchars($applyHref, ENT_QUOTES); ?>" class="agent-contact">
+                            <i class="fas fa-envelope"></i> Izveidot pieteikumu
+                        </a>
+                    <?php else: ?>
+                        <a href="#" class="agent-contact" onclick="return false;" style="opacity:0.55; cursor:not-allowed;">
+                            <i class="fas fa-envelope"></i> Izveidot pieteikumu
+                        </a>
+                        <button class="chat-icon-btn" onclick="startChatWithUser(<?php echo $ownerId; ?>, '<?php echo htmlspecialchars($ownerName, ENT_QUOTES); ?>')" title="Sazināties ar īpašnieku">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <div class="sidebar-widget sidebar-price">
@@ -294,12 +318,12 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>E-pasts</h4>
-                            <input type="email" name="lt_email" placeholder="...">
+                            <input type="email" name="lt_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
                         </div>
 
                         <div class="application-input-group">
                             <h4>Telefona nr.</h4>
-                            <input type="tel" name="lt_phone" placeholder="+371 ">
+                            <input type="tel" name="lt_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
                         </div>
 
                         <div class="application-input-group">
@@ -334,12 +358,12 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>E-pasts</h4>
-                            <input type="email" name="st_email" placeholder="...">
+                            <input type="email" name="st_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
                         </div>
 
                         <div class="application-input-group">
                             <h4>Telefona nr.</h4>
-                            <input type="tel" name="st_phone" placeholder="+371 ">
+                            <input type="tel" name="st_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
                         </div>
 
                         <div class="application-input-group">
@@ -370,12 +394,12 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>E-pasts</h4>
-                            <input type="email" name="sale_email" placeholder="...">
+                            <input type="email" name="sale_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
                         </div>
 
                         <div class="application-input-group">
                             <h4>Telefona nr.</h4>
-                            <input type="tel" name="sale_phone" placeholder="+371 ">
+                            <input type="tel" name="sale_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
                         </div>
 
                         <div class="application-input-group">

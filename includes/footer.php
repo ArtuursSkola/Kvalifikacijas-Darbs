@@ -1,12 +1,12 @@
 <?php
-// includes/footer.php
+
 require_once __DIR__ . '/../routes/main.php';
 ?>
     <footer>
         <div class="footer-content">
             <div class="footer-col">
                 <h3>Home<span>Estate</span></h3>
-                <p>Mēs palīdzam cilvēkiem atrast viņu sapņu mājokļus kopš 2024. gada. Uzticama platforma visiem nekustamā īpašuma darījumiem.</p>
+                <p>Mēs palīdzam cilvēkiem atrast viņu sapņu mājokļus kopš 2026. gada. Uzticama platforma visiem nekustamā īpašuma darījumiem.</p>
                 <div class="footer-social">
                     <a href="#"><i class="fab fa-facebook-f"></i></a>
                     <a href="#"><i class="fab fa-instagram"></i></a>

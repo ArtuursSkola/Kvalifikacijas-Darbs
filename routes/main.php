@@ -143,6 +143,10 @@ function main_routes(): array
         'api.favorites' => 'api/get_favorites.php',
         'faq' => 'pages/faq.php',
         'api.submit_palidziba' => 'api/submit_palidziba.php',
+        'api.chat.list'     => 'api/zinas_saraksts.php',
+        'api.chat.messages' => 'api/zinas_atvert.php',
+        'api.chat.send'     => 'api/zinas_sutat.php',
+        'api.chat.read'     => 'api/zinas_lasitas.php',
     ];
 
     return $routes;

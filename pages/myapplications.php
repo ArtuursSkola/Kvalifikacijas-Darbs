@@ -47,7 +47,7 @@ include __DIR__ . '/../includes/header.php';
                 <i class="fas fa-file-alt"></i>
                 <h3>Jums vēl nav pieteikumu</h3>
                 <p>Ja vēlaties pieteikties īpašumam, apmeklējiet īpašumu lapu un nosūtiet pieteikumu.</p>
-                <a href="/property" class="btn btn-primary">Apskatīt īpašumus</a>
+                <a href="<?php echo main_route('property.list'); ?>" class="btn btn-primary">Apskatīt īpašumus</a>
             </div>
         <?php else: ?>
             <div class="applications-grid">
@@ -278,7 +278,7 @@ include __DIR__ . '/../includes/header.php';
     padding: 10px;
     background: #f8f9fa;
     border-radius: 8px;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid var(--accent);
 }
 
 .message-reply {
@@ -412,7 +412,7 @@ include __DIR__ . '/../includes/header.php';
 }
 
 .btn-primary {
-    background: #007bff;
+    background: var(--accent);
     color: #fff;
 }
 

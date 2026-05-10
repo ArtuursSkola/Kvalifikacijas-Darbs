@@ -7,10 +7,11 @@
 
 .faq-hero {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 60%, #1a4a2e 100%);
-    padding: 64px 48px 56px;
+    padding: 144px 48px 56px;
     color: var(--white);
     position: relative;
     overflow: hidden;
+    margin-top: -80px;
 }
 
 .faq-hero::before {
