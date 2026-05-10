@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/account.php';
+require_once __DIR__ . '/popup_system.php';
 require_once __DIR__ . '/../routes/main.php';
 require_once __DIR__ . '/../routes/admin.php';
 
@@ -141,6 +142,7 @@ $myHomesUrl = main_route('property.myhomes');
 
 
 
+
 <?php if ($currentUser): ?>
     <div class="settings-modal" id="settings-modal">
         <a class="settings-modal__backdrop" href="#" aria-label="Aizvērt"></a>
@@ -175,6 +177,12 @@ $myHomesUrl = main_route('property.myhomes');
 
                         <label for="username_nav">Lietotājvārds</label>
                         <input type="text" name="username" id="username_nav" value="<?php echo htmlspecialchars((string)($currentUser['lietotajvards'] ?? '')); ?>" required>
+
+                        <label for="email_nav">E-pasts</label>
+                        <input type="email" name="email" id="email_nav" value="<?php echo htmlspecialchars((string)($currentUser['epasts'] ?? '')); ?>" required>
+
+                        <label for="telefons_nav">Telefona numurs</label>
+                        <input type="tel" name="telefons" id="telefons_nav" pattern="[0-9]{8}" maxlength="8" value="<?php echo htmlspecialchars((string)($currentUser['telefons'] ?? '')); ?>">
 
                         <button type="submit" class="btn-submit">Saglabāt izmaiņas</button>
                     </form>
@@ -342,3 +350,15 @@ $myHomesUrl = main_route('property.myhomes');
         </div>
     </div>
 <?php endif; ?>
+
+<?php
+
+if (isset($_SESSION['profile_update_success'])) {
+    unset($_SESSION['profile_update_success']);
+    showSuccessPopup('Izmaiņas ir saglabātas');
+}
+if (isset($_SESSION['password_change_success'])) {
+    unset($_SESSION['password_change_success']);
+    showSuccessPopup('Parole ir nomainīta');
+}
+?>

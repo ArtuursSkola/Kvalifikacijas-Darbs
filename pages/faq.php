@@ -347,18 +347,30 @@ include __DIR__ . '/../includes/header.php';
                 });
             }
 
-            var faqItems = document.querySelectorAll('.faq-item');
-            faqItems.forEach(function (item) {
-                var trigger = item.querySelector('.faq-item__trigger');
-                if (!trigger) return;
-                trigger.addEventListener('click', function () {
-                    var isOpen = item.classList.contains('open');
-                    faqItems.forEach(function (i) { i.classList.remove('open'); });
-                    if (!isOpen) item.classList.add('open');
+        });
+    </script>
+    <script>
+        function initFaq() {
+            const items = document.querySelectorAll('.faq-item');
+
+            items.forEach(item => {
+                const trigger = item.querySelector('.faq-item__trigger');
+
+                trigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const isOpen = item.classList.contains('open');
+
+
+                    items.forEach(i => i.classList.remove('open'));
+
+
+                    if (!isOpen) {
+                        item.classList.add('open');
+                    }
                 });
             });
-
-        });
+        }
     </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

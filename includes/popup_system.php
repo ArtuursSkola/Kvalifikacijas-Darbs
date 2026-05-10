@@ -1,10 +1,12 @@
 <?php
-function showSuccessPopup($message) {
-    echo "<script>
-        document.addEventListener('DOMContentLoaded', function() {
-            showPageAlert('" . addslashes($message) . "', 'success');
-        });
-    </script>";
+if (!function_exists('showSuccessPopup')) {
+    function showSuccessPopup($message) {
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showPageAlert('" . addslashes($message) . "', 'success');
+            });
+        </script>";
+    }
 }
 ?>
 

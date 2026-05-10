@@ -451,6 +451,8 @@ ul {
 
 .settings-form input[type="text"],
 .settings-form input[type="password"],
+.settings-form input[type="email"],
+.settings-form input[type="tel"],
 .settings-form input[type="file"] {
     width: 100%;
     border-radius: 14px;
@@ -2648,3 +2650,4 @@ footer {
     }
     .footer-social { justify-content: center; }
 }
+
