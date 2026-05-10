@@ -31,6 +31,11 @@ if (!function_exists('isActive')) {
             <link rel="stylesheet" href="<?php echo asset_path('css/' . $style . '.css'); ?>">
         <?php endforeach; ?>
     <?php endif; ?>
+    
+
+    <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['lietotajs', 'ipasnieks'], true)): ?>
+        <link rel="stylesheet" href="<?php echo asset_path('css/support.css'); ?>">
+    <?php endif; ?>
 </head>
 <?php
 $resolvedBodyClass = trim((string)($bodyClass ?? ''));
@@ -51,4 +56,13 @@ if (isset($bodyAttributes) && is_string($bodyAttributes) && trim($bodyAttributes
 
 <?php include __DIR__ . '/navbar.php'; ?>
 <?php include __DIR__ . '/popup_system.php'; ?>
+
+<?php
+if (strpos($_SERVER['PHP_SELF'], '/Admin/') === false) {
+    @include_once __DIR__ . '/cron_trigger.php';
+}
+?>
+
+
+<?php include_once __DIR__ . '/support.php'; ?>
 

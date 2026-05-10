@@ -34,14 +34,9 @@
     padding-top: 160px;
 }
 
-.myapplications-page .navbar {
+.myapplications-page .navbar:not(.scrolled) {
     background: transparent !important;
     box-shadow: none !important;
-}
-
-.myapplications-page .navbar.scrolled {
-    background: var(--primary) !important;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.15) !important;
 }
 
 .badge-pill {

@@ -259,8 +259,8 @@ if (!empty($errors)) {
             <?php endif; ?>
             <li><a href="<?php echo admin_route('listings'); ?>"><i class="fas fa-building"></i> Sludinājumi</a></li>
             <li><a href="<?php echo admin_route('palidziba'); ?>"><i class="fas fa-headset"></i> Palīdzības centrs</a></li>
-            <li><a href="#"><i class="fas fa-shopping-cart"></i> Pirkumi</a></li>
-            <li><a href="#"><i class="fas fa-chart-bar"></i> Statistika</a></li>
+            <li><a href="<?php echo admin_route('subscription_dashboard'); ?>"><i class="fas fa-shopping-cart"></i> Abonementi</a></li>
+            <li><a href="<?php echo admin_route('subscription_dashboard'); ?>"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>
         </ul>
         <div class="sidebar-user">
@@ -360,8 +360,11 @@ if (!empty($errors)) {
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php 
-                                        if (!empty($u['plans']) && !empty($u['plan_expires_at'])) {
+                                        <?php
+                                        $noPlan = empty($u['plans']) || in_array($u['plans'], ['Nekads', 'Bezmaksas'], true);
+                                        if ($noPlan || empty($u['plan_expires_at'])) {
+                                            echo '<span class="badge gray">—</span>';
+                                        } else {
                                             $expires = strtotime($u['plan_expires_at']);
                                             $now = time();
                                             if ($expires > $now) {
@@ -370,8 +373,6 @@ if (!empty($errors)) {
                                             } else {
                                                 echo '<span style="color:#e74c3c;font-weight:600;">Beidzies</span>';
                                             }
-                                        } else {
-                                            echo '<span style="color:#94a3b8;">—</span>';
                                         }
                                         ?>
                                     </td>
