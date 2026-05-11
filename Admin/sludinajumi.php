@@ -350,7 +350,9 @@ if (isset($_SESSION['admin_success'])) {
                                                 <a href="<?php echo buildUrl(['reject' => $h['id']]); ?>" class="btn-sm reject" onclick="return confirm('Noraidīt šo sludinājumu?')" title="Noraidīt"><i class="fas fa-times"></i></a>
                                             <?php endif; ?>
                                             <button class="btn-sm edit" onclick='openEditModal(<?php echo json_encode($h); ?>)' title="Rediģēt"><i class="fas fa-edit"></i></button>
-                                            <a href="<?php echo main_route('property.show', ['id' => $h['id']]); ?>" class="btn-sm view" target="_blank" title="Skatīt"><i class="fas fa-eye"></i></a>
+                                            <a href="<?php echo main_route('property.show', ['id' => $h['id'], 'from' => 'admin_listings']); ?>" class="btn-sm view" target="_blank" title="Skatīt">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
                                             <a href="<?php echo buildUrl(['delete' => $h['id']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')" title="Dzēst"><i class="fas fa-trash"></i></a>
                                         </div>
                                     </td>

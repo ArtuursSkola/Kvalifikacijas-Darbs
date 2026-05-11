@@ -78,7 +78,7 @@ unset($_SESSION['owner_flash']);
                 </ul>
                 <form method="POST" action="<?php echo main_route('account.become_owner'); ?>">
                     <input type="hidden" name="plan" value="Bezmaksas">
-                    <button type="submit" class="plan-btn ghost">Sākt bezmaksas</button>
+                    <button type="submit" class="plan-btn">Sākt bezmaksas</button>
                 </form>
             </div>
 

@@ -38,7 +38,8 @@ if ($stmt) {
             storeUserSessionData($user);
         }
         if ($selectedPlan === 'Bezmaksas') {
-            $_SESSION['owner_flash'] = ['type' => 'success', 'message' => 'Jums tagad ir Bezmaksas plāns. Tagad varat publicēt 1 aktīvu sludinājumu un pievienot līdz 3 fotogrāfijām.'];
+            $_SESSION['plan_change_success'] = true;
+            $_SESSION['plan_change_message'] = 'Jums tagad ir Bezmaksas plāns!';
             header('Location: ' . main_route('owner') . '#plans');
             exit;
         }

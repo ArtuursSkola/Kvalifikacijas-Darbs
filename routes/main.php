@@ -126,6 +126,7 @@ function main_routes(): array
         'property.create' => 'pages/property/newhome.php',
         'property.myhomes' => 'pages/property/myhomes.php',
         'property.stats' => 'pages/property/homestats.php',
+        'my.listings' => 'pages/property/myhomes.php',
         'login' => 'login/login.php',
         'register' => 'login/register.php',
         'logout' => 'login/logout.php',

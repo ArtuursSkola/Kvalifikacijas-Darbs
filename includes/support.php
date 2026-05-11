@@ -229,8 +229,20 @@ function markMessagesAsRead() {
 }
 
 function formatTime(dateString) {
-    const date = new Date(dateString + 'Z');
+    const normalized = String(dateString || '').replace(' ', 'T');
+    const localParsed = new Date(normalized);
+    const utcParsed = new Date(normalized + 'Z');
     const now = new Date();
+
+
+    let date = localParsed;
+    if (!Number.isNaN(utcParsed.getTime())) {
+        const localDelta = Number.isNaN(localParsed.getTime()) ? Number.POSITIVE_INFINITY : Math.abs(now - localParsed);
+        const utcDelta = Math.abs(now - utcParsed);
+        if (utcDelta < localDelta) date = utcParsed;
+    }
+    if (Number.isNaN(date.getTime())) return '';
+
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);

@@ -62,7 +62,7 @@ $isOwnerViewer = $viewerId > 0 && $viewerId === $ownerId;
 $canApply = $viewerId > 0 && !$isOwnerViewer;
 $applyHref = $canApply ? '#application-form' : ($viewerId <= 0 ? main_route('login') : '#');
 
-// Get user's phone and email for auto-fill
+
 $userPhone = '';
 $userEmail = '';
 if ($viewerId > 0) {
@@ -120,10 +120,27 @@ $rentPrice = $home['ires_maksa'] ?: $home['cena'];
 $utilitiesPrice = $home['komunalo_maksa'] ?: 0;
 $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 ?>
+    <?php
+    $from = $_GET['from'] ?? '';
+
+    $backHref = main_route('property.list');
+    $backText = 'Atpakaļ uz meklēšanu';
+
+    if ($from === 'my_listings') {
+        $backHref = main_route('my.listings');
+        $backText = 'Atpakaļ uz mani sludinājumi';
+    }
+
+    if ($from === 'admin_listings') {
+        $backHref = admin_route('listings');
+        $backText = 'Atpakaļ uz sludinājumu tabulu';
+    }
+    ?>
+
     <div class="back-nav">
-        <a href="<?php echo main_route('property.list'); ?>" class="btn-back">
+        <a href="<?php echo $backHref; ?>" class="btn-back">
             <i class="fas fa-arrow-left"></i>
-            Atpakaļ uz meklēšanu
+            <?php echo $backText; ?>
         </a>
     </div>
 

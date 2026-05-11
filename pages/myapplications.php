@@ -119,8 +119,9 @@ include __DIR__ . '/../includes/header.php';
                             </div>
                         <?php endif; ?>
 
+                        <?php $appLocked = in_array($app['statuss'], ['Apstiprināts', 'approved'], true); ?>
                         <div class="app-actions">
-                            <button class="btn-action btn-edit" onclick="editApplication(<?php echo $app['id']; ?>)">
+                            <button class="btn-action btn-edit" <?php echo $appLocked ? 'disabled title="Apstiprinātu pieteikumu nevar rediģēt"' : 'onclick="editApplication(' . $app['id'] . ')"'; ?>>
                                 <i class="fas fa-edit"></i> Rediģēt
                             </button>
                             <button class="btn-action btn-delete" onclick="deleteApplication(<?php echo $app['id']; ?>)">
@@ -179,8 +180,9 @@ include __DIR__ . '/../includes/header.php';
                             </div>
                         <?php endif; ?>
 
+                        <?php $msgLocked = in_array($msg['statuss'], ['Atbildēts', 'Aizvērts'], true); ?>
                         <div class="app-actions">
-                            <button class="btn-action btn-edit" onclick="editHelpMessage(<?php echo $msg['id']; ?>)">
+                            <button class="btn-action btn-edit" <?php echo $msgLocked ? 'disabled title="Atbildētu ziņojumu nevar rediģēt"' : 'onclick="editHelpMessage(' . $msg['id'] . ')"'; ?>>
                                 <i class="fas fa-edit"></i> Rediģēt
                             </button>
                             <button class="btn-action btn-delete" onclick="deleteHelpMessage(<?php echo $msg['id']; ?>)">
@@ -214,6 +216,18 @@ include __DIR__ . '/../includes/header.php';
                             <option value="rejected">Noraidīts</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="editEmail">E-pasts</label>
+                        <input type="email" id="editEmail" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPhone">Telefona nr.</label>
+                        <input type="tel" id="editPhone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editComment">Komentārs</label>
+                        <textarea id="editComment" class="form-control" rows="4"></textarea>
+                    </div>
                 </div>
                 
                 <div id="helpFields" style="display: none;">
@@ -242,20 +256,134 @@ include __DIR__ . '/../includes/header.php';
 
 <script>
 function editApplication(id) {
+
+    const appCard = document.querySelector(`[onclick*="editApplication(${id})"]`).closest('.app-card');
+    if (!appCard) {
+        console.error('Application card not found');
+        return;
+    }
+
+    const statusElement = appCard.querySelector('.app-status');
+    const emailElement = appCard.querySelector('.app-meta span:nth-child(1)');
+    const phoneElement = appCard.querySelector('.app-meta span:nth-child(2)');
+    const dateElement = appCard.querySelector('.app-meta span:nth-child(3)');
+    const commentElement = appCard.querySelector('.app-comment');
+    const detailsElement = appCard.querySelector('.app-details');
+    
+
     document.getElementById('modalTitle').textContent = 'Rediģēt pieteikumu';
     document.getElementById('editId').value = id;
     document.getElementById('editType').value = 'application';
     document.getElementById('applicationFields').style.display = 'block';
     document.getElementById('helpFields').style.display = 'none';
+    
+
+    if (statusElement) {
+        const statusText = statusElement.textContent.trim();
+        const statusSelect = document.getElementById('editStatus');
+        if (statusSelect) {
+            Array.from(statusSelect.options).forEach(option => {
+                if (option.textContent.trim() === statusText) {
+                    statusSelect.value = option.value;
+                }
+            });
+        }
+    }
+    
+
+    if (emailElement) {
+        const emailText = emailElement.textContent.trim();
+
+        const emailField = document.getElementById('editEmail');
+        if (emailField) {
+            emailField.value = emailText;
+        }
+    }
+    
+    if (phoneElement) {
+        const phoneText = phoneElement.textContent.trim();
+
+        const phoneField = document.getElementById('editPhone');
+        if (phoneField) {
+            phoneField.value = phoneText;
+        }
+    }
+    
+    if (commentElement) {
+        const commentText = commentElement.textContent.trim();
+
+        const commentField = document.getElementById('editComment');
+        if (commentField) {
+            commentField.value = commentText;
+        }
+    }
     document.getElementById('editModal').style.display = 'flex';
 }
 
 function editHelpMessage(id) {
+
+    const msgCard = document.querySelector(`[onclick*="editHelpMessage(${id})"]`).closest('.app-card');
+    if (!msgCard) {
+        console.error('Help message card not found');
+        return;
+    }
+    
+
+    const statusElement = msgCard.querySelector('.app-status');
+    const dateElement = msgCard.querySelector('.app-meta span:nth-child(1)');
+    const themeElement = msgCard.querySelector('.app-name');
+    const aprakstsElement = msgCard.querySelector('.app-details p');
+    const atbildeElement = msgCard.querySelector('.app-comment');
+    
+
     document.getElementById('modalTitle').textContent = 'Rediģēt ziņojumu';
     document.getElementById('editId').value = id;
     document.getElementById('editType').value = 'help';
     document.getElementById('applicationFields').style.display = 'none';
     document.getElementById('helpFields').style.display = 'block';
+    
+
+    if (statusElement) {
+        const statusText = statusElement.textContent.trim();
+        const statusSelect = document.getElementById('editStatus');
+        if (statusSelect) {
+
+            Array.from(statusSelect.options).forEach(option => {
+                if (option.textContent.trim() === statusText) {
+                    statusSelect.value = option.value;
+                }
+            });
+        }
+    }
+    
+    if (dateElement) {
+        const dateText = dateElement.textContent.trim();
+
+    }
+    
+    if (themeElement) {
+        const themeText = themeElement.textContent.trim();
+        const themeField = document.getElementById('editTema');
+        if (themeField) {
+            themeField.value = themeText;
+        }
+    }
+    
+    if (aprakstsElement) {
+        const aprakstsText = aprakstsElement.textContent.trim();
+        const aprakstsField = document.getElementById('editApraksts');
+        if (aprakstsField) {
+            aprakstsField.value = aprakstsText;
+        }
+    }
+    
+    if (atbildeElement) {
+        const atbildeText = atbildeElement.textContent.trim();
+        const atbildeField = document.getElementById('editAtbilde');
+        if (atbildeField) {
+            atbildeField.value = atbildeText;
+        }
+    }
     document.getElementById('editModal').style.display = 'flex';
 }
 

@@ -673,11 +673,6 @@ footer {
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-.property-card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-lg);
-    border-color: transparent;
-}
 
 .property-image {
     position: relative;
@@ -694,9 +689,6 @@ footer {
     transition: transform 0.6s ease;
 }
 
-.property-card:hover .property-image img {
-    transform: scale(1.1);
-}
 
 .property-badge {
     position: absolute;
@@ -738,15 +730,10 @@ footer {
     justify-content: center;
     color: #e74c3c;
     cursor: pointer;
-    transition: all 0.3s;
     border: none;
     font-size: 1.1rem;
 }
 
-.property-favorite:hover {
-    transform: scale(1.15);
-    background: var(--white);
-}
 
 .property-favorite.active i {
     font-weight: 900;
@@ -847,7 +834,7 @@ footer {
  }
 
 .btn-view-property {
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    background: var(--accent);
     color: var(--white);
     padding: 12px 24px;
     border-radius: var(--radius-sm);
@@ -861,7 +848,7 @@ footer {
 }
 
 .btn-view-property:hover {
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    background: var(--accent-dark);
     transform: translateY(-2px);
 }
 

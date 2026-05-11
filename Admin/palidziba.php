@@ -5,6 +5,7 @@ require_once __DIR__ . '/../routes/admin.php';
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) die('Nav atrasts con_db.php');
 require $configPath;
+require_once dirname(__DIR__) . '/includes/account.php';
 
 if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'moderator'], true)) {
     header('Location: ' . admin_route('login'));
@@ -99,7 +100,7 @@ if (!in_array($filterStatus, $allowedStatuses, true)) $filterStatus = '';
 
 $whereClause = $filterStatus !== '' ? "WHERE p.statuss = ?" : "";
 
-$sql = "SELECT p.*, l.lietotajvards, l.epasts, l.loma
+$sql = "SELECT p.*, l.lietotajvards, l.epasts, l.loma, l.profila_bilde
         FROM est_palidziba p
         LEFT JOIN est_lietotaji l ON p.lietotaja_id = l.lietotaja_id
         $whereClause
@@ -220,7 +221,18 @@ $bujCount     = count(array_filter($messages, fn($m) => (int)($m['radata_buj'] ?
                 ?>
                 <div class="msg-card">
                     <div class="msg-card__head">
-                        <div class="msg-avatar"><?php echo htmlspecialchars($initial); ?></div>
+
+                        <?php
+                        $avatarUrl = userProfileImageUrl($msg['profila_bilde'] ?? '');
+                        ?>
+
+                        <div class="msg-avatar">
+                            <?php if (!empty($avatarUrl)): ?>
+                                <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="Profila bilde">
+                            <?php else: ?>
+                                <?php echo htmlspecialchars($initial); ?>
+                            <?php endif; ?>
+                        </div>
                         <div class="msg-user-info">
                             <strong><?php echo htmlspecialchars($username); ?></strong>
                             <span><?php echo htmlspecialchars($email); ?></span>

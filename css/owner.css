@@ -370,11 +370,14 @@
             display: block;
             margin: 0 28px 28px;
             padding: 16px;
-            text-align: center;
+            background: var(--accent);
+            color: var(--white);
+            border: none;
             border-radius: var(--radius-sm);
             font-weight: 600;
+            width: calc(100% - 56px);
             font-size: 1rem;
-            text-decoration: none;
+            cursor: pointer;
             transition: all 0.3s;
         }
 
@@ -444,7 +447,7 @@
         }
 
         .plan-card.silver .plan-btn {
-            background: linear-gradient(135deg, #909090, #b8b8b8, #c8c8c8);
+            background: #c7c8cc;
             color: #fff;
             border: none;
             box-shadow: 0 4px 15px rgba(150,150,150,0.4);
@@ -515,7 +518,7 @@
         }
 
         .plan-card.gold .plan-btn {
-            background: linear-gradient(135deg, #b8860b, #d4af37, #f0c14b);
+            background: #efc659;
             color: #fff;
             border: none;
             box-shadow: 0 4px 15px rgba(212,175,55,0.4);

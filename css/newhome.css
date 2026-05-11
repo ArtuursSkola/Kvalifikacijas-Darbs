@@ -50,6 +50,20 @@
     animation: floatShape 8s ease-in-out infinite;
 }
 
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gray-600);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 10px 20px;
+    background: var(--white);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s;
+}
+
 .shape-2 {
     width: 300px;
     height: 300px;
@@ -140,7 +154,7 @@
         }
         .form-grid label {
             font-weight: 700;
-            color: var(--primary-color);
+            color: #000000;
             margin-bottom: 6px;
             display: block;
         }
@@ -174,8 +188,99 @@
         .step { display: none; }
         .step.active { display: block; }
         .step-nav { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
-        .step-status { font-weight: 700; color: var(--primary-color); margin-bottom: 10px; }
-        .rent-only.hidden, .buy-only.hidden, .short-rent-only.hidden, .apartment-only.hidden { display: none; }
+        .step-status { font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+        .rent-only.hidden, .buy-only.hidden, .short-rent-only.hidden, .short-rent-only.hidden {
+    display: none;
+}
+.back-button-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 30;
+    padding: 0 10px;
+    transform: translateY(-90px);
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gray-600);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 12px 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    transition: all 0.25s ease;
+}
+
+.btn-back:hover {
+    transform: translateY(-2px);
+    color: var(--accent);
+}
+
+
+.check-group {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.check-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 200px;
+}
+
+.check-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.check-group .checkbox-text {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.check-price-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.check-price-wrap input {
+    padding: 10px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.check-price-wrap input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(48, 182, 7, 0.1);
+}
+
+.check-price-wrap .muted {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
         input.invalid, select.invalid { border-color: #c0392b; }
         .pricing-grid input { margin-bottom: 4px; }
 

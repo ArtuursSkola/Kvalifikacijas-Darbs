@@ -33,12 +33,13 @@ if ($checkResult->num_rows === 0) {
 $checkStmt->close();
 
 
+$createdAt = (new DateTime('now', new DateTimeZone('Europe/Riga')))->format('Y-m-d H:i:s');
 $stmt = $savienojums->prepare("
     INSERT INTO est_zinas (sutitaja_id, sanemeja_id, zina, izlasita, created_at) 
-    VALUES (?, ?, ?, 0, NOW())
+    VALUES (?, ?, ?, 0, ?)
 ");
 
-$stmt->bind_param('iis', $currentUserId, $receiverId, $message);
+$stmt->bind_param('iiss', $currentUserId, $receiverId, $message, $createdAt);
 
 if ($stmt->execute()) {
     echo json_encode(['success' => true, 'message' => 'Message sent successfully']);

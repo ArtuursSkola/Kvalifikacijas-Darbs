@@ -11,7 +11,7 @@ if (!$currentUser) {
     exit;
 }
 
-if (!userHasActivePaidPlan($currentUser)) {
+if (!userHasActiveOwnerPlan($currentUser)) {
     header('Location: ' . main_route('owner') . '#plans');
     exit;
 }

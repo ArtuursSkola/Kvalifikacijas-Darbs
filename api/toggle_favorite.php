@@ -61,11 +61,12 @@ try {
         ]);
         exit;
     }
+    $createdAt = (new DateTime('now', new DateTimeZone('Europe/Riga')))->format('Y-m-d H:i:s');
     $stmt = $savienojums->prepare("
         INSERT INTO est_favoriti (user_id, home_id, created_at)
-        VALUES (?, ?, NOW())
+        VALUES (?, ?, ?)
     ");
-    $stmt->bind_param('ii', $userId, $homeId);
+    $stmt->bind_param('iis', $userId, $homeId, $createdAt);
     $stmt->execute();
     $stmt->close();
     $stmt = $savienojums->prepare("

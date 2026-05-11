@@ -131,7 +131,11 @@ if ($ownerId > 0) {
                             <div class="owner-card__footer">
                                 <span class="price"><?php echo htmlspecialchars($price); ?></span>
                                 <div class="owner-card__actions">
-                                    <a href="<?php echo main_route('property.show', ['id' => (int)$home['id']]); ?>" class="btn-owner-action" title="Skatīt"><i class="fas fa-eye"></i></a>
+                                    <a href="<?php echo main_route('property.show', ['id' => $home['id'], 'from' => 'my_listings']); ?>"
+                                       class="btn-owner-action btn-owner-view"
+                                       title="Skatīt">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                     <a href="<?php echo main_route('property.create', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-edit" title="Rediģēt"><i class="fas fa-edit"></i></a>
                                     <a href="<?php echo main_route('property.stats', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-info" title="Info"><i class="fas fa-info"></i></a>
                                 </div>

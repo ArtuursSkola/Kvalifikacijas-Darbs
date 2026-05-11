@@ -287,9 +287,7 @@ $myHomesUrl = main_route('property.myhomes');
                 <section class="settings-panel">
                     <h3>Kļūt par īpašnieku</h3>
                     <p>Vai vēlaties kļūt par īpašnieku?</p>
-                    <form method="POST" action="<?php echo main_route('account.become_owner'); ?>">
-                        <button type="submit" class="btn-submit">Kļūt par īpašnieku</button>
-                    </form>
+                    <button type="button" class="btn-submit" onclick="showBecomeOwnerPopup()">Kļūt par īpašnieku</button>
                     <div style="margin-top: 12px;">
 
                     </div>
@@ -361,4 +359,53 @@ if (isset($_SESSION['password_change_success'])) {
     unset($_SESSION['password_change_success']);
     showSuccessPopup('Parole ir nomainīta');
 }
+
+
+if (isset($_SESSION['plan_change_success'])) {
+    unset($_SESSION['plan_change_success']);
+    showSuccessPopup($_SESSION['plan_change_message'] ?? 'Plāns veiksmīgi mainīts!');
+    unset($_SESSION['plan_change_message']);
+}
+
+
+if (isset($_SESSION['settings_flash'])) {
+    $flash = $_SESSION['settings_flash'];
+    unset($_SESSION['settings_flash']);
+    
+    if ($flash['type'] === 'success') {
+        showSuccessPopup($flash['message'] ?? 'Izmaiņas ir saglabātas');
+    } elseif ($flash['type'] === 'error') {
+        showPageAlert($flash['message'] ?? 'Kļūda. Notīkārtība.', 'error');
+    }
+}
 ?>
+
+<script>
+function showBecomeOwnerPopup() {
+
+    if (confirm('Vai vēlaties kļūt īpašnieks? Tas dos jums iespējas iespējas sludinājumu publicēšanas iespējas.')) {
+
+        fetch('<?php echo main_route("account.become_owner"); ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'plan=Bezmaksas'
+        })
+        .then(response => {
+            if (response.ok) {
+                showPageAlert('Jūs veiksmīgi kļūtāt īpašnieku!', 'success');
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showPageAlert('Kļūda. Mēģinājiet vēlāk.', 'error');
+            }
+        })
+        .catch(error => {
+            showPageAlert('Kļūda. Mēģinājiet vēlāk.', 'error');
+        });
+    }
+}
+</script>

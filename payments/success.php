@@ -57,11 +57,13 @@ try {
         $expiresAt = null;
 
         if ($userId > 0) {
+            $activatedAt = date('Y-m-d H:i:s');
+            $planExpiresAt = date('Y-m-d H:i:s', strtotime('+30 days'));
             $stmtUp = $savienojums->prepare("UPDATE est_lietotaji
-                SET loma='ipasnieks', plans=?, plan_activated_at=NOW(), plan_expires_at=DATE_ADD(NOW(), INTERVAL 30 DAY)
+                SET loma='ipasnieks', plans=?, plan_activated_at=?, plan_expires_at=?
                 WHERE lietotajvards=?");
             if ($stmtUp) {
-                $stmtUp->bind_param("ss", $plan_name, $username);
+                $stmtUp->bind_param("ssss", $plan_name, $activatedAt, $planExpiresAt, $username);
                 $stmtUp->execute();
                 $stmtUp->close();
             }
@@ -79,14 +81,15 @@ try {
             $amountPaid = isset($payment_intent->amount_received) ? ((int)$payment_intent->amount_received / 100) : 0;
             $currency = strtoupper((string)($payment_intent->currency ?? 'EUR'));
             $paymentStatus = (string)($payment_intent->status ?? 'succeeded');
+            $purchasedAt = date('Y-m-d H:i:s');
 
             $ins = $savienojums->prepare("INSERT INTO est_plan_purchases
                 (user_id, plan_name, amount_paid, currency, purchased_at, expires_at, stripe_session_id, payment_intent_id, payment_status)
-                VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)");
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if ($ins) {
                 $stripeSessionId = (string)$session_id;
                 $paymentIntentId = (string)($payment_intent->id ?? '');
-                $ins->bind_param('isdsssss', $userId, $plan_name, $amountPaid, $currency, $expiresAt, $stripeSessionId, $paymentIntentId, $paymentStatus);
+                $ins->bind_param('isdssssss', $userId, $plan_name, $amountPaid, $currency, $purchasedAt, $expiresAt, $stripeSessionId, $paymentIntentId, $paymentStatus);
                 $ins->execute();
                 $ins->close();
             }
@@ -98,10 +101,21 @@ try {
         }
 
         $transaction_id = $payment_intent->id;
-        $message = "<h2>Maksājums veiksmīgs</h2><hr>";
-        $message .= "<p>Maksājuma reference: <b>$transaction_id</b></p>";
-        $message .= "<p>Aktivizēts plāns: <b>$plan_name</b>. Tagad vari izveidot sludinājumus.</p>";
-        $_SESSION["pazinojums_modal"] = $message;
+        
+
+        if ($plan_name === 'Sudraba') {
+            $_SESSION['plan_change_success'] = true;
+            $_SESSION['plan_change_message'] = 'Jūs veiksmīgi iegādājāties Sudraba plānu!';
+        } elseif ($plan_name === 'Zelta') {
+            $_SESSION['plan_change_success'] = true;
+            $_SESSION['plan_change_message'] = 'Jūs veiksmīgi iegādājāties Zelta plānu!';
+        } else {
+
+            $message = "<h2>Maksājums veiksmīgs</h2><hr>";
+            $message .= "<p>Maksājuma reference: <b>$transaction_id</b></p>";
+            $message .= "<p>Aktivizēts plāns: <b>$plan_name</b>. Tagad vari izveidot sludinājumus.</p>";
+            $_SESSION["pazinojums_modal"] = $message;
+        }
     }
 
 } catch (\Exception $e) {

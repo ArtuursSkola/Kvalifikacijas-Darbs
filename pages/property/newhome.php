@@ -210,8 +210,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	        $errors[] = 'Atrašanās vietas apraksts drīkst saturēt tikai burtus un atstarpes un nedrīkst būt garāks par 50 rakstīmēm.';
 	    }
 	    if ($address !== '') {
-	        if ($len($address) > 35) {
-	            $errors[] = 'Adrese nedrīkst būt garāka par 35 rakstīmēm.';
+	        if ($len($address) > 50) {
+	            $errors[] = 'Adrese nedrīkst būt garāka par 50 rakstīmēm.';
 	        } else {
 	            $m = [];
 	            preg_match_all('/\\p{L}/u', $address, $m);
@@ -374,7 +374,14 @@ include __DIR__ . '/../../includes/header.php';
         <p><?php echo $isEdit ? 'Veic nepieciešamās izmaiņas savā sludinājumā.' : 'Pievieno informāciju pa soļiem. Sludinājums tiks saglabāts kā melnraksts.'; ?></p>
     </div>
 </header>
-
+<?php if ($isEdit): ?>
+    <div class="back-button-wrap">
+        <a href="<?php echo main_route('property.myhomes'); ?>" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            Atgriezties uz mani sludinājumi
+        </a>
+    </div>
+<?php endif; ?>
 
 <div class="newhome-shell">
     <?php if ($success): ?>
@@ -551,22 +558,24 @@ include __DIR__ . '/../../includes/header.php';
                     <p class="muted small">Tiek ņemta cena par nakti.</p>
                 </div>
                 <div class="short-rent-only hidden">
-                    <label style="display:flex; align-items:center; gap:10px;">
+                    <div class="check-group">
                         <input type="checkbox" id="has-pirts" name="has_pirts" value="1" <?php echo $has_pirts ? 'checked' : ''; ?>>
-                        Pirts (papildu maksa)
-                    </label>
-                    <div id="pirts-price-wrap" style="<?php echo $has_pirts ? '' : 'display:none;'; ?>">
-                        <input type="number" step="0.01" min="0" name="pirts_price_per_day" id="pirts-price-per-day" value="<?php echo htmlspecialchars($pirts_price_per_day); ?>" placeholder="50">
+                        <label for="has-pirts">Pirts (papildu maksa)</label>
+                    </div>
+                    <div id="pirts-price-wrap" class="check-price-wrap" style="<?php echo $has_pirts ? '' : 'display:none;'; ?>">
+                        <input type="number" min="0" max="999" oninput=" this.value = this.value.replace(/[^0-9]/g, '');if (this.value.length > 3) {
+            this.value = this.value.slice(0, 3);}" name="pirts_price_per_day" id="pirts-price-per-day" value="<?php echo htmlspecialchars($pirts_price_per_day); ?>" placeholder="50">
                         <p class="muted small">Cena par 1 dienu.</p>
                     </div>
                 </div>
                 <div class="short-rent-only hidden">
-                    <label style="display:flex; align-items:center; gap:10px;">
+                    <div class="check-group">
                         <input type="checkbox" id="has-balla" name="has_balla" value="1" <?php echo $has_balla ? 'checked' : ''; ?>>
-                        Balla (papildu maksa)
-                    </label>
-                    <div id="balla-price-wrap" style="<?php echo $has_balla ? '' : 'display:none;'; ?>">
-                        <input type="number" step="0.01" min="0" name="balla_price_per_day" id="balla-price-per-day" value="<?php echo htmlspecialchars($balla_price_per_day); ?>" placeholder="50">
+                        <label for="has-balla">Baļļa (papildu maksa)</label>
+                    </div>
+                    <div id="balla-price-wrap" class="check-price-wrap" style="<?php echo $has_balla ? '' : 'display:none;'; ?>">
+                        <input type="number" min="0" max="999" oninput="this.value = this.value.replace(/[^0-9]/g, '');if (this.value.length > 3) {
+            this.value = this.value.slice(0, 3);}" name="balla_price_per_day" id="balla-price-per-day" value="<?php echo htmlspecialchars($balla_price_per_day); ?>" placeholder="50">
                         <p class="muted small">Cena par 1 dienu.</p>
                     </div>
                 </div>
@@ -582,3 +591,133 @@ include __DIR__ . '/../../includes/header.php';
 
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    setTimeout(function() {
+
+        const hasPirtsCheckbox = document.getElementById('has-pirts');
+        const hasBallaCheckbox = document.getElementById('has-balla');
+
+        const pirtsPriceWrap = document.getElementById('pirts-price-wrap');
+        const ballaPriceWrap = document.getElementById('balla-price-wrap');
+
+        if (hasPirtsCheckbox && pirtsPriceWrap) {
+            hasPirtsCheckbox.addEventListener('change', function () {
+                pirtsPriceWrap.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+
+        if (hasBallaCheckbox && ballaPriceWrap) {
+            hasBallaCheckbox.addEventListener('change', function () {
+                ballaPriceWrap.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+
+        const rentPriceDisplay = document.getElementById('short-rent-price-display');
+        const shortRentPriceDisplay = document.getElementById('short-rent-price-display');
+        const buyPriceDisplay = document.getElementById('buy-price-display');
+        
+
+        if (rentPriceDisplay) {
+            rentPriceDisplay.style.display = 'block';
+        }
+        if (shortRentPriceDisplay) {
+            shortRentPriceDisplay.style.display = 'block';
+        }
+        if (buyPriceDisplay) {
+            buyPriceDisplay.style.display = 'block';
+        }
+        
+        if (type === 'pardsod') {
+            rentPriceDisplay.style.display = 'block';
+            shortRentPriceDisplay.style.display = 'block';
+            buyPriceDisplay.style.display = 'none';
+        } else if (type === 'ire') {
+            rentPriceDisplay.style.display = 'block';
+            shortRentPriceDisplay.style.display = 'none';
+            buyPriceDisplay.style.display = 'none';
+        } else {
+            rentPriceDisplay.style.display = 'none';
+            shortRentPriceDisplay.style.display = 'block';
+            buyPriceDisplay.style.display = 'block';
+        }
+        
+
+        const propertyTypeRadios = document.querySelectorAll('input[name="veids"]');
+        propertyTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                updatePriceDisplay(this.value);
+            });
+        });
+        
+
+        const initialType = document.querySelector('input[name="veids"]:checked')?.value || 'pardsod';
+        updatePriceDisplay(initialType);
+    }, 100);
+
+    const hasPirtsCheckbox = document.getElementById('has-pirts');
+    const hasBallaCheckbox = document.getElementById('has-balla');
+    const pirtsPriceWrap = document.getElementById('pirts-price-wrap');
+    const ballaPriceWrap = document.getElementById('balla-price-wrap');
+    
+    if (hasPirtsCheckbox) {
+        hasPirtsCheckbox.addEventListener('change', function() {
+            pirtsPriceWrap.style.display = this.checked ? 'flex' : 'none';
+        });
+    }
+    
+    if (hasBallaCheckbox) {
+        hasBallaCheckbox.addEventListener('change', function() {
+            if (ballaPriceWrap) {
+                ballaPriceWrap.style.display = this.checked ? 'flex' : 'none';
+            }
+        });
+    }
+    
+
+    const rentPriceDisplay = document.getElementById('short-rent-price-display');
+    const shortRentPriceDisplay = document.getElementById('short-rent-price-display');
+    const buyPriceDisplay = document.getElementById('buy-price-display');
+    
+
+    function updatePriceDisplay(type) {
+        if (rentPriceDisplay) {
+            rentPriceDisplay.style.display = 'block';
+        }
+        if (shortRentPriceDisplay) {
+            shortRentPriceDisplay.style.display = 'block';
+        }
+        if (buyPriceDisplay) {
+            buyPriceDisplay.style.display = 'block';
+        }
+        
+        if (type === 'pardsod') {
+            if (rentPriceDisplay) rentPriceDisplay.style.display = 'block';
+            if (shortRentPriceDisplay) shortRentPriceDisplay.style.display = 'block';
+            if (buyPriceDisplay) buyPriceDisplay.style.display = 'none';
+        } else if (type === 'ire') {
+            if (rentPriceDisplay) rentPriceDisplay.style.display = 'block';
+            if (shortRentPriceDisplay) shortRentPriceDisplay.style.display = 'block';
+            if (buyPriceDisplay) buyPriceDisplay.style.display = 'none';
+        } else {
+            if (rentPriceDisplay) rentPriceDisplay.style.display = 'none';
+            if (shortRentPriceDisplay) shortRentPriceDisplay.style.display = 'block';
+            if (buyPriceDisplay) buyPriceDisplay.style.display = 'block';
+        }
+    }
+    
+
+    const propertyTypeRadios = document.querySelectorAll('input[name="veids"]');
+    propertyTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            updatePriceDisplay(this.value);
+        });
+    });
+    
+
+    const initialType = document.querySelector('input[name="veids"]:checked')?.value || 'pardsod';
+    updatePriceDisplay(initialType);
+});
+</script>
