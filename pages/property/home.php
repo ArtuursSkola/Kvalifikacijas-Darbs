@@ -135,6 +135,17 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
         $backHref = admin_route('listings');
         $backText = 'Atpakaļ uz sludinājumu tabulu';
     }
+
+    function fixDateTime($value) {
+        if (!$value) return null;
+        $dt = DateTime::createFromFormat('Y-m-d\TH:i', trim($value));
+        if (!$dt) {
+            $dt = DateTime::createFromFormat('Y-m-d H:i', trim($value));
+        }
+        return $dt ? $dt->format('Y-m-d H:i:s') : null;
+    }
+
+    $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
     ?>
 
     <div class="back-nav">
@@ -157,10 +168,10 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                     <span class="chip"><i class="fas fa-ruler-combined"></i> <?php echo $home['platiba']; ?> m²</span>
                     <?php if ($home['kategorija']): ?>
                     <span class="chip">
-                        <i class="fas <?php echo $home['kategorija'] === 'maja' ? 'fa-home' : 'fa-building'; ?>"></i> 
-                        <?php 
+                        <i class="fas <?php echo $home['kategorija'] === 'maja' ? 'fa-home' : 'fa-building'; ?>"></i>
+                        <?php
                             $catLabels = ['dzivoklis' => 'Dzīvoklis', 'maja' => 'Māja', 'apartaments' => 'Apartaments'];
-                            echo htmlspecialchars($catLabels[$home['kategorija']] ?? $home['kategorija']); 
+                            echo htmlspecialchars($catLabels[$home['kategorija']] ?? $home['kategorija']);
                         ?>
                     </span>
                     <?php endif; ?>
@@ -189,7 +200,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                 <div id="description" class="tab-content active">
                     <h3>Par īpašumu</h3>
                     <p><?php echo nl2br(htmlspecialchars($home['apraksts'])); ?></p>
-                    
+
                     <?php if (!empty($amenities)): ?>
                     <h3 style="margin-top: 24px;">Ērtības un aprīkojums</h3>
                     <ul class="amenities-list">
@@ -203,7 +214,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                 <div id="layout" class="tab-content">
                     <h3>Īpašuma plānojums</h3>
                     <p><?php echo nl2br(htmlspecialchars($home['planojums'] ?: 'Plānojuma informācija nav pieejama.')); ?></p>
-                    
+
                     <div class="spec-grid">
                         <div class="spec-card">
                             <strong>Platība</strong>
@@ -294,7 +305,19 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                 <?php else: ?>
                     <span class="price"><?php echo $priceDisplay; ?></span>
                     <?php if (($home['veids'] ?? '') === 'istermina_ire'): ?>
-                        <div id="sidebar-calendar" class="sidebar-calendar" data-home-id="<?php echo (int)$homeId; ?>"></div>
+                        <div class="sc-wrap" id="sidebar-calendar" data-home-id="<?php echo (int)$homeId; ?>">
+                            <div class="sc-header">
+                                <button class="sc-nav" id="sc-prev" type="button" aria-label="Iepriekšējais mēnesis">&#8249;</button>
+                                <span class="sc-title" id="sc-title"></span>
+                                <button class="sc-nav" id="sc-next" type="button" aria-label="Nākamais mēnesis">&#8250;</button>
+                            </div>
+                            <div class="sc-grid" id="sc-grid"></div>
+                            <div class="sc-legend">
+                                <span class="sc-dot sc-dot--free"></span> Brīvs
+                                <span class="sc-dot sc-dot--taken"></span> Aizņemts
+                                <span class="sc-dot sc-dot--past"></span> Pagājis
+                            </div>
+                        </div>
                     <?php endif; ?>
                 <?php endif; ?>
                 <?php if ($canApply): ?>
@@ -330,9 +353,8 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>Vārds un uzvārds</h4>
-                            <input type="text" name="lt_full_name" placeholder="...">
+                            <input type="text" name="lt_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
                         </div>
-
                         <div class="application-input-group">
                             <h4>E-pasts</h4>
                             <input type="email" name="lt_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
@@ -345,21 +367,18 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>īres periods mēnešos</h4>
-                            <input type="number" name="lt_rent_months" min="1" placeholder="Piem. 6">
-                        <label class="application-checkbox">
-                            <input type="checkbox" name="lt_rent_unknown" value="1">
-                            Pagaidām nav zināms
-                        </label>
+                            <input type="number" name="lt_rent_months" id="lt_rent_months" min="1" max="99" placeholder="Piem. 6" oninput="if(this.value.length>2)this.value=this.value.slice(0,2);if(parseInt(this.value)>99)this.value=99;">
+                            <label class="application-checkbox"><input type="checkbox" id="rent_unknown" name="lt_rent_unknown" value="1"> Pagaidām nav zināms</label>
                         </div>
 
                         <div class="application-input-group">
                             <h4>Sākuma datums</h4>
-                            <input type="date" name="lt_start_date">
+                            <input type="datetime-local" name="lt_start_date" id="lt_start_date">
                         </div>
 
                         <div class="application-input-group">
                             <h4>Papildu komentāri</h4>
-                            <textarea name="lt_comment" rows="4" placeholder="..."></textarea>
+                            <textarea name="lt_comment" rows="4" maxlength="300" placeholder="..."></textarea>
                         </div>
 
                         <div class="application-input-group">
@@ -370,7 +389,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                          <h4>Vārds un uzvārds</h4>
-                         <input type="text" name="st_full_name" placeholder="...">
+                            <input type="text" name="st_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
                         </div>
 
                         <div class="application-input-group">
@@ -385,17 +404,17 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>Sākuma datums</h4>
-                            <input type="date" name="st_start_date">
+                            <input type="datetime-local" name="st_start_date" id="st_start_date">
                         </div>
 
                         <div class="application-input-group">
                             <h4>Beigu datums</h4>
-                            <input type="date" name="st_end_date">
+                            <input type="datetime-local" name="st_end_date" id="st_end_date">
                         </div>
 
                         <div class="application-input-group">
                             <h4>Komentāri</h4>
-                            <textarea name="st_comment" rows="4" placeholder="..."></textarea>
+                            <textarea name="st_comment" rows="4" maxlength="300" placeholder="..."></textarea>
                         </div>
 
                         <div class="application-input-group">
@@ -406,7 +425,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>Vārds un uzvārds</h4>
-                            <input type="text" name="sale_full_name" placeholder="...">
+                            <input type="text" name="sale_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
                         </div>
 
                         <div class="application-input-group">
@@ -421,7 +440,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>Piedāvātā summa</h4>
-                            <input type="number" name="sale_offer" placeholder="...">
+                            <input type="number" name="sale_offer" placeholder="..." max="9999999" oninput="if(this.value.length>7)this.value=this.value.slice(0,7);">
                         </div>
 
                         <div class="application-input-group">
@@ -437,7 +456,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
 
                         <div class="application-input-group">
                             <h4>Papildu komentārs</h4>
-                            <input type="text" name="sale_comment" placeholder="...">
+                            <input type="text" name="sale_comment" maxlength="300" placeholder="...">
                         </div>
 
                         <div class="application-input-group">
@@ -449,7 +468,7 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                 </div>
             </div>
             <?php endif; ?>
-            
+
             <div class="sidebar-widget sidebar-agent">
                 <h4>Kontaktpersona</h4>
                 <div class="agent-info">
@@ -463,9 +482,132 @@ $totalPrice = $home['kopa_maksa'] ?: ($rentPrice + $utilitiesPrice);
                     <i class="fas fa-phone-alt"></i> Zvanīt
                 </a>
             </div>
-            
-            
+
+
         </aside>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const calendar = document.getElementById('sidebar-calendar');
+            if (!calendar) return;
+
+            const grid = document.getElementById('sc-grid');
+            const title = document.getElementById('sc-title');
+            const prev = document.getElementById('sc-prev');
+            const next = document.getElementById('sc-next');
+            if (!grid || !title || !prev || !next) return;
+
+            const homeId = calendar.dataset.homeId;
+            const apiBase = document.body.getAttribute('data-homes-api') || '';
+
+            let current = new Date();
+            let bookingRanges = [];
+
+            const pad2 = (n) => String(n).padStart(2, '0');
+            const formatDateKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+            function isDayTaken(key, ranges) {
+                const ts = new Date(key + 'T12:00:00').getTime();
+                for (const r of ranges) {
+                    if (!r.from || !r.to) continue;
+                    const a = new Date(String(r.from).replace(' ', 'T')).getTime();
+                    const b = new Date(String(r.to).replace(' ', 'T')).getTime();
+                    if (ts >= a && ts < b) return true;
+                }
+                return false;
+            }
+
+            async function loadTaken() {
+                try {
+                    const year = current.getFullYear();
+                    const month = current.getMonth();
+                    const monthKey = `${year}-${pad2(month + 1)}`;
+                    bookingRanges = [];
+                    if (apiBase && homeId) {
+                        const url = new URL(apiBase, window.location.href);
+                        url.searchParams.set('action', 'availability');
+                        url.searchParams.set('home_id', String(homeId));
+                        url.searchParams.set('month', monthKey);
+                        const res = await fetch(url.toString(), { credentials: 'same-origin' });
+                        const data = await res.json().catch(() => null);
+                        if (res.ok && data && data.ok === true && Array.isArray(data.ranges)) {
+                            bookingRanges = data.ranges;
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                    bookingRanges = [];
+                }
+                render();
+            }
+
+            function render() {
+                const year = current.getFullYear();
+                const month = current.getMonth();
+
+                const first = new Date(year, month, 1);
+                const last = new Date(year, month + 1, 0);
+
+                const days = last.getDate();
+                const startDay = (first.getDay() + 6) % 7;
+
+                title.textContent = first.toLocaleString('lv-LV', {
+                    month: 'long',
+                    year: 'numeric'
+                });
+
+                grid.innerHTML = '';
+
+                const weekdays = ['P','O','T','C','Pk','S','Sv'];
+                weekdays.forEach(d => {
+                    const el = document.createElement('div');
+                    el.className = 'sc-cell sc-cell--name';
+                    el.textContent = d;
+                    grid.appendChild(el);
+                });
+
+                for (let i = 0; i < startDay; i++) {
+                    const empty = document.createElement('div');
+                    empty.className = 'sc-cell sc-cell--empty';
+                    grid.appendChild(empty);
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                for (let d = 1; d <= days; d++) {
+                    const date = new Date(year, month, d);
+                    const key = formatDateKey(date);
+
+                    const cell = document.createElement('div');
+                    cell.classList.add('sc-cell');
+
+                    if (date < today) {
+                        cell.classList.add('sc-cell--past');
+                    } else if (isDayTaken(key, bookingRanges)) {
+                        cell.classList.add('sc-cell--taken');
+                    } else {
+                        cell.classList.add('sc-cell--free');
+                    }
+
+                    cell.textContent = d;
+                    grid.appendChild(cell);
+                }
+            }
+
+            prev.addEventListener('click', () => {
+                current.setMonth(current.getMonth() - 1);
+                loadTaken();
+            });
+
+            next.addEventListener('click', () => {
+                current.setMonth(current.getMonth() + 1);
+                loadTaken();
+            });
+
+            loadTaken();
+        });
+    </script>
 
     <?php include __DIR__ . '/../../includes/footer.php'; ?>

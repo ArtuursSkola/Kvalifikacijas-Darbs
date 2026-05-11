@@ -165,13 +165,47 @@ if (isset($_POST['edit_mod'])) {
     }
 }
 
-$mods = [];
-$res = $savienojums->query("SELECT admin_id, lietotajvards, epasts, loma, created_at FROM est_admin ORDER BY created_at DESC");
-while ($row = $res->fetch_assoc()) {
-    $mods[] = $row;
+$search = trim($_GET['search'] ?? '');
+$whereClause = '';
+$params = [];
+$types = '';
+
+if ($search !== '') {
+    $whereClause = "WHERE lietotajvards LIKE ? OR epasts LIKE ?";
+    $searchParam = '%' . $search . '%';
+    $params = [$searchParam, $searchParam];
+    $types = 'ss';
 }
 
-$totalMods = count($mods);
+$countSql = "SELECT COUNT(*) FROM est_admin $whereClause";
+$totalMods = 0;
+if ($search !== '') {
+    $stmt = $savienojums->prepare($countSql);
+    $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    $totalMods = $stmt->get_result()->fetch_row()[0];
+    $stmt->close();
+} else {
+    $totalMods = $savienojums->query("SELECT COUNT(*) FROM est_admin")->fetch_row()[0];
+}
+
+$mods = [];
+$sql = "SELECT admin_id, lietotajvards, epasts, loma, created_at FROM est_admin $whereClause ORDER BY created_at DESC";
+if ($search !== '') {
+    $stmt = $savienojums->prepare($sql);
+    $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $mods[] = $row;
+    }
+    $stmt->close();
+} else {
+    $res = $savienojums->query($sql);
+    while ($row = $res->fetch_assoc()) {
+        $mods[] = $row;
+    }
+}
 $adminCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma='admin'")->fetch_row()[0];
 $moderatorCount = $savienojums->query("SELECT COUNT(*) FROM est_admin WHERE loma='moderator'")->fetch_row()[0];
 ?>
@@ -263,7 +297,11 @@ if (!empty($errors)) {
 
         <div class="panel">
             <div class="panel-header">
-                <h3>Sistēmas administratori un moderatori</h3>
+                <h3>Sistēmas administratori un moderatori (<?php echo $totalMods; ?>)</h3>
+                <form class="search-box" method="GET">
+                    <input type="text" name="search" placeholder="Meklēt..." value="<?php echo htmlspecialchars($search); ?>">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </form>
             </div>
             <div class="table-container">
                 <table>
@@ -296,7 +334,7 @@ if (!empty($errors)) {
                                         </button>
                                     <?php endif; ?>
                                     <?php if ($m['loma'] === 'moderator'): ?>
-                                        <a href="?delete=<?php echo $m['admin_id']; ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst šo administratoru?')">
+                                        <a href="?delete=<?php echo $m['admin_id']; ?>&search=<?php echo urlencode($search); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst šo administratoru?')">
                                             <i class="fas fa-trash"></i>
                                         </a>
                                     <?php endif; ?>

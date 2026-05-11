@@ -1350,69 +1350,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const api = document.body.getAttribute('data-homes-api') || '';
         const homeId = parseInt(document.body.getAttribute('data-home-id') || '0', 10);
         const homeType = (document.body.getAttribute('data-home-type') || '').trim();
-        const cal = document.getElementById('sidebar-calendar');
         const modal = document.getElementById('application-form');
 
         if (api && homeId) {
-            (async function () {
-                if (!cal || homeType !== 'istermina_ire') return;
-                const pad2 = (n) => String(n).padStart(2, '0');
-                const now = new Date();
-                const y = now.getFullYear();
-                const m = now.getMonth() + 1;
-                const monthKey = `${y}-${pad2(m)}`;
-
-                const monthStart = new Date(y, m - 1, 1);
-                const monthEnd = new Date(y, m, 0);
-                const startDow = (monthStart.getDay() + 6) % 7;
-                const daysInMonth = monthEnd.getDate();
-                const dateKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-
-                const cells = [];
-                for (let i = 0; i < startDow; i++) {
-                    const d = new Date(y, m - 1, 1 - (startDow - i));
-                    cells.push({ day: d.getDate(), key: dateKey(d), out: true });
-                }
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const d = new Date(y, m - 1, day);
-                    cells.push({ day, key: dateKey(d), out: false });
-                }
-                const total = Math.ceil(cells.length / 7) * 7;
-                for (let i = 1; cells.length < total; i++) {
-                    const d = new Date(y, m - 1, daysInMonth + i);
-                    cells.push({ day: d.getDate(), key: dateKey(d), out: true });
-                }
-
-                cal.innerHTML = `<div class="sidebar-calendar__grid">${cells.map(c => `<div class="sidebar-day${c.out ? ' is-out' : ''}" data-date="${c.key}">${c.day}</div>`).join('')}</div>`;
-
-                const isTaken = (key, ranges) => {
-                    const ts = new Date(key + 'T00:00:00').getTime();
-                    for (const r of ranges) {
-                        if (!r.from || !r.to) continue;
-                        const a = new Date(r.from + 'T00:00:00').getTime();
-                        const b = new Date(r.to + 'T00:00:00').getTime();
-                        if (ts >= a && ts < b) return true;
-                    }
-                    return false;
-                };
-
-                try {
-                    const url = new URL(api, window.location.href);
-                    url.searchParams.set('action', 'availability');
-                    url.searchParams.set('home_id', String(homeId));
-                    url.searchParams.set('month', monthKey);
-                    const res = await fetch(url.toString(), { credentials: 'same-origin' });
-                    const data = await res.json().catch(() => null);
-                    if (!res.ok || !data || data.ok !== true) return;
-                    const ranges = Array.isArray(data.ranges) ? data.ranges : [];
-                    cal.querySelectorAll('.sidebar-day').forEach(d => {
-                        const k = d.getAttribute('data-date') || '';
-                        if (k && isTaken(k, ranges)) d.classList.add('is-taken');
-                    });
-                } catch (_) {
-                }
-            })();
-
             if (modal) {
                 const alertBox = document.getElementById('application-alert');
                 const showAlert = (msg, ok) => {

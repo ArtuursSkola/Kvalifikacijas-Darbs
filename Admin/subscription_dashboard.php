@@ -167,9 +167,6 @@ while ($row = $activeData->fetch_assoc()) {
         <div class="page-header">
             <h1><i class="fas fa-shopping-cart"></i> Abonementu panelis</h1>
             <div class="header-actions">
-                <a href="/cron/process_subscriptions.php" class="btn btn-add" target="_blank">
-                    <i class="fas fa-sync"></i> Apstrādāt atjaunošanu
-                </a>
             </div>
         </div>
         

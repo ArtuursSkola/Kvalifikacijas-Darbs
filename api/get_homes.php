@@ -113,16 +113,22 @@ if ($action === 'pieteikums_create') {
         $iresMenesi = $iresMenesiRaw === '' ? null : (int)$iresMenesiRaw;
         $navZinams = isset($_POST['nav_zinams']) && (string)$_POST['nav_zinams'] === '1' ? 1 : 0;
         $iresSakumaDatums = trim((string)($_POST['ires_sakuma_datums'] ?? ''));
+        $iresSakumaDatums = substr($iresSakumaDatums, 0, 10);
         if ($iresSakumaDatums === '') {
             json_out(['ok' => false, 'error' => 'Norādiet sākuma datumu.'], 422);
         }
     } elseif ($veids === 'istermina_ire') {
         $sakumaDatums = trim((string)($_POST['sakuma_datums'] ?? ''));
-        $beiguDatums = trim((string)($_POST['beigu_datums'] ?? ''));
+        $beiguDatums  = trim((string)($_POST['beigu_datums']  ?? ''));
+
         if ($sakumaDatums === '' || $beiguDatums === '') {
             json_out(['ok' => false, 'error' => 'Norādiet sākuma un beigu datumu.'], 422);
         }
-        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $sakumaDatums) || !preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $beiguDatums)) {
+
+        $sakumaDatums = substr($sakumaDatums, 0, 10);
+        $beiguDatums  = substr($beiguDatums,  0, 10);
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $sakumaDatums) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $beiguDatums)) {
             json_out(['ok' => false, 'error' => 'Nederīgs datuma formāts.'], 422);
         }
         if (strtotime($beiguDatums) <= strtotime($sakumaDatums)) {
