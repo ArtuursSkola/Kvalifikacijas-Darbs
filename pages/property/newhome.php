@@ -1,11 +1,42 @@
 <?php
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 require_once __DIR__ . '/../../routes/main.php';
+require_once __DIR__ . '/../../routes/admin.php';
 require_once dirname(__DIR__, 2) . '/con_db.php';
 require_once dirname(__DIR__, 2) . '/includes/account.php';
 
 $currentUser = loadCurrentUserContext($savienojums);
-if (!$currentUser || ($currentUser['loma'] ?? '') !== 'ipasnieks' || !userHasActiveOwnerPlan($currentUser)) {
+
+if (!$currentUser && isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'moderator'], true)) {
+    $currentUser = [
+            'lietotaja_id' => $_SESSION['user_id'] ?? 0,
+            'loma'         => $_SESSION['role'],
+            'plans'        => 'Zelta',
+    ];
+}
+
+$currentUserId = (int)($currentUser['lietotaja_id'] ?? 0);
+
+
+if (!$currentUser) {
+    header('Location: ' . main_route('login'));
+    exit;
+}
+
+$role = $currentUser['loma'] ?? '';
+$isAdminOrMod = in_array($role, ['admin', 'moderator'], true);
+$isOwner = ($role === 'ipasnieks');
+
+if (!$isAdminOrMod && !$isOwner) {
+    header('Location: ' . main_route('owner') . '#plans');
+    exit;
+}
+
+if ($isOwner && !$isAdminOrMod && !userHasActiveOwnerPlan($currentUser)) {
     header('Location: ' . main_route('owner') . '#plans');
     exit;
 }
@@ -15,7 +46,8 @@ $plan = (string)($currentUser['plans'] ?? 'Nekads');
 $errors = [];
 $success = '';
 
-
+$source = $_GET['source'] ?? '';
+$isAdminSource = ($source === 'admin');
 
 
 $uploadDir = dirname(__DIR__, 2) . '/uploads';
@@ -81,7 +113,7 @@ if ($isEdit) {
     }
 
 
-    if ((int)$existingHome['ipasnieka_id'] !== (int)$_SESSION['user_id']) {
+    if (!$isAdminOrMod && (int)$existingHome['ipasnieka_id'] !== (int)($_SESSION['user_id'] ?? 0)) {
         header('Location: ' . main_route('property.list'));
         exit;
     }
@@ -277,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $gallery_json = json_encode(array_slice($combined_gallery, 0, $galleryLimit));
 
     if ($errors === []) {
-        $ownerId = (int)$_SESSION['user_id'];
+        $ownerId = (int)($_SESSION['user_id'] ?? 0);
 
         $floorInfo = '';
         if ($property_category === 'maja') {
@@ -300,22 +332,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ballaVal = (float)str_replace(',', '.', (string)$balla_price_per_day);
 
         if ($isEdit) {
-            $sql = "UPDATE est_homes SET 
-                nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
-                cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
-                apraksts=?, planojums=?, karte=?, ertibas=?, 
-                galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, statuss='Melnraksts'
-                WHERE id=? AND ipasnieka_id=?";
-            $stmt = $savienojums->prepare($sql);
-            if ($stmt) {
-                $stmt->bind_param(
-                    'ssssssddiiisssssssdddddii',
-                    $title, $city, $address, $location_text, $property_category, $type,
-                    $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
-                    $description, $layout_text, $map_text, $amenities,
-                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
-                    $editId, $ownerId
-                );
+            if ($isAdminOrMod) {
+                $sql = "UPDATE est_homes SET 
+                    nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
+                    cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
+                    apraksts=?, planojums=?, karte=?, ertibas=?, 
+                    galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, statuss='Melnraksts'
+                    WHERE id=?";
+                $stmt = $savienojums->prepare($sql);
+                if ($stmt) {
+                    $stmt->bind_param(
+                        'ssssssddiiisssssssdddddi',
+                        $title, $city, $address, $location_text, $property_category, $type,
+                        $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
+                        $description, $layout_text, $map_text, $amenities,
+                        $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
+                        $editId
+                    );
+                }
+
+            } else {
+                $sql = "UPDATE est_homes SET 
+        nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
+        cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
+        apraksts=?, planojums=?, karte=?, ertibas=?, 
+        galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, statuss='Melnraksts'
+        WHERE id=? AND ipasnieka_id=?";
+                $stmt = $savienojums->prepare($sql);
+                if ($stmt) {
+                    $stmt->bind_param(
+                            'ssssssddiiisssssssdddddi',
+                            $title, $city, $address, $location_text, $property_category, $type,
+                            $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
+                            $description, $layout_text, $map_text, $amenities,
+                            $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
+                            $editId, $ownerId
+                    );
+                }
             }
         } else {
             $sql = "INSERT INTO est_homes
@@ -324,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $savienojums->prepare($sql);
             if ($stmt) {
                 $stmt->bind_param(
-                    'issssssddiiisssssssddddd',
+                    'issssssddiiisssssssdddddd',
                     $ownerId, $title, $city, $address, $location_text, $property_category, $type,
                     $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
                     $description, $layout_text, $map_text, $amenities,
@@ -335,14 +388,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($stmt) {
             if ($stmt->execute()) {
+                if ($isAdminOrMod && $isAdminSource) {
+                    $_SESSION['admin_success'] = 'approve_property';
+                    header('Location: ' . admin_route('listings'));
+                    exit;
+                }
                 $_SESSION['property_success'] = $isEdit ? 'edit' : 'create';
-                main_redirect('property.myhomes');
+
+                if (function_exists('main_redirect')) {
+                    main_redirect('property.myhomes');
+                } else {
+                    header('Location: ' . main_route('property.myhomes'));
+                    exit;
+                }
             } else {
                 $errors[] = 'Neizdevās saglabāt sludinājumu: ' . $stmt->error;
             }
             $stmt->close();
         } else {
-            $errors[] = 'Neizdevās sagatavot pieprasījumu.';
+            $errors[] = 'Neizdevās sagatavot pieprasījumu: ' . $savienojums->error;
         }
     }
 }
@@ -376,10 +440,17 @@ include __DIR__ . '/../../includes/header.php';
 </header>
 <?php if ($isEdit): ?>
     <div class="back-button-wrap">
-        <a href="<?php echo main_route('property.myhomes'); ?>" class="btn-back">
-            <i class="fas fa-arrow-left"></i>
-            Atgriezties uz mani sludinājumi
-        </a>
+        <?php if ($isAdminSource): ?>
+            <a href="<?php echo admin_route('listings'); ?>" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Atgriezties uz admin paneli
+            </a>
+        <?php else: ?>
+            <a href="<?php echo main_route('property.myhomes'); ?>" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Atgriezties uz mani sludinājumi
+            </a>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 
@@ -393,7 +464,7 @@ include __DIR__ . '/../../includes/header.php';
 
     <div class="step-status" id="step-status">1/5: Pamatinformācija</div>
 
-    <form method="POST" action="<?php echo main_route('property.create'); ?>" enctype="multipart/form-data" id="newhome-form">
+    <form method="POST" action="<?php echo main_route('property.create') . ($isAdminSource ? '?source=admin' : ''); ?>" enctype="multipart/form-data" id="newhome-form">
         <input type="hidden" name="edit_id" value="<?php echo $editId; ?>">
         <div class="step active" data-step="1">
             <div class="form-grid">

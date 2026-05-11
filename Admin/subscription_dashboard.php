@@ -88,6 +88,56 @@ while ($row = $activeData->fetch_assoc()) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .chart-toggle {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-toggle:hover {
+            background: #e9ecef;
+            border-color: #dee2e6;
+        }
+        
+        .chart-toggle.active {
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+        
+        .chart-container {
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container canvas {
+            max-height: 300px;
+        }
+        
+        .chart-container.hidden {
+            display: none;
+        }
+        
+        .revenue-chart {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <aside class="sidebar">
@@ -146,24 +196,10 @@ while ($row = $activeData->fetch_assoc()) {
                     <h3><i class="fas fa-chart-line"></i> Ieņēmumi (Pēdējie 6 mēneši)</h3>
                 </div>
                 <div class="panel-body" style="padding: 20px;">
-                    <div class="revenue-chart">
-                        <?php
-                        $last6Months = array_slice(array_keys($monthlyRevenue), 0, 6, true);
-                        foreach ($last6Months as $month) {
-                            $revenue = $monthlyRevenue[$month] ?? 0;
-                            $maxRevenue = !empty($monthlyRevenue) ? max($monthlyRevenue) : 1;
-                            if ($maxRevenue == 0) $maxRevenue = 1;
-                            $height = ($revenue / $maxRevenue) * 100;
-                            if ($height < 5) $height = 5;
-                            
-                            echo '<div class="chart-bar-container">';
-                            echo '<div class="chart-bar-value">€' . number_format($revenue, 0) . '</div>';
-                            echo '<div class="chart-bar" style="height: ' . $height . '%;"></div>';
-                            echo '<div class="chart-bar-label">' . date('M', strtotime($month . '-01')) . '</div>';
-                            echo '</div>';
-                        }
-                        ?>
+                    <div class="chart-container">
+                        <canvas id="revenueCanvas" width="400" height="200"></canvas>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -238,5 +274,65 @@ while ($row = $activeData->fetch_assoc()) {
             </div>
         </div>
     </main>
+    
+    <script>
+        const monthlyRevenueData = <?php echo json_encode($monthlyRevenue); ?>;
+        const months = Object.keys(monthlyRevenueData);
+        const last6Months = months.slice(-6).reverse();
+        const revenues = last6Months.map(month => monthlyRevenueData[month] || 0);
+        
+        function initChart() {
+            const revenueCtx = document.getElementById('revenueCanvas').getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: last6Months.map(month => {
+                        const date = new Date(month + '-01');
+                        return date.toLocaleDateString('lv-LV', { month: 'short' });
+                    }),
+                    datasets: [{
+                        label: 'Ieņēmumi (EUR)',
+                        data: revenues,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Ieņēmumi: €' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '€' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+        });
+    </script>
 </body>
 </html>

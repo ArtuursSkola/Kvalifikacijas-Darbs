@@ -139,12 +139,12 @@ body {
     width: 4px;
     height: 100%;
 }
-.stat-card.green::before { background: #30b607; }
-.stat-card.blue::before { background: #3498db; }
-.stat-card.orange::before { background: #f39c12; }
-.stat-card.purple::before { background: #9b59b6; }
-.stat-card.teal::before { background: #1abc9c; }
-.stat-card.red::before { background: #e74c3c; }
+.stat-card.green::before {}
+.stat-card.blue::before {}
+.stat-card.orange::before {}
+.stat-card.purple::before {}
+.stat-card.teal::before {}
+.stat-card.red::before {}
 .stat-icon {
     width: 44px;
     height: 44px;

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../routes/admin.php';
+require_once __DIR__ . '/../includes/popup_system.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -88,6 +89,7 @@ if (isset($_POST['edit_listing'])) {
         $stmt->bind_param('sssdssi', $title, $city, $type, $price, $status, $description, $id);
         if ($stmt->execute()) {
             $success = 'Sludinājums atjaunināts.';
+            showSuccessPopup('Sludinājums veiksmīgi rediģēts!');
         }
         $stmt->close();
     }
@@ -349,7 +351,8 @@ if (isset($_SESSION['admin_success'])) {
                                                 <a href="<?php echo buildUrl(['approve' => $h['id']]); ?>" class="btn-sm approve" onclick="return confirm('Apstiprināt šo sludinājumu?')" title="Apstiprināt"><i class="fas fa-check"></i></a>
                                                 <a href="<?php echo buildUrl(['reject' => $h['id']]); ?>" class="btn-sm reject" onclick="return confirm('Noraidīt šo sludinājumu?')" title="Noraidīt"><i class="fas fa-times"></i></a>
                                             <?php endif; ?>
-                                            <button class="btn-sm edit" onclick='openEditModal(<?php echo json_encode($h); ?>)' title="Rediģēt"><i class="fas fa-edit"></i></button>
+                                            <a class="btn-sm edit"
+                                               href="<?php echo main_route('property.create'); ?>?id=<?php echo $h['id']; ?>&source=admin" title="Rediģēt"><i class="fas fa-edit"></i></a>
                                             <a href="<?php echo main_route('property.show', ['id' => $h['id'], 'from' => 'admin_listings']); ?>" class="btn-sm view" target="_blank" title="Skatīt">
                                                 <i class="fas fa-eye"></i>
                                             </a>

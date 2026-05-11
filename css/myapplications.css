@@ -188,7 +188,6 @@
     background: #f0fdf4;
     padding: 12px 14px;
     border-radius: 10px;
-    border-left: 3px solid var(--accent);
     margin-bottom: 14px;
     line-height: 1.6;
 }

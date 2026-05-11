@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../routes/admin.php';
+require_once __DIR__ . '/../includes/popup_system.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) die('Nav atrasts con_db.php');
@@ -32,7 +33,10 @@ if (isset($_GET['delete']) && ctype_digit((string)$_GET['delete'])) {
     }
     $delStmt = $savienojums->prepare("DELETE FROM est_palidziba WHERE id = ?");
     $delStmt->bind_param('i', $delId);
-    if ($delStmt->execute()) $success = 'Ziņojums dzēsts.';
+    if ($delStmt->execute()) {
+        $success = 'Ziņojums dzēsts.';
+        showSuccessPopup('Ziņojums veiksmīgi dzēsts!');
+    }
     else $error = 'Neizdevās dzēst.';
     $delStmt->close();
 }
@@ -65,6 +69,7 @@ if (isset($_GET['buj_toggle']) && ctype_digit((string)$_GET['buj_toggle'])) {
             $bStmt->bind_param('ii', $newBuj, $bujId);
             if ($bStmt->execute()) {
                 $success = 'BUJ statuss atjaunināts.';
+                showSuccessPopup('BUJ statuss veiksmīgi atjaunināts!');
             } else {
                 $error = 'Neizdevās atjaunināt BUJ statusu: ' . $bStmt->error;
             }
@@ -86,7 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reply_submit'])) {
     if ($msgId > 0 && $atbilde !== '') {
         $rStmt = $savienojums->prepare("UPDATE est_palidziba SET atbilde=?, statuss='Atbildēts' WHERE id=?");
         $rStmt->bind_param('si', $atbilde, $msgId);
-        if ($rStmt->execute()) $success = 'Atbilde saglabāta.';
+        if ($rStmt->execute()) {
+            $success = 'Atbilde saglabāta.';
+            showSuccessPopup('Atbilde veiksmīgi saglabāta!');
+        }
         else $error = 'Neizdevās saglabāt atbildi.';
         $rStmt->close();
     } else {

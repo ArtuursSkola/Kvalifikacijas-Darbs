@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../routes/admin.php';
+require_once __DIR__ . '/../includes/popup_system.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -32,6 +33,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
             $stmt->bind_param('i', $delId);
             if ($stmt->execute()) {
                 $success = 'Moderators dzēsts.';
+                showSuccessPopup('Moderators veiksmīgi dzēsts!');
             } else {
                 $errors[] = 'Neizdevās dzēst: ' . $stmt->error;
             }
@@ -91,6 +93,7 @@ if (isset($_POST['create_mod'])) {
             $ins->bind_param('ssss', $newUsername, $newEmail, $hash, $newRole);
             if ($ins->execute()) {
                 $success = 'Moderators izveidots.';
+                showSuccessPopup('Moderators veiksmīgi izveidots!');
             } else {
                 $errors[] = 'Neizdevās izveidot: ' . $ins->error;
             }
@@ -148,6 +151,7 @@ if (isset($_POST['edit_mod'])) {
                     }
                     if ($upd->execute()) {
                         $success = 'Informācija atjaunināta.';
+                        showSuccessPopup('Izmaiņas tika saglabātas!');
                     } else {
                         $errors[] = 'Neizdevās atjaunināt: ' . $upd->error;
                     }

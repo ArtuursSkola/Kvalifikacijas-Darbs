@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../routes/admin.php';
+require_once __DIR__ . '/../includes/popup_system.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -17,7 +18,7 @@ $errors = [];
 $success = '';
 $form_type = '';
 
-// Handle delete action (admin only)
+
 if ($_SESSION['role'] === 'admin' && isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $delId = (int)$_GET['delete'];
     $stmt = $savienojums->prepare("DELETE FROM est_lietotaji WHERE lietotaja_id = ?");
@@ -26,6 +27,7 @@ if ($_SESSION['role'] === 'admin' && isset($_GET['delete']) && is_numeric($_GET[
         if ($stmt->execute()) {
             $success = 'Lietotājs dzēsts.';
             $_SESSION['admin_success'] = 'delete_user';
+            showSuccessPopup('Lietotājs veiksmīgi dzēsts!');
         } else {
             $errors[] = 'Neizdevās dzēst: ' . $stmt->error;
         }
@@ -33,7 +35,7 @@ if ($_SESSION['role'] === 'admin' && isset($_GET['delete']) && is_numeric($_GET[
     }
 }
 
-// Handle create new user
+
 if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
     $form_type = 'create';
     $newUsername = trim($_POST['new_username'] ?? '');
@@ -77,6 +79,7 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
             if ($ins->execute()) {
                 $success = 'Lietotājs izveidots.';
                 $_SESSION['admin_success'] = 'create_user';
+                showSuccessPopup('Lietotājs veiksmīgi izveidots!');
             } else {
                 $errors[] = 'Neizdevās izveidot: ' . $ins->error;
             }
@@ -86,7 +89,7 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['create_user'])) {
     }
 }
 
-// Handle full user edit
+
 if ($_SESSION['role'] === 'admin' && isset($_POST['edit_user'])) {
     $form_type = 'edit';
     $editId = (int)($_POST['edit_id'] ?? 0);
@@ -135,6 +138,7 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['edit_user'])) {
                 if ($upd->execute()) {
                     $success = 'Lietotājs atjaunināts.';
                     $_SESSION['admin_success'] = 'edit_user';
+                    showSuccessPopup('Izmaiņas tika saglabātas!');
                 } else {
                     $errors[] = 'Neizdevās atjaunināt: ' . $upd->error;
                 }
@@ -145,12 +149,12 @@ if ($_SESSION['role'] === 'admin' && isset($_POST['edit_user'])) {
     }
 }
 
-// Pagination
+
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
 
-// Search
+
 $search = trim($_GET['search'] ?? '');
 $whereClause = '';
 $params = [];
@@ -163,7 +167,7 @@ if ($search !== '') {
     $types = 'ss';
 }
 
-// Get total count
+
 $countSql = "SELECT COUNT(*) FROM est_lietotaji $whereClause";
 $totalUsers = 0;
 if ($search !== '') {
@@ -180,7 +184,7 @@ if ($search !== '') {
 
 $totalPages = max(1, ceil($totalUsers / $perPage));
 
-// Get users
+
 $users = [];
 $sql = "SELECT lietotaja_id, lietotajvards, epasts, loma, plans, plan_expires_at, created_at FROM est_lietotaji $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?";
 if ($search !== '') {
@@ -199,7 +203,7 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// Stats
+
 $totalCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji")->fetch_row()[0];
 $ownersCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE loma='ipasnieks'")->fetch_row()[0];
 $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE(created_at)=CURDATE()")->fetch_row()[0];
@@ -411,7 +415,6 @@ if (!empty($errors)) {
         </div>
     </main>
 
-    <!-- Create User Modal -->
     <div class="modal-overlay" id="createModal">
         <div class="modal">
             <div class="modal-header">
@@ -462,7 +465,6 @@ if (!empty($errors)) {
         </div>
     </div>
 
-    <!-- Edit User Modal -->
     <div class="modal-overlay" id="editModal">
         <div class="modal">
             <div class="modal-header">
