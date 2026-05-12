@@ -4,7 +4,8 @@ require_once __DIR__ . '/../routes/main.php';
 require_once __DIR__ . '/../con_db.php';
 
 if (!isset($_SESSION['user_id'])) {
-    main_redirect('login');
+    header('Location: ' . main_route('login'));
+    exit;
 }
 
 $user_id = (int)$_SESSION['user_id'];

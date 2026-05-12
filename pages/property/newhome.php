@@ -28,6 +28,10 @@ if (!$currentUser) {
 }
 
 $role = $currentUser['loma'] ?? '';
+if ($role === 'lietotajs') {
+    header('Location: ' . main_route('owner'));
+    exit;
+}
 $isAdminOrMod = in_array($role, ['admin', 'moderator'], true);
 $isOwner = ($role === 'ipasnieks');
 

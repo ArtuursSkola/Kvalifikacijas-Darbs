@@ -121,7 +121,7 @@ include __DIR__ . '/../includes/header.php';
                         <span class="faq-item__q">Vai mani personas dati ir droši?</span>
                         <div class="faq-item__icon"><i class="fas fa-chevron-down"></i></div>
                     </div>
-                    <div class="faq-item__body"><p>Jā. Mēs ievērojam stingras datu aizsardzības normas. Jūsu personas dati netiek pārdoti trešajām pusēm. Visi sensitīvie dati tiek šifrēti. Plašāku informāciju skatiet mūsu Privātuma politikā.</p></div>
+                    <div class="faq-item__body"><p>Jā. Mēs ievērojam stingras datu aizsardzības normas. Jūsu personas dati netiek pārdoti trešajām pusēm. Visi sensitīvie dati tiek šifrēti. Plašāku informāciju skatiet mūsu <a href="<?php echo htmlspecialchars(main_route('privacy'), ENT_QUOTES, 'UTF-8'); ?>">Privātuma politikā</a>.</p></div>
                 </div>
 
                 <div class="faq-item">

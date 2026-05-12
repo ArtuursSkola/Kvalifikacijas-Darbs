@@ -1,9 +1,23 @@
 <?php
 session_start();
 require_once __DIR__ . '/../routes/main.php';
+require_once __DIR__ . '/../includes/account.php';
+require_once __DIR__ . '/../con_db.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ' . main_route('login'));
+    exit();
+}
+
+$currentUser = loadCurrentUserContext($savienojums);
+if (!$currentUser) {
+    header('Location: ' . main_route('login'));
+    exit();
+}
+
+$role = $currentUser['loma'] ?? '';
+if ($role === 'lietotajs') {
+    header('Location: ' . main_route('home'));
     exit();
 }
 

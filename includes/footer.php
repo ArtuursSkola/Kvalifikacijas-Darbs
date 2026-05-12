@@ -28,7 +28,7 @@ require_once __DIR__ . '/../routes/main.php';
                 <h4>Atbalsts</h4>
                 <ul>
                     <li><a href="<?php echo main_route('faq'); ?>">Biežāk uzdotie jautājumi</a></li>
-                    <li><a href="#">Privātuma politika</a></li>
+                    <li><a href="<?php echo main_route('privacy'); ?>">Privātuma politika</a></li>
                     <li><a href="#">Lietošanas noteikumi</a></li>
                     <li><a href="#">Kontakti</a></li>
                 </ul>

@@ -143,6 +143,7 @@ function main_routes(): array
         'api.favorites_toggle' => 'api/toggle_favorite.php',
         'api.favorites' => 'api/get_favorites.php',
         'faq' => 'pages/faq.php',
+        'privacy' => 'pages/privacy.php',
         'api.submit_palidziba' => 'api/submit_palidziba.php',
         'api.chat.list'     => 'api/zinas_saraksts.php',
         'api.chat.messages' => 'api/zinas_atvert.php',
