@@ -24,6 +24,10 @@ if ($username === '') {
     $errors[] = 'Lietotājvārds nevar būt tukšs.';
 }
 
+if (preg_match('/[0-9]/', $username)) {
+    $errors[] = 'Lietotājvārds nevar saturēt ciparus';
+}
+
 if ($email === '') {
     $errors[] = 'E-pasts nevar būt tukšs.';
 }

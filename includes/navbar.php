@@ -176,7 +176,7 @@ $myHomesUrl = main_route('property.myhomes');
                         </div>
 
                         <label for="username_nav">Lietotājvārds</label>
-                        <input type="text" name="username" id="username_nav" value="<?php echo htmlspecialchars((string)($currentUser['lietotajvards'] ?? '')); ?>" required>
+                        <input type="text" name="username" id="username_nav" value="<?php echo htmlspecialchars((string)($currentUser['lietotajvards'] ?? '')); ?>" required oninput="this.value=this.value.replace(/[\s0-9]/g,'')">
 
                         <label for="email_nav">E-pasts</label>
                         <input type="email" name="email" id="email_nav" value="<?php echo htmlspecialchars((string)($currentUser['epasts'] ?? '')); ?>" required>

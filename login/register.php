@@ -31,6 +31,9 @@ if (isset($_POST['register_btn'])) {
     if (preg_match('/[0-9]/', $lietotajvards)) {
         $errors[] = "Lietotājvārds nevar saturēt skaitļus";
     }
+    if (strpos($lietotajvards, ' ') !== false) {
+        $errors[] = "Lietotājvārds nevar saturēt atstarpes";
+    }
     if (strlen($lietotajvards) < 5) {
         $errors[] = "Lietotājvārdam jābūt vismaz 5 simbolus garam";
     } elseif (strlen($lietotajvards) > 25) {
@@ -128,7 +131,7 @@ if (isset($_POST['register_btn'])) {
             <form action="<?php echo main_route('register'); ?>" method="POST">
                 <div class="form-group">
                     <label>Lietotājvārds</label>
-                    <input type="text" name="username" required>
+                    <input type="text" name="username" required oninput="this.value=this.value.replace(/\s/g,'')">
                 </div>
                 <div class="form-group">
                     <label>E-pasts</label>

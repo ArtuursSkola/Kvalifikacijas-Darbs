@@ -1334,7 +1334,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.tab-link').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 btn.classList.add('active');
-                document.getElementById(btn.dataset.tab).classList.add('active');
+                const panel = document.getElementById(btn.dataset.tab);
+                if (panel) panel.classList.add('active');
+                if (btn.dataset.tab === 'map') {
+                    setTimeout(() => {
+                        if (typeof window.__homeestPropertyMapInit === 'function') {
+                            window.__homeestPropertyMapInit();
+                        }
+                    }, 100);
+                }
             });
         });
 

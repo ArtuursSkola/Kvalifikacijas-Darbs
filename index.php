@@ -65,6 +65,25 @@ if ($resUsers && $row = $resUsers->fetch_row()) $totalUsersCount = (int)$row[0];
 $dealsCount = 0;
 $resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Pardots'");
 if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
+
+require_once __DIR__ . '/includes/latvia_city_coords.php';
+$homepageMapMarkers = [];
+$hm = $savienojums->query("SELECT id, nosaukums, pilseta FROM est_homes WHERE statuss = 'Aktivs' ORDER BY created_at DESC LIMIT 400");
+if ($hm) {
+    while ($row = $hm->fetch_assoc()) {
+        $hid = (int)$row['id'];
+        $bc = latvia_city_coordinates((string)($row['pilseta'] ?? ''));
+        $jj = map_home_jitter($bc[0], $bc[1], $hid);
+        $homepageMapMarkers[] = [
+            'id' => $hid,
+            'title' => (string)($row['nosaukums'] ?? ''),
+            'city' => (string)($row['pilseta'] ?? ''),
+            'lat' => $jj[0],
+            'lng' => $jj[1],
+            'url' => main_route('property.show', ['id' => $hid]),
+        ];
+    }
+}
 ?>
 
     <header class="hero">
@@ -200,6 +219,59 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
             </div>
         </div>
     </section>
+
+    <section class="homepage-map-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Karte</span>
+                <h2 class="section-title-new">Sludinājumu atrašanās vietas</h2>
+                <p class="section-subtitle">Aktīvo piedāvājumu aptuvenās atrašanās vietas pa Latviju.</p>
+            </div>
+            <div id="homepage-osm-map" class="homepage-osm-map"></div>
+            <p class="homepage-osm-attrib">Karte: © <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">OpenStreetMap</a> līdzdalībnieki</p>
+        </div>
+    </section>
+    <script type="application/json" id="homepage-map-data"><?php echo json_encode(['markers' => $homepageMapMarkers], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const raw = document.getElementById('homepage-map-data');
+            const mapEl = document.getElementById('homepage-osm-map');
+            if (!raw || !mapEl) return;
+            let payload;
+            try { payload = JSON.parse(raw.textContent); } catch (e) { return; }
+            const markers = Array.isArray(payload.markers) ? payload.markers : [];
+            function esc(s) {
+                const d = document.createElement('div');
+                d.textContent = s == null ? '' : String(s);
+                return d.innerHTML;
+            }
+            function loadLeaflet(cb) {
+                if (window.L) { cb(); return; }
+                const lk = document.createElement('link');
+                lk.rel = 'stylesheet';
+                lk.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                document.head.appendChild(lk);
+                const s = document.createElement('script');
+                s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                s.onload = function() { cb(); };
+                document.head.appendChild(s);
+            }
+            loadLeaflet(function() {
+                const map = L.map(mapEl, { scrollWheelZoom: false }).setView([56.8796, 24.6032], 7);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(map);
+                markers.forEach(function(m) {
+                    if (typeof m.lat !== 'number' || typeof m.lng !== 'number') return;
+                    const u = m.url ? String(m.url) : '';
+                    const link = u ? '<br><a href="' + encodeURI(u) + '">Skatīt sludinājumu</a>' : '';
+                    L.marker([m.lat, m.lng]).addTo(map).bindPopup('<strong>' + esc(m.title) + '</strong><br>' + esc(m.city) + link);
+                });
+                setTimeout(function() { map.invalidateSize(); }, 400);
+            });
+        });
+    </script>
 
     <section class="features-section">
         <div class="container">

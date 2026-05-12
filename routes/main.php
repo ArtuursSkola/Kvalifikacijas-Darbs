@@ -139,6 +139,7 @@ function main_routes(): array
         'payment.checkout_offer' => 'payments/checkout_offer.php',
         'payment.success' => 'payments/success.php',
         'api.homes' => 'api/get_homes.php',
+        'api.geocode' => 'api/geocode.php',
         'api.favorites_ids' => 'api/favorites_ids.php',
         'api.favorites_toggle' => 'api/toggle_favorite.php',
         'api.favorites' => 'api/get_favorites.php',
