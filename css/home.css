@@ -421,6 +421,14 @@ body.property-detail-page {
     object-fit: cover;
 }
 
+.property-detail-osm-map {
+    height: 320px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    margin-top: 12px;
+    background: var(--gray-100);
+}
+
 
 .property-sidebar {
     position: sticky;

@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../routes/main.php';
 require_once __DIR__ . '/../../routes/admin.php';
 require_once dirname(__DIR__, 2) . '/con_db.php';
 require_once dirname(__DIR__, 2) . '/includes/account.php';
+require_once dirname(__DIR__, 2) . '/includes/latvia_city_coords.php';
 
 $currentUser = loadCurrentUserContext($savienojums);
 
@@ -77,6 +78,25 @@ function handleUploadOrUrl(string $fileKey, string $fallbackUrl, string $uploadD
     }
 
     return trim((string)$fallbackUrl);
+}
+
+/** @return array{0: float, 1: float}|null */
+function home_parse_lat_lng_post(?string $latIn, ?string $lngIn): ?array
+{
+    $latIn = trim(str_replace(',', '.', (string)$latIn));
+    $lngIn = trim(str_replace(',', '.', (string)$lngIn));
+    if ($latIn === '' || $lngIn === '') {
+        return null;
+    }
+    if (!is_numeric($latIn) || !is_numeric($lngIn)) {
+        return null;
+    }
+    $lat = (float)$latIn;
+    $lng = (float)$lngIn;
+    if ($lat < 55.0 || $lat > 59.5 || $lng < 18.0 || $lng > 30.5) {
+        return null;
+    }
+    return [$lat, $lng];
 }
 
 
@@ -161,6 +181,16 @@ $pirts_price_per_day = $existingHome['pirts_cena_diena'] ?? '';
 $balla_price_per_day = $existingHome['balla_cena_diena'] ?? '';
 $has_pirts = $pirts_price_per_day !== '' && (float)$pirts_price_per_day > 0;
 $has_balla = $balla_price_per_day !== '' && (float)$balla_price_per_day > 0;
+$pin_lat = '';
+$pin_lng = '';
+if ($existingHome) {
+    if (isset($existingHome['latitude']) && $existingHome['latitude'] !== null && $existingHome['latitude'] !== '') {
+        $pin_lat = (string)$existingHome['latitude'];
+    }
+    if (isset($existingHome['longitude']) && $existingHome['longitude'] !== null && $existingHome['longitude'] !== '') {
+        $pin_lng = (string)$existingHome['longitude'];
+    }
+}
 if ($type === 'ire') {
     $price_label = 'Cena (EUR / men.) *';
 } elseif ($type === 'istermina_ire') {
@@ -208,6 +238,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $layout_text = trim((string)($_POST['layout_text'] ?? ''));
     $map_text = trim((string)($_POST['map_text'] ?? ''));
     $amenities = trim((string)($_POST['amenities'] ?? ''));
+    $pin_lat = trim((string)($_POST['latitude'] ?? ''));
+    $pin_lng = trim((string)($_POST['longitude'] ?? ''));
 
     $main_image_url = trim((string)($_POST['main_image_url'] ?? ''));
     
@@ -335,22 +367,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pirtsVal = (float)str_replace(',', '.', (string)$pirts_price_per_day);
         $ballaVal = (float)str_replace(',', '.', (string)$balla_price_per_day);
 
+        $postedPin = home_parse_lat_lng_post($pin_lat, $pin_lng);
+        $latBind = null;
+        $lngBind = null;
+        if ($postedPin !== null) {
+            $latBind = number_format($postedPin[0], 7, '.', '');
+            $lngBind = number_format($postedPin[1], 7, '.', '');
+        }
+
         if ($isEdit) {
             if ($isAdminOrMod) {
                 $sql = "UPDATE est_homes SET 
                     nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
                     cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
                     apraksts=?, planojums=?, karte=?, ertibas=?, 
-                    galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, statuss='Melnraksts'
+                    galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, latitude=?, longitude=?, statuss='Melnraksts'
                     WHERE id=?";
                 $stmt = $savienojums->prepare($sql);
                 if ($stmt) {
+                    $adminBindTypes = 'ssssss' . 'dd' . 'iii' . str_repeat('s', 7) . 'ddddd' . 'ss' . 'i';
                     $stmt->bind_param(
-                        'ssssssddiiisssssssdddddi',
+                        $adminBindTypes,
                         $title, $city, $address, $location_text, $property_category, $type,
                         $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
                         $description, $layout_text, $map_text, $amenities,
                         $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
+                        $latBind, $lngBind,
                         $editId
                     );
                 }
@@ -360,32 +402,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
         cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
         apraksts=?, planojums=?, karte=?, ertibas=?, 
-        galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, statuss='Melnraksts'
+        galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, latitude=?, longitude=?, statuss='Melnraksts'
         WHERE id=? AND ipasnieka_id=?";
                 $stmt = $savienojums->prepare($sql);
                 if ($stmt) {
+                    $ownerBindTypes = 'ssssss' . 'dd' . 'iii' . str_repeat('s', 7) . 'ddddd' . 'ss' . 'ii';
                     $stmt->bind_param(
-                            'ssssssddiiisssssssdddddi',
+                            $ownerBindTypes,
                             $title, $city, $address, $location_text, $property_category, $type,
                             $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
                             $description, $layout_text, $map_text, $amenities,
                             $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
+                            $latBind, $lngBind,
                             $editId, $ownerId
                     );
                 }
             }
         } else {
             $sql = "INSERT INTO est_homes
-                (ipasnieka_id, nosaukums, pilseta, adrese, atrasanas_vieta, kategorija, veids, cena, platiba, gulamistabas, vannasistabas, stavs, stavu_info, apraksts, planojums, karte, ertibas, galvenais_attels, galerija, ires_maksa, komunalo_maksa, kopa_maksa, pirts_cena_diena, balla_cena_diena, statuss)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Melnraksts')";
+                (ipasnieka_id, nosaukums, pilseta, adrese, atrasanas_vieta, kategorija, veids, cena, platiba, gulamistabas, vannasistabas, stavs, stavu_info, apraksts, planojums, karte, ertibas, galvenais_attels, galerija, ires_maksa, komunalo_maksa, kopa_maksa, pirts_cena_diena, balla_cena_diena, latitude, longitude, statuss)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Melnraksts')";
             $stmt = $savienojums->prepare($sql);
             if ($stmt) {
+                $insertBindTypes = 'i' . str_repeat('s', 6) . 'dd' . 'iii' . str_repeat('s', 7) . str_repeat('d', 5) . 'ss';
                 $stmt->bind_param(
-                    'issssssddiiisssssssdddddd',
+                    $insertBindTypes,
                     $ownerId, $title, $city, $address, $location_text, $property_category, $type,
                     $priceVal, $areaVal, $bedsVal, $bathsVal, $floorVal, $floorInfo,
                     $description, $layout_text, $map_text, $amenities,
-                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal
+                    $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
+                    $latBind, $lngBind
                 );
             }
         }
@@ -418,11 +464,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $pageTitle = ($isEdit ? 'Rediģēt sludinājumu' : 'Izveidot sludinājumu') . ' - HomeEstate';
 $extraStyles = ['newhome'];
 $bodyClass = 'owner-page newhome-page';
+$mapCenterForForm = latvia_city_coordinates($city !== '' ? $city : '');
 $bodyData = [
     'gallery-limit' => $galleryLimit,
     'gallery-json' => $gallery_json,
     'has-existing-main' => $main_image ? 'true' : 'false',
-    'app-url' => app_url("")
+    'app-url' => app_url(""),
+    'map-center-lat' => (string)$mapCenterForForm[0],
+    'map-center-lng' => (string)$mapCenterForForm[1],
+    'geocode-url' => main_route('api.geocode'),
 ];
 include __DIR__ . '/../../includes/header.php';
 ?>
@@ -551,6 +601,17 @@ include __DIR__ . '/../../includes/header.php';
                     <label>Karte / atrašanās vieta</label>
                     <textarea name="map_text" placeholder="Kā nokļūt / ko iekļaut kartē..."><?php echo htmlspecialchars($map_text); ?></textarea>
                 </div>
+                <div class="newhome-map-block">
+                    <label>Precīza vieta kartē (neobligāti)</label>
+                    <p class="muted small">Noklikšķini kartē, lai novietotu tapu. Ja pin nav, sākumlapā tiek rādīta aptuvena pilsētas atrašanās vieta.</p>
+                    <div class="newhome-map-toolbar">
+                        <button type="button" class="btn-submit ghost" id="newhome-map-center-city">Centrēt pēc pilsētas</button>
+                        <button type="button" class="btn-submit ghost" id="newhome-map-clear-pin">Noņemt pinu</button>
+                    </div>
+                    <div id="newhome-location-map" class="newhome-location-map" aria-label="Īpašuma novietojums"></div>
+                    <input type="hidden" name="latitude" id="newhome-lat-input" value="<?php echo htmlspecialchars($pin_lat); ?>">
+                    <input type="hidden" name="longitude" id="newhome-lng-input" value="<?php echo htmlspecialchars($pin_lng); ?>">
+                </div>
             </div>
 
             <div class="step-nav">
@@ -664,135 +725,130 @@ include __DIR__ . '/../../includes/header.php';
     </form>
 </div>
 
+<script>
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        var mapEl = document.getElementById('newhome-location-map');
+        if (!mapEl) return;
+        var body = document.body;
+        var latInput = document.getElementById('newhome-lat-input');
+        var lngInput = document.getElementById('newhome-lng-input');
+        var cityInput = document.querySelector('#newhome-form input[name="city"]');
+        var geocodeUrl = body.getAttribute('data-geocode-url') || '';
+        var centerLat = parseFloat(body.getAttribute('data-map-center-lat') || '56.95');
+        var centerLng = parseFloat(body.getAttribute('data-map-center-lng') || '24.1');
+        if (!isFinite(centerLat)) centerLat = 56.95;
+        if (!isFinite(centerLng)) centerLng = 24.1;
+        var map = null;
+        var marker = null;
+        var mapBuilt = false;
+
+        function parseHiddenPin() {
+            if (!latInput || !lngInput) return null;
+            var la = parseFloat(String(latInput.value).replace(',', '.'));
+            var lo = parseFloat(String(lngInput.value).replace(',', '.'));
+            if (!isFinite(la) || !isFinite(lo)) return null;
+            return [la, lo];
+        }
+
+        function syncInputsFromLatLng(ll) {
+            if (latInput) latInput.value = ll[0].toFixed(7);
+            if (lngInput) lngInput.value = ll[1].toFixed(7);
+        }
+
+        function clearPin() {
+            if (latInput) latInput.value = '';
+            if (lngInput) lngInput.value = '';
+            if (marker && map) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+        }
+
+        function loadLeaflet(cb) {
+            if (window.L) { cb(); return; }
+            var lk = document.createElement('link');
+            lk.rel = 'stylesheet';
+            lk.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(lk);
+            var s = document.createElement('script');
+            s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            s.onload = function () { cb(); };
+            document.head.appendChild(s);
+        }
+
+        function buildMap() {
+            if (mapBuilt || !mapEl) return;
+            mapBuilt = true;
+            loadLeaflet(function () {
+                var pin = parseHiddenPin();
+                var zl = pin ? 14 : 11;
+                var clat = pin ? pin[0] : centerLat;
+                var clng = pin ? pin[1] : centerLng;
+                map = L.map(mapEl, { scrollWheelZoom: false }).setView([clat, clng], zl);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+                if (pin) {
+                    marker = L.marker(pin).addTo(map);
+                }
+                map.on('click', function (ev) {
+                    var ll = [ev.latlng.lat, ev.latlng.lng];
+                    syncInputsFromLatLng(ll);
+                    if (marker) {
+                        marker.setLatLng(ll);
+                    } else {
+                        marker = L.marker(ll).addTo(map);
+                    }
+                });
+                setTimeout(function () { if (map) map.invalidateSize(); }, 200);
+            });
+        }
+
+        document.addEventListener('newhome-step', function (ev) {
+            if (!ev.detail || ev.detail.index !== 1) return;
+            buildMap();
+            setTimeout(function () { if (map) map.invalidateSize(); }, 350);
+        });
+
+        var btnClear = document.getElementById('newhome-map-clear-pin');
+        if (btnClear) {
+            btnClear.addEventListener('click', function () {
+                clearPin();
+                if (map) map.setView([centerLat, centerLng], 11);
+            });
+        }
+
+        var btnCenter = document.getElementById('newhome-map-center-city');
+        if (btnCenter) {
+            btnCenter.addEventListener('click', function () {
+                var q = cityInput && cityInput.value ? String(cityInput.value).trim() : '';
+                if (!geocodeUrl) {
+                    if (map) map.setView([centerLat, centerLng], 11);
+                    return;
+                }
+                if (!q) {
+                    if (map) map.setView([centerLat, centerLng], 11);
+                    return;
+                }
+                try {
+                    var url = new URL(geocodeUrl, window.location.href);
+                    url.searchParams.set('q', q + ', Latvija');
+                    fetch(url.toString()).then(function (r) { return r.json(); }).then(function (data) {
+                        if (!data || !data.ok || !isFinite(data.lat) || !isFinite(data.lng)) return;
+                        centerLat = data.lat;
+                        centerLng = data.lng;
+                        if (map) {
+                            map.setView([centerLat, centerLng], 12);
+                            map.invalidateSize();
+                        }
+                    }).catch(function () {});
+                } catch (e) {}
+            });
+        }
+    });
+})();
+</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-
-    setTimeout(function() {
-
-        const hasPirtsCheckbox = document.getElementById('has-pirts');
-        const hasBallaCheckbox = document.getElementById('has-balla');
-
-        const pirtsPriceWrap = document.getElementById('pirts-price-wrap');
-        const ballaPriceWrap = document.getElementById('balla-price-wrap');
-
-        if (hasPirtsCheckbox && pirtsPriceWrap) {
-            hasPirtsCheckbox.addEventListener('change', function () {
-                pirtsPriceWrap.style.display = this.checked ? 'block' : 'none';
-            });
-        }
-
-        if (hasBallaCheckbox && ballaPriceWrap) {
-            hasBallaCheckbox.addEventListener('change', function () {
-                ballaPriceWrap.style.display = this.checked ? 'block' : 'none';
-            });
-        }
-        
-
-        const rentPriceDisplay = document.getElementById('short-rent-price-display');
-        const shortRentPriceDisplay = document.getElementById('short-rent-price-display');
-        const buyPriceDisplay = document.getElementById('buy-price-display');
-        
-
-        if (rentPriceDisplay) {
-            rentPriceDisplay.style.display = 'block';
-        }
-        if (shortRentPriceDisplay) {
-            shortRentPriceDisplay.style.display = 'block';
-        }
-        if (buyPriceDisplay) {
-            buyPriceDisplay.style.display = 'block';
-        }
-        
-        if (type === 'pardsod') {
-            rentPriceDisplay.style.display = 'block';
-            shortRentPriceDisplay.style.display = 'block';
-            buyPriceDisplay.style.display = 'none';
-        } else if (type === 'ire') {
-            rentPriceDisplay.style.display = 'block';
-            shortRentPriceDisplay.style.display = 'none';
-            buyPriceDisplay.style.display = 'none';
-        } else {
-            rentPriceDisplay.style.display = 'none';
-            shortRentPriceDisplay.style.display = 'block';
-            buyPriceDisplay.style.display = 'block';
-        }
-        
-
-        const propertyTypeRadios = document.querySelectorAll('input[name="veids"]');
-        propertyTypeRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                updatePriceDisplay(this.value);
-            });
-        });
-        
-
-        const initialType = document.querySelector('input[name="veids"]:checked')?.value || 'pardsod';
-        updatePriceDisplay(initialType);
-    }, 100);
-
-    const hasPirtsCheckbox = document.getElementById('has-pirts');
-    const hasBallaCheckbox = document.getElementById('has-balla');
-    const pirtsPriceWrap = document.getElementById('pirts-price-wrap');
-    const ballaPriceWrap = document.getElementById('balla-price-wrap');
-    
-    if (hasPirtsCheckbox) {
-        hasPirtsCheckbox.addEventListener('change', function() {
-            pirtsPriceWrap.style.display = this.checked ? 'flex' : 'none';
-        });
-    }
-    
-    if (hasBallaCheckbox) {
-        hasBallaCheckbox.addEventListener('change', function() {
-            if (ballaPriceWrap) {
-                ballaPriceWrap.style.display = this.checked ? 'flex' : 'none';
-            }
-        });
-    }
-    
-
-    const rentPriceDisplay = document.getElementById('short-rent-price-display');
-    const shortRentPriceDisplay = document.getElementById('short-rent-price-display');
-    const buyPriceDisplay = document.getElementById('buy-price-display');
-    
-
-    function updatePriceDisplay(type) {
-        if (rentPriceDisplay) {
-            rentPriceDisplay.style.display = 'block';
-        }
-        if (shortRentPriceDisplay) {
-            shortRentPriceDisplay.style.display = 'block';
-        }
-        if (buyPriceDisplay) {
-            buyPriceDisplay.style.display = 'block';
-        }
-        
-        if (type === 'pardsod') {
-            if (rentPriceDisplay) rentPriceDisplay.style.display = 'block';
-            if (shortRentPriceDisplay) shortRentPriceDisplay.style.display = 'block';
-            if (buyPriceDisplay) buyPriceDisplay.style.display = 'none';
-        } else if (type === 'ire') {
-            if (rentPriceDisplay) rentPriceDisplay.style.display = 'block';
-            if (shortRentPriceDisplay) shortRentPriceDisplay.style.display = 'block';
-            if (buyPriceDisplay) buyPriceDisplay.style.display = 'none';
-        } else {
-            if (rentPriceDisplay) rentPriceDisplay.style.display = 'none';
-            if (shortRentPriceDisplay) shortRentPriceDisplay.style.display = 'block';
-            if (buyPriceDisplay) buyPriceDisplay.style.display = 'block';
-        }
-    }
-    
-
-    const propertyTypeRadios = document.querySelectorAll('input[name="veids"]');
-    propertyTypeRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            updatePriceDisplay(this.value);
-        });
-    });
-    
-
-    const initialType = document.querySelector('input[name="veids"]:checked')?.value || 'pardsod';
-    updatePriceDisplay(initialType);
-});
-</script>

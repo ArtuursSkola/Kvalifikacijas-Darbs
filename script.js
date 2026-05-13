@@ -1011,6 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 status.textContent = `${idx + 1}/5: ${name}`;
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.dispatchEvent(new CustomEvent('newhome-step', { detail: { index: idx }, bubbles: true }));
         };
 
         const cpLen = (v) => Array.from(String(v || '')).length;

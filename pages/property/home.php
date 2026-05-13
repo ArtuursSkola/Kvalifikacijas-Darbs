@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . '/../../routes/main.php';
 require_once dirname(__DIR__, 2) . '/con_db.php';
 require_once dirname(__DIR__, 2) . '/includes/account.php';
+require_once dirname(__DIR__, 2) . '/includes/latvia_city_coords.php';
 
 $isOwner = isset($_SESSION['role']) && $_SESSION['role'] === 'ipasnieks';
 $plan = $_SESSION['plans'] ?? 'Nekads';
@@ -27,6 +28,23 @@ if ($homeRes->num_rows === 0) {
 
 $home = $homeRes->fetch_assoc();
 $homeStmt->close();
+
+$detailMapLat = null;
+$detailMapLng = null;
+$hasDetailPin = false;
+$latCol = $home['latitude'] ?? null;
+$lngCol = $home['longitude'] ?? null;
+if ($latCol !== null && $latCol !== '' && $lngCol !== null && $lngCol !== ''
+        && is_numeric($latCol) && is_numeric($lngCol)) {
+    $detailMapLat = (float)$latCol;
+    $detailMapLng = (float)$lngCol;
+    $hasDetailPin = true;
+} else {
+    $bc = latvia_city_coordinates((string)($home['pilseta'] ?? ''));
+    $jj = map_home_jitter($bc[0], $bc[1], $homeId);
+    $detailMapLat = $jj[0];
+    $detailMapLng = $jj[1];
+}
 
 $viewStmt = $savienojums->prepare("UPDATE est_homes SET skatijumi = skatijumi + 1 WHERE id = ?");
 if ($viewStmt) {
@@ -54,6 +72,9 @@ $bodyData = [
         'homes-api' => main_route('api.homes'),
         'home-id' => (int)$homeId,
         'home-type' => (string)($home['veids'] ?? ''),
+        'detail-map-lat' => (string)$detailMapLat,
+        'detail-map-lng' => (string)$detailMapLng,
+        'detail-map-exact' => $hasDetailPin ? '1' : '0',
 ];
 include __DIR__ . '/../../includes/header.php';
 
@@ -238,9 +259,10 @@ $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
                 <div id="map" class="tab-content">
                     <h3>Atrašanās vieta</h3>
                     <p><?php echo nl2br(htmlspecialchars($home['karte'] ?: 'Īpašums atrodas ' . $home['pilseta'] . ', ' . $home['adrese'])); ?></p>
-                    <div class="map-placeholder">
-                        <img src="https://i.imgur.com/5g2j3fD.png" alt="Karte ar atrašanās vietu">
-                    </div>
+                    <div id="property-detail-map" class="property-detail-osm-map" aria-label="Īpašuma karte"></div>
+                    <?php if (!$hasDetailPin): ?>
+                        <p class="muted small" style="margin-top:10px;">Aptuvena atrašanās vieta (pilsētas centrs ar nelielu nobīdi). Īpašnieks var precizēt pinu sludinājuma redakcijā.</p>
+                    <?php endif; ?>
                 </div>
             </div>
         </main>
@@ -625,6 +647,47 @@ $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
 
             loadTaken();
         });
+    </script>
+
+    <script>
+    (function () {
+        var mapEl = document.getElementById('property-detail-map');
+        if (!mapEl) return;
+        var body = document.body;
+        var lat = parseFloat(body.getAttribute('data-detail-map-lat') || '');
+        var lng = parseFloat(body.getAttribute('data-detail-map-lng') || '');
+        if (!isFinite(lat) || !isFinite(lng)) return;
+        var exact = body.getAttribute('data-detail-map-exact') === '1';
+        var mapInstance = null;
+        function loadLeaflet(cb) {
+            if (window.L) { cb(); return; }
+            var lk = document.createElement('link');
+            lk.rel = 'stylesheet';
+            lk.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(lk);
+            var s = document.createElement('script');
+            s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            s.onload = function () { cb(); };
+            document.head.appendChild(s);
+        }
+        window.__homeestPropertyMapInit = function () {
+            if (mapInstance) {
+                setTimeout(function () { mapInstance.invalidateSize(); }, 150);
+                return;
+            }
+            loadLeaflet(function () {
+                if (!mapEl || mapInstance) return;
+                var zoom = exact ? 14 : 11;
+                mapInstance = L.map(mapEl, { scrollWheelZoom: false }).setView([lat, lng], zoom);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(mapInstance);
+                L.marker([lat, lng]).addTo(mapInstance);
+                setTimeout(function () { mapInstance.invalidateSize(); }, 250);
+            });
+        };
+    })();
     </script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

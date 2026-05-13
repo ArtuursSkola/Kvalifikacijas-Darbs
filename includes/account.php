@@ -227,23 +227,32 @@ function fetchUserPlanHistory(mysqli $conn, int $userId, ?array $currentUser = n
 
 function fetchUserPropertyTransactions(mysqli $conn, int $userId): array
 {
-
     $items = [];
-    $stmt = $conn->prepare("SELECT t.transaction_type, t.amount, t.currency, t.created_at, t.home_id,
+    try {
+        $stmt = $conn->prepare("SELECT t.transaction_type, t.amount, t.currency, t.created_at, t.home_id,
         h.nosaukums as home_title, h.pilseta as home_city, h.veids as home_type
         FROM est_property_transactions t
         LEFT JOIN est_homes h ON h.id = t.home_id
         WHERE t.user_id = ?
         ORDER BY t.created_at DESC");
 
-    if ($stmt) {
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        while ($res && $row = $res->fetch_assoc()) {
-            $items[] = $row;
+        if ($stmt) {
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            while ($res && $row = $res->fetch_assoc()) {
+                $items[] = $row;
+            }
+            $stmt->close();
         }
-        $stmt->close();
+    } catch (Throwable $e) {
+        $msg = $e->getMessage();
+        if (stripos($msg, "doesn't exist") !== false
+            || stripos($msg, 'does not exist') !== false
+            || stripos($msg, 'Unknown table') !== false) {
+            return [];
+        }
+        throw $e;
     }
 
     return $items;

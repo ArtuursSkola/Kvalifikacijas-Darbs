@@ -152,6 +152,22 @@
             min-height: 140px;
             resize: vertical;
         }
+        .newhome-map-block {
+            grid-column: 1 / -1;
+            margin-top: 8px;
+        }
+        .newhome-map-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0 8px;
+        }
+        .newhome-location-map {
+            height: 280px;
+            border-radius: 12px;
+            border: 1px solid #dfe5eb;
+            background: #e8eef3;
+        }
         .form-grid label {
             font-weight: 700;
             color: #000000;

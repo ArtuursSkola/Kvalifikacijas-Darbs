@@ -68,18 +68,30 @@ if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
 
 require_once __DIR__ . '/includes/latvia_city_coords.php';
 $homepageMapMarkers = [];
-$hm = $savienojums->query("SELECT id, nosaukums, pilseta FROM est_homes WHERE statuss = 'Aktivs' ORDER BY created_at DESC LIMIT 400");
+$hm = $savienojums->query("SELECT id, nosaukums, pilseta, latitude, longitude FROM est_homes WHERE statuss = 'Aktivs' ORDER BY created_at DESC LIMIT 400");
 if ($hm) {
     while ($row = $hm->fetch_assoc()) {
         $hid = (int)$row['id'];
-        $bc = latvia_city_coordinates((string)($row['pilseta'] ?? ''));
-        $jj = map_home_jitter($bc[0], $bc[1], $hid);
+        $latRaw = $row['latitude'] ?? null;
+        $lngRaw = $row['longitude'] ?? null;
+        $hasPin = $latRaw !== null && $latRaw !== ''
+            && $lngRaw !== null && $lngRaw !== ''
+            && is_numeric($latRaw) && is_numeric($lngRaw);
+        if ($hasPin) {
+            $lat = (float)$latRaw;
+            $lng = (float)$lngRaw;
+        } else {
+            $bc = latvia_city_coordinates((string)($row['pilseta'] ?? ''));
+            $jj = map_home_jitter($bc[0], $bc[1], $hid);
+            $lat = $jj[0];
+            $lng = $jj[1];
+        }
         $homepageMapMarkers[] = [
             'id' => $hid,
             'title' => (string)($row['nosaukums'] ?? ''),
             'city' => (string)($row['pilseta'] ?? ''),
-            'lat' => $jj[0],
-            'lng' => $jj[1],
+            'lat' => $lat,
+            'lng' => $lng,
             'url' => main_route('property.show', ['id' => $hid]),
         ];
     }
