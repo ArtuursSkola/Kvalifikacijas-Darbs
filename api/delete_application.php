@@ -18,14 +18,19 @@ if (!isset($data['id'])) {
 }
 
 $application_id = (int)$data['id'];
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 
 try {
-    $query = "DELETE FROM applications WHERE id = ? AND user_id = ?";
+    $query = "DELETE FROM est_pieteikumi WHERE id = ? AND lietotaja_id = ?";
     $stmt = $savienojums->prepare($query);
+    if (!$stmt) {
+        echo json_encode(['success' => false, 'message' => 'Database error']);
+        exit();
+    }
     $stmt->bind_param('ii', $application_id, $user_id);
     $result = $stmt->execute();
-    
+    $stmt->close();
+
     if ($result && $savienojums->affected_rows > 0) {
         echo json_encode(['success' => true, 'message' => 'Application deleted successfully']);
     } else {
@@ -34,4 +39,3 @@ try {
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => 'Database error']);
 }
-?>

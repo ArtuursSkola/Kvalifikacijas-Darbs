@@ -136,8 +136,8 @@
 }
 
 .status-Jauns, .status-pending { background: #fffbeb; color: #b45309; }
-.status-Apstiprināts, .status-approved, .status-Rezervets { background: #f0fdf4; color: #166534; }
-.status-Noraidīts, .status-rejected { background: #fef2f2; color: #991b1b; }
+.status-Apstiprinats, .status-Apstiprināts, .status-approved, .status-Rezervets { background: #f0fdf4; color: #166534; }
+.status-Noraidits, .status-Noraidīts, .status-rejected { background: #fef2f2; color: #991b1b; }
 .status-Iesūtīts { background: #eff6ff; color: #1d4ed8; }
 .status-Atbildēts { background: #f0fdfa; color: #059669; }
 .status-Aizvērts { background: #fef2f2; color: #991b1b; }

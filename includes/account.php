@@ -48,14 +48,14 @@ function storeUserSessionData(array $user): void
     $_SESSION['role'] = $user['loma'] ?? $_SESSION['role'] ?? 'lietotajs';
     $_SESSION['plans'] = $user['plans'] ?? 'Nekads';
     $_SESSION['profile_picture'] = $user['profila_bilde'] ?? null;
-    $_SESSION['plan_activated_at'] = $user['plan_activated_at'] ?? null;
-    $_SESSION['plan_expires_at'] = $user['plan_expires_at'] ?? null;
+    $_SESSION['plans_aktivizets'] = $user['plans_aktivizets'] ?? null;
+    $_SESSION['plana_beigas'] = $user['plana_beigas'] ?? null;
 }
 
 function expirePlanIfNeeded(mysqli $conn, array $user): array
 {
     $plan = $user['plans'] ?? 'Nekads';
-    $expiresAt = $user['plan_expires_at'] ?? null;
+    $expiresAt = $user['plana_beigas'] ?? null;
 
     if (!in_array($plan, ['Sudraba', 'Zelta'], true) || empty($expiresAt)) {
         return $user;
@@ -71,7 +71,7 @@ function expirePlanIfNeeded(mysqli $conn, array $user): array
         return $user;
     }
 
-    $stmt = $conn->prepare("UPDATE est_lietotaji SET plans = 'Nekads', plan_activated_at = NULL, plan_expires_at = NULL WHERE lietotaja_id = ?");
+    $stmt = $conn->prepare("UPDATE est_lietotaji SET plans = 'Nekads', plans_aktivizets = NULL, plana_beigas = NULL WHERE lietotaja_id = ?");
     if ($stmt) {
         $userId = (int)$user['lietotaja_id'];
         $stmt->bind_param('i', $userId);
@@ -80,8 +80,8 @@ function expirePlanIfNeeded(mysqli $conn, array $user): array
     }
 
     $user['plans'] = 'Nekads';
-    $user['plan_activated_at'] = null;
-    $user['plan_expires_at'] = null;
+    $user['plans_aktivizets'] = null;
+    $user['plana_beigas'] = null;
 
     return $user;
 }
@@ -110,7 +110,7 @@ function userHasActivePaidPlan(?array $user): bool
     }
 
     $plan = $user['plans'] ?? 'Nekads';
-    $expiresAt = $user['plan_expires_at'] ?? null;
+    $expiresAt = $user['plana_beigas'] ?? null;
 
     return in_array($plan, ['Sudraba', 'Zelta'], true)
         && !empty($expiresAt)
@@ -160,11 +160,11 @@ function getPlanDaysLeft(?array $user): ?int
         return null;
     }
 
-    if (!isValidMysqlDateTime((string)$user['plan_expires_at'])) {
+    if (!isValidMysqlDateTime((string)$user['plana_beigas'])) {
         return null;
     }
 
-    $expiresTimestamp = strtotime((string)$user['plan_expires_at']);
+    $expiresTimestamp = strtotime((string)$user['plana_beigas']);
     if ($expiresTimestamp === false) {
         return null;
     }
@@ -187,17 +187,17 @@ function fetchUserPlanHistory(mysqli $conn, int $userId, ?array $currentUser = n
 {
 
     $history = [];
-    $stmt = $conn->prepare("SELECT plan_name, amount_paid, currency, purchased_at, expires_at, payment_status
-        FROM est_plan_purchases
+    $stmt = $conn->prepare("SELECT plana_vards, maksa, valuta, nopirkts_at, beidzas_at, maksajuma_statuss
+        FROM est_plana_pirkums
         WHERE user_id = ?
-        ORDER BY purchased_at DESC");
+        ORDER BY nopirkts_at DESC");
 
     if ($stmt) {
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($result && $row = $result->fetch_assoc()) {
-            if (in_array($row['plan_name'], ['Bezmaksas', 'Nekads'], true)) {
+            if (in_array($row['plana_vards'], ['Bezmaksas', 'Nekads'], true)) {
                 continue;
             }
             $history[] = $row;
@@ -207,16 +207,16 @@ function fetchUserPlanHistory(mysqli $conn, int $userId, ?array $currentUser = n
 
     if ($history === [] && $currentUser) {
         $currentPlan = getCurrentPlanLabel($currentUser);
-        $activatedAt = (string)($currentUser['plan_activated_at'] ?? '');
+        $activatedAt = (string)($currentUser['plans_aktivizets'] ?? '');
         if (in_array($currentPlan, ['Sudraba', 'Zelta'], true) && isValidMysqlDateTime($activatedAt)) {
-            $expiresAt = (string)($currentUser['plan_expires_at'] ?? '');
+            $expiresAt = (string)($currentUser['plana_beigas'] ?? '');
             $history[] = [
-                'plan_name' => $currentPlan,
-                'amount_paid' => null,
-                'currency' => 'EUR',
-                'purchased_at' => $activatedAt,
-                'expires_at' => isValidMysqlDateTime($expiresAt) ? $expiresAt : null,
-                'payment_status' => userHasActivePaidPlan($currentUser) ? 'active' : 'expired',
+                'plana_vards' => $currentPlan,
+                'maksa' => null,
+                'valuta' => 'EUR',
+                'nopirkts_at' => $activatedAt,
+                'beidzas_at' => isValidMysqlDateTime($expiresAt) ? $expiresAt : null,
+                'maksajuma_statuss' => 'succeeded',
             ];
         }
     }

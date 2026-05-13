@@ -231,8 +231,8 @@ $myHomesUrl = main_route('property.myhomes');
                                     echo 'Nav plāna';
                                 } elseif ($currentPlanLabel === 'Bezmaksas') {
                                     echo 'Nav aktīva plāna';
-                                } elseif (!empty($currentUser['plan_expires_at']) && isValidMysqlDateTime((string)$currentUser['plan_expires_at'])) {
-                                    echo htmlspecialchars(date('d.m.Y H:i', strtotime((string)$currentUser['plan_expires_at'])));
+                                } elseif (!empty($currentUser['plana_beigas']) && isValidMysqlDateTime((string)$currentUser['plana_beigas'])) {
+                                    echo htmlspecialchars(date('d.m.Y H:i', strtotime((string)$currentUser['plana_beigas'])));
                                 } else {
                                     echo 'Nav plāna';
                                 }
@@ -262,22 +262,25 @@ $myHomesUrl = main_route('property.myhomes');
                             <?php foreach ($planHistory as $purchase): ?>
                                 <div class="settings-history__item">
                                     <div>
-                                        <strong><?php echo htmlspecialchars((string)($purchase['plan_name'] ?? 'Nekads')); ?></strong>
-                                        <span><?php echo !empty($purchase['purchased_at']) ? htmlspecialchars(date('d.m.Y H:i', strtotime((string)$purchase['purchased_at']))) : 'Nav datu'; ?></span>
+                                        <strong><?php echo htmlspecialchars((string)($purchase['plana_vards'] ?? 'Nekads')); ?></strong>
+                                        <span><?php echo !empty($purchase['nopirkts_at']) ? htmlspecialchars(date('d.m.Y H:i', strtotime((string)$purchase['nopirkts_at']))) : 'Nav datu'; ?></span>
                                     </div>
                                     <div>
                                         <strong>
                                             <?php
-                                            if (isset($purchase['amount_paid']) && $purchase['amount_paid'] !== null) {
-                                                echo htmlspecialchars(number_format((float)$purchase['amount_paid'], 2, '.', ' ')) . ' ' . htmlspecialchars((string)($purchase['currency'] ?? 'EUR'));
+                                            if (isset($purchase['maksa']) && $purchase['maksa'] !== null) {
+                                                echo htmlspecialchars(number_format((float)$purchase['maksa'], 2, '.', ' ')) . ' ' . htmlspecialchars((string)($purchase['valuta'] ?? 'EUR'));
                                             } else {
                                                 echo 'Nav summas';
                                             }
                                             ?>
                                         </strong>
-                                        <span><?php echo !empty($purchase['expires_at']) ? 'Līdz ' . htmlspecialchars(date('d.m.Y', strtotime((string)$purchase['expires_at']))) : 'Bez termiņa'; ?></span>
+                                        <span><?php echo !empty($purchase['beidzas_at']) ? 'Līdz ' . htmlspecialchars(date('d.m.Y', strtotime((string)$purchase['beidzas_at']))) : 'Bez termiņa'; ?></span>
                                     </div>
-                                    <span class="settings-history__status"><?php echo htmlspecialchars((string)($purchase['payment_status'] ?? 'succeeded')); ?></span>
+                                    <span class="settings-history__status"><?php
+                                        $ms = (string)($purchase['maksajuma_statuss'] ?? 'succeeded');
+                                        echo $ms === 'succeeded' ? 'Veiksmīgs' : htmlspecialchars($ms);
+                                    ?></span>
                                 </div>
                             <?php endforeach; ?>
                         </div>

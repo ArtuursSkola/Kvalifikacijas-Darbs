@@ -13,14 +13,14 @@ if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'moderat
 
 $revenueStmt = $savienojums->prepare("
     SELECT 
-        DATE_FORMAT(purchased_at, '%Y-%m') as month,
-        SUM(amount_paid) as monthly_revenue,
+        DATE_FORMAT(nopirkts_at, '%Y-%m') as month,
+        SUM(maksa) as monthly_revenue,
         COUNT(*) as transaction_count,
-        plan_name
-    FROM est_plan_purchases 
-    WHERE payment_status = 'succeeded'
-    GROUP BY DATE_FORMAT(purchased_at, '%Y-%m'), plan_name
-    ORDER BY month DESC, plan_name
+        plana_vards
+    FROM est_plana_pirkums 
+    WHERE maksajuma_statuss = 'succeeded'
+    GROUP BY DATE_FORMAT(nopirkts_at, '%Y-%m'), plana_vards
+    ORDER BY month DESC, plana_vards
 ");
 $revenueStmt->execute();
 $revenueData = $revenueStmt->get_result();
@@ -37,7 +37,7 @@ $activeStmt = $savienojums->prepare("
         END) as monthly_recurring
     FROM est_lietotaji 
     WHERE plans IN ('Sudraba', 'Zelta') 
-    AND plan_expires_at > NOW()
+    AND plana_beigas > NOW()
     GROUP BY plans
 ");
 $activeStmt->execute();
@@ -46,10 +46,10 @@ $activeData = $activeStmt->get_result();
 
 $recentStmt = $savienojums->prepare("
     SELECT p.*, l.lietotajvards
-    FROM est_plan_purchases p
+    FROM est_plana_pirkums p
     LEFT JOIN est_lietotaji l ON p.user_id = l.lietotaja_id
-    WHERE p.payment_status = 'succeeded'
-    ORDER BY p.purchased_at DESC
+    WHERE p.maksajuma_statuss = 'succeeded'
+    ORDER BY p.nopirkts_at DESC
     LIMIT 20
 ");
 $recentStmt->execute();
@@ -256,13 +256,16 @@ while ($row = $activeData->fetch_assoc()) {
                             <tr>
                                 <td><?php echo htmlspecialchars($row['lietotajvards']); ?></td>
                                 <td>
-                                    <span class="badge <?php echo strtolower($row['plan_name']) === 'zelta' ? 'orange' : 'gray'; ?>">
-                                        <?php echo htmlspecialchars($row['plan_name']); ?>
+                                    <span class="badge <?php echo strtolower($row['plana_vards']) === 'zelta' ? 'orange' : 'gray'; ?>">
+                                        <?php echo htmlspecialchars($row['plana_vards']); ?>
                                     </span>
                                 </td>
-                                <td>€<?php echo number_format($row['amount_paid'], 2); ?></td>
-                                <td><?php echo date('d.m.Y H:i', strtotime($row['purchased_at'])); ?></td>
-                                <td><code><?php echo substr($row['payment_intent_id'], 0, 20); ?>...</code></td>
+                                <td>€<?php echo number_format($row['maksa'], 2); ?></td>
+                                <td><?php echo date('d.m.Y H:i', strtotime($row['nopirkts_at'])); ?></td>
+                                <td><code><?php
+                                    $mid = (string)($row['maksajuma_id'] ?? '');
+                                    echo $mid !== '' ? htmlspecialchars(substr($mid, 0, 20)) . '…' : '—';
+                                ?></code></td>
                             </tr>
                             <?php endwhile; ?>
                         </tbody>

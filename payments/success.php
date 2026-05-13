@@ -24,16 +24,16 @@ try {
     $checkout_session = \Stripe\Checkout\Session::retrieve($session_id);
     $payment_intent = \Stripe\PaymentIntent::retrieve($checkout_session->payment_intent);
 
-    $plan_name = $checkout_session->metadata->plan_name ?? '';
-    $plan_name = trim(html_entity_decode($plan_name, ENT_QUOTES, 'UTF-8'));
+    $plana_vards = $checkout_session->metadata->plana_vards ?? ($checkout_session->metadata->plan_name ?? '');
+    $plana_vards = trim(html_entity_decode($plana_vards, ENT_QUOTES, 'UTF-8'));
 
-    if ($plan_name === '') {
+    if ($plana_vards === '') {
         $_SESSION["pazinojums_modal"] = "Nevar iegūt plāna nosaukumu no Stripe metadata!";
         header("Location: " . main_route('home'));
         exit;
     }
 
-    if (!in_array($plan_name, $allowed_plans)) {
+    if (!in_array($plana_vards, $allowed_plans)) {
         $_SESSION["pazinojums_modal"] = "Nepareizs plāna nosaukums!";
         header("Location: " . main_route('home'));
         exit;
@@ -60,21 +60,21 @@ try {
             $activatedAt = date('Y-m-d H:i:s');
             $planExpiresAt = date('Y-m-d H:i:s', strtotime('+30 days'));
             $stmtUp = $savienojums->prepare("UPDATE est_lietotaji
-                SET loma='ipasnieks', plans=?, plan_activated_at=?, plan_expires_at=?
+                SET loma='ipasnieks', plans=?, plans_aktivizets=?, plana_beigas=?
                 WHERE lietotajvards=?");
             if ($stmtUp) {
-                $stmtUp->bind_param("ssss", $plan_name, $activatedAt, $planExpiresAt, $username);
+                $stmtUp->bind_param("ssss", $plana_vards, $activatedAt, $planExpiresAt, $username);
                 $stmtUp->execute();
                 $stmtUp->close();
             }
 
-            $expiresRes = $savienojums->prepare("SELECT plan_expires_at FROM est_lietotaji WHERE lietotaja_id=? LIMIT 1");
+            $expiresRes = $savienojums->prepare("SELECT plana_beigas FROM est_lietotaji WHERE lietotaja_id=? LIMIT 1");
             if ($expiresRes) {
                 $expiresRes->bind_param('i', $userId);
                 $expiresRes->execute();
                 $r = $expiresRes->get_result();
                 $row = $r ? $r->fetch_assoc() : null;
-                $expiresAt = $row['plan_expires_at'] ?? null;
+                $expiresAt = $row['plana_beigas'] ?? null;
                 $expiresRes->close();
             }
 
@@ -83,13 +83,13 @@ try {
             $paymentStatus = (string)($payment_intent->status ?? 'succeeded');
             $purchasedAt = date('Y-m-d H:i:s');
 
-            $ins = $savienojums->prepare("INSERT INTO est_plan_purchases
-                (user_id, plan_name, amount_paid, currency, purchased_at, expires_at, stripe_session_id, payment_intent_id, payment_status)
+            $ins = $savienojums->prepare("INSERT INTO est_plana_pirkums
+                (user_id, plana_vards, maksa, valuta, nopirkts_at, beidzas_at, stripe_session_id, maksajuma_id, maksajuma_statuss)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if ($ins) {
                 $stripeSessionId = (string)$session_id;
                 $paymentIntentId = (string)($payment_intent->id ?? '');
-                $ins->bind_param('isdssssss', $userId, $plan_name, $amountPaid, $currency, $purchasedAt, $expiresAt, $stripeSessionId, $paymentIntentId, $paymentStatus);
+                $ins->bind_param('isdssssss', $userId, $plana_vards, $amountPaid, $currency, $purchasedAt, $expiresAt, $stripeSessionId, $paymentIntentId, $paymentStatus);
                 $ins->execute();
                 $ins->close();
             }
@@ -103,17 +103,17 @@ try {
         $transaction_id = $payment_intent->id;
         
 
-        if ($plan_name === 'Sudraba') {
+        if ($plana_vards === 'Sudraba') {
             $_SESSION['plan_change_success'] = true;
             $_SESSION['plan_change_message'] = 'Jūs veiksmīgi iegādājāties Sudraba plānu!';
-        } elseif ($plan_name === 'Zelta') {
+        } elseif ($plana_vards === 'Zelta') {
             $_SESSION['plan_change_success'] = true;
             $_SESSION['plan_change_message'] = 'Jūs veiksmīgi iegādājāties Zelta plānu!';
         } else {
 
             $message = "<h2>Maksājums veiksmīgs</h2><hr>";
             $message .= "<p>Maksājuma reference: <b>$transaction_id</b></p>";
-            $message .= "<p>Aktivizēts plāns: <b>$plan_name</b>. Tagad vari izveidot sludinājumus.</p>";
+            $message .= "<p>Aktivizēts plāns: <b>$plana_vards</b>. Tagad vari izveidot sludinājumus.</p>";
             $_SESSION["pazinojums_modal"] = $message;
         }
     }

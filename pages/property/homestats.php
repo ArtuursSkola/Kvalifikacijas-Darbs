@@ -107,6 +107,12 @@ $infoStats = [
 ];
 
 $infoPieteikumi = [];
+$pietStatusLabel = [
+    'Jauns' => 'Jauns',
+    'Apstiprinats' => 'Apstiprināts',
+    'Rezervets' => 'Rezervēts',
+    'Noraidits' => 'Noraidīts',
+];
 $pstmt = $savienojums->prepare("SELECT id, vards_uzvards, epasts, telefons, komentars, ires_menesi, nav_zinams, ires_sakuma_datums, sakuma_datums, beigu_datums, piedavata_summa, finansesanas_veids, statuss, created_at FROM est_pieteikumi WHERE sludinajuma_id = ? ORDER BY created_at DESC");
 if ($pstmt) {
     $pstmt->bind_param('i', $infoId);
@@ -180,7 +186,7 @@ include __DIR__ . '/../../includes/header.php';
                         <div class="app-top">
                             <div class="app-name"><?php echo htmlspecialchars((string)($p['vards_uzvards'] ?? '')); ?></div>
                             <div class="app-status status-<?php echo htmlspecialchars((string)($p['statuss'] ?? '')); ?>">
-                                <?php echo htmlspecialchars((string)($p['statuss'] ?? '')); ?>
+                                <?php echo htmlspecialchars($pietStatusLabel[(string)($p['statuss'] ?? '')] ?? (string)($p['statuss'] ?? '')); ?>
                             </div>
                         </div>
                         

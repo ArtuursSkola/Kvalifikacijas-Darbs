@@ -85,13 +85,16 @@ include __DIR__ . '/../includes/header.php';
         <?php else: ?>
             <div class="apps-grid">
                 <?php foreach ($applications as $app): ?>
-                    <div class="app-card">
+                    <div class="app-card" data-app-status="<?php echo htmlspecialchars((string)($app['statuss'] ?? '')); ?>">
                         <div class="app-top">
                             <div class="app-name">Pieteikums</div>
                             <div class="app-status status-<?php echo htmlspecialchars((string)($app['statuss'] ?? '')); ?>">
                                 <?php
                                 $status_text = [
                                     'Jauns' => 'Gaida apskati',
+                                    'Apstiprinats' => 'Apstiprināts',
+                                    'Rezervets' => 'Rezervēts',
+                                    'Noraidits' => 'Noraidīts',
                                     'Apstiprināts' => 'Apstiprināts',
                                     'Noraidīts' => 'Noraidīts',
                                     'approved' => 'Apstiprināts',
@@ -120,7 +123,7 @@ include __DIR__ . '/../includes/header.php';
                             </div>
                         <?php endif; ?>
 
-                        <?php $appLocked = in_array($app['statuss'], ['Apstiprināts', 'approved'], true); ?>
+                        <?php $appLocked = in_array($app['statuss'], ['Apstiprinats', 'Rezervets', 'Apstiprināts', 'approved'], true); ?>
                         <div class="app-actions">
                             <button class="btn-action btn-edit" <?php echo $appLocked ? 'disabled title="Apstiprinātu pieteikumu nevar rediģēt"' : 'onclick="editApplication(' . $app['id'] . ')"'; ?>>
                                 <i class="fas fa-edit"></i> Rediģēt
@@ -212,9 +215,9 @@ include __DIR__ . '/../includes/header.php';
                     <div class="form-group">
                         <label for="editStatus">Statuss</label>
                         <select id="editStatus" class="form-control">
-                            <option value="pending">Gaida apskati</option>
-                            <option value="approved">Apstiprināts</option>
-                            <option value="rejected">Noraidīts</option>
+                            <option value="Jauns">Gaida apskati</option>
+                            <option value="Apstiprinats">Apstiprināts</option>
+                            <option value="Noraidits">Noraidīts</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -264,7 +267,6 @@ function editApplication(id) {
         return;
     }
 
-    const statusElement = appCard.querySelector('.app-status');
     const emailElement = appCard.querySelector('.app-meta span:nth-child(1)');
     const phoneElement = appCard.querySelector('.app-meta span:nth-child(2)');
     const dateElement = appCard.querySelector('.app-meta span:nth-child(3)');
@@ -279,16 +281,10 @@ function editApplication(id) {
     document.getElementById('helpFields').style.display = 'none';
     
 
-    if (statusElement) {
-        const statusText = statusElement.textContent.trim();
-        const statusSelect = document.getElementById('editStatus');
-        if (statusSelect) {
-            Array.from(statusSelect.options).forEach(option => {
-                if (option.textContent.trim() === statusText) {
-                    statusSelect.value = option.value;
-                }
-            });
-        }
+    const raw = (appCard.getAttribute('data-app-status') || '').trim();
+    const statusSelect = document.getElementById('editStatus');
+    if (statusSelect && raw) {
+        statusSelect.value = ['Jauns', 'Apstiprinats', 'Noraidits', 'Rezervets'].includes(raw) ? raw : 'Jauns';
     }
     
 

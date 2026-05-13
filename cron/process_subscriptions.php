@@ -3,11 +3,11 @@ require_once __DIR__ . '/../con_db.php';
 
 
 $stmt = $savienojums->prepare("
-    SELECT lietotaja_id, lietotajvards, plans, plan_expires_at
+    SELECT lietotaja_id, lietotajvards, plans, plana_beigas
     FROM est_lietotaji 
     WHERE plans IN ('Sudraba', 'Zelta') 
-    AND plan_expires_at IS NOT NULL
-    AND plan_expires_at <= NOW()
+    AND plana_beigas IS NOT NULL
+    AND plana_beigas <= NOW()
 ");
 $stmt->execute();
 $result = $stmt->get_result();
@@ -32,7 +32,7 @@ foreach ($usersToRenew as $user) {
 
     $updateStmt = $savienojums->prepare("
         UPDATE est_lietotaji 
-        SET plan_expires_at = ?, plan_activated_at = NOW() 
+        SET plana_beigas = ?, plans_aktivizets = NOW() 
         WHERE lietotaja_id = ?
     ");
     $updateStmt->bind_param('si', $newExpiresAt, $userId);
@@ -44,8 +44,8 @@ foreach ($usersToRenew as $user) {
         $fakeSessionId = 'cs_auto_' . time() . '_' . $userId;
 
         $insertStmt = $savienojums->prepare("
-            INSERT INTO est_plan_purchases 
-            (user_id, plan_name, amount_paid, currency, purchased_at, expires_at, stripe_session_id, payment_intent_id, payment_status)
+            INSERT INTO est_plana_pirkums 
+            (user_id, plana_vards, maksa, valuta, nopirkts_at, beidzas_at, stripe_session_id, maksajuma_id, maksajuma_statuss)
             VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, 'succeeded')
         ");
         $insertStmt->bind_param('isdssss', $userId, $planName, $amount, $currency, $newExpiresAt, $fakeSessionId, $fakeStripeId);

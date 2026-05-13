@@ -18,21 +18,37 @@ if (!isset($data['id']) || !isset($data['status'])) {
 }
 
 $application_id = (int)$data['id'];
-$status = $data['status'];
-$user_id = $_SESSION['user_id'];
+$status = (string)$data['status'];
+$user_id = (int)$_SESSION['user_id'];
 
-$valid_statuses = ['pending', 'approved', 'rejected'];
-if (!in_array($status, $valid_statuses)) {
+$map = [
+    'pending' => 'Jauns',
+    'approved' => 'Apstiprinats',
+    'rejected' => 'Noraidits',
+    'Jauns' => 'Jauns',
+    'Apstiprinats' => 'Apstiprinats',
+    'Rezervets' => 'Rezervets',
+    'Noraidits' => 'Noraidits',
+];
+
+if (!isset($map[$status])) {
     echo json_encode(['success' => false, 'message' => 'Invalid status']);
     exit();
 }
 
+$dbStatus = $map[$status];
+
 try {
-    $query = "UPDATE applications SET status = ?, updated_at = NOW() WHERE id = ? AND user_id = ?";
+    $query = "UPDATE est_pieteikumi SET statuss = ? WHERE id = ? AND lietotaja_id = ?";
     $stmt = $savienojums->prepare($query);
-    $stmt->bind_param('ssi', $status, $application_id, $user_id);
+    if (!$stmt) {
+        echo json_encode(['success' => false, 'message' => 'Database error']);
+        exit();
+    }
+    $stmt->bind_param('sii', $dbStatus, $application_id, $user_id);
     $result = $stmt->execute();
-    
+    $stmt->close();
+
     if ($result && $savienojums->affected_rows > 0) {
         echo json_encode(['success' => true, 'message' => 'Application updated successfully']);
     } else {
@@ -41,4 +57,3 @@ try {
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => 'Database error']);
 }
-?>

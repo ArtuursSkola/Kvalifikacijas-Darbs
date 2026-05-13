@@ -186,7 +186,7 @@ $totalPages = max(1, ceil($totalUsers / $perPage));
 
 
 $users = [];
-$sql = "SELECT lietotaja_id, lietotajvards, epasts, loma, plans, plan_expires_at, created_at FROM est_lietotaji $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?";
+$sql = "SELECT lietotaja_id, lietotajvards, epasts, loma, plans, plana_beigas, created_at FROM est_lietotaji $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?";
 if ($search !== '') {
     $stmt = $savienojums->prepare($sql);
     $stmt->bind_param($types . 'ii', ...[...$params, $perPage, $offset]);
@@ -366,10 +366,10 @@ if (!empty($errors)) {
                                     <td>
                                         <?php
                                         $noPlan = empty($u['plans']) || in_array($u['plans'], ['Nekads', 'Bezmaksas'], true);
-                                        if ($noPlan || empty($u['plan_expires_at'])) {
+                                        if ($noPlan || empty($u['plana_beigas'])) {
                                             echo '<span class="badge gray">—</span>';
                                         } else {
-                                            $expires = strtotime($u['plan_expires_at']);
+                                            $expires = strtotime($u['plana_beigas']);
                                             $now = time();
                                             if ($expires > $now) {
                                                 $days = ceil(($expires - $now) / 86400);

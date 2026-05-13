@@ -20,7 +20,7 @@ $types = 's';
 $params = [$newRole];
 
 if ($selectedPlan !== '' && in_array($selectedPlan, $allowedPlans, true)) {
-    $sql .= ", plans = ?, plan_activated_at = NOW(), plan_expires_at = NULL";
+    $sql .= ", plans = ?, plans_aktivizets = NOW(), plana_beigas = NULL";
     $types .= 's';
     $params[] = $selectedPlan;
 }

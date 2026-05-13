@@ -28,7 +28,7 @@ try {
             ]
         ]],
         'metadata' => [
-            'plan_name' => $plan
+            'plana_vards' => $plan
         ]
     ]);
 
