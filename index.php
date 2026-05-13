@@ -66,26 +66,31 @@ $dealsCount = 0;
 $resDeals = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statuss = 'Pardots'");
 if ($resDeals && $row = $resDeals->fetch_row()) $dealsCount = (int)$row[0];
 
-require_once __DIR__ . '/includes/latvia_city_coords.php';
 $homepageMapMarkers = [];
-$hm = $savienojums->query("SELECT id, nosaukums, pilseta, latitude, longitude FROM est_homes WHERE statuss = 'Aktivs' ORDER BY created_at DESC LIMIT 400");
+$hm = $savienojums->query(
+    "SELECT id, nosaukums, pilseta, latitude, longitude FROM est_homes
+     WHERE statuss = 'Aktivs'
+       AND latitude IS NOT NULL
+       AND longitude IS NOT NULL
+     ORDER BY created_at DESC
+     LIMIT 400"
+);
 if ($hm) {
     while ($row = $hm->fetch_assoc()) {
-        $hid = (int)$row['id'];
         $latRaw = $row['latitude'] ?? null;
         $lngRaw = $row['longitude'] ?? null;
-        $hasPin = $latRaw !== null && $latRaw !== ''
-            && $lngRaw !== null && $lngRaw !== ''
-            && is_numeric($latRaw) && is_numeric($lngRaw);
-        if ($hasPin) {
-            $lat = (float)$latRaw;
-            $lng = (float)$lngRaw;
-        } else {
-            $bc = latvia_city_coordinates((string)($row['pilseta'] ?? ''));
-            $jj = map_home_jitter($bc[0], $bc[1], $hid);
-            $lat = $jj[0];
-            $lng = $jj[1];
+        if ($latRaw === null || $lngRaw === null) {
+            continue;
         }
+        if (!is_numeric($latRaw) || !is_numeric($lngRaw)) {
+            continue;
+        }
+        $lat = (float)$latRaw;
+        $lng = (float)$lngRaw;
+        if ($lat < 55.0 || $lat > 59.5 || $lng < 18.0 || $lng > 30.5) {
+            continue;
+        }
+        $hid = (int)$row['id'];
         $homepageMapMarkers[] = [
             'id' => $hid,
             'title' => (string)($row['nosaukums'] ?? ''),
@@ -237,7 +242,7 @@ if ($hm) {
             <div class="section-header">
                 <span class="section-label">Karte</span>
                 <h2 class="section-title-new">Sludinājumu atrašanās vietas</h2>
-                <p class="section-subtitle">Aktīvo piedāvājumu aptuvenās atrašanās vietas pa Latviju.</p>
+                <p class="section-subtitle">Tikai sludinājumi, kuros īpašnieks norādījis precīzu atrašanās vietu kartē.</p>
             </div>
             <div id="homepage-osm-map" class="homepage-osm-map"></div>
             <p class="homepage-osm-attrib">Karte: © <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">OpenStreetMap</a> līdzdalībnieki</p>
@@ -280,6 +285,19 @@ if ($hm) {
                     const link = u ? '<br><a href="' + encodeURI(u) + '">Skatīt sludinājumu</a>' : '';
                     L.marker([m.lat, m.lng]).addTo(map).bindPopup('<strong>' + esc(m.title) + '</strong><br>' + esc(m.city) + link);
                 });
+                if (markers.length === 1) {
+                    const m0 = markers[0];
+                    if (typeof m0.lat === 'number' && typeof m0.lng === 'number') {
+                        map.setView([m0.lat, m0.lng], 12);
+                    }
+                } else if (markers.length > 1) {
+                    const pts = markers.filter(function(m) {
+                        return typeof m.lat === 'number' && typeof m.lng === 'number';
+                    }).map(function(m) { return [m.lat, m.lng]; });
+                    if (pts.length > 1) {
+                        map.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 11 });
+                    }
+                }
                 setTimeout(function() { map.invalidateSize(); }, 400);
             });
         });
