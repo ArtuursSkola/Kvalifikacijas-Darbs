@@ -82,8 +82,8 @@ if ($action === 'pieteikums_create') {
         json_out(['ok' => false, 'error' => 'Sludinājums nav atrasts'], 404);
     }
 
-    if (($home['statuss'] ?? '') === 'Pardots') {
-        json_out(['ok' => false, 'error' => 'Šis īpašums jau ir pārdots vai izīrēts.'], 403);
+    if ((string)($home['statuss'] ?? '') !== 'Aktivs') {
+        json_out(['ok' => false, 'error' => 'Šis sludinājums nav pieejams pieteikumiem.'], 403);
     }
 
     $veids = (string)($home['veids'] ?? '');

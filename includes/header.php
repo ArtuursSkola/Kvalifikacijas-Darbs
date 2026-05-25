@@ -25,16 +25,26 @@ if (!function_exists('isActive')) {
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo asset_path('style.css'); ?>?v=1.0.1">
+    <?php
+    $assetVer = function (string $rel): string {
+        $rel = ltrim($rel, '/');
+        $p = dirname(__DIR__) . '/' . $rel;
+        if (is_file($p)) {
+            return (string)filemtime($p);
+        }
+        return '1.0.1';
+    };
+    ?>
+    <link rel="stylesheet" href="<?php echo asset_path('style.css'); ?>?v=<?php echo $assetVer('style.css'); ?>">
     <?php if (isset($extraStyles)): ?>
         <?php foreach ($extraStyles as $style): ?>
-            <link rel="stylesheet" href="<?php echo asset_path('css/' . $style . '.css'); ?>?v=1.0.1">
+            <link rel="stylesheet" href="<?php echo asset_path('css/' . $style . '.css'); ?>?v=<?php echo $assetVer('css/' . $style . '.css'); ?>">
         <?php endforeach; ?>
     <?php endif; ?>
     
 
     <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['lietotajs', 'ipasnieks'], true)): ?>
-        <link rel="stylesheet" href="<?php echo asset_path('css/support.css'); ?>">
+        <link rel="stylesheet" href="<?php echo asset_path('css/support.css'); ?>?v=<?php echo $assetVer('css/support.css'); ?>">
     <?php endif; ?>
 </head>
 <?php
@@ -65,4 +75,3 @@ if (strpos($_SERVER['PHP_SELF'], '/Admin/') === false) {
 
 
 <?php include_once __DIR__ . '/support.php'; ?>
-

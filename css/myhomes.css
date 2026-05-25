@@ -236,3 +236,24 @@
     border-color: var(--primary-light);
     color: var(--white);
 }
+
+.btn-owner-danger {
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+    border-color: rgba(220, 38, 38, 0.25);
+}
+
+.btn-owner-danger:hover {
+    background: rgba(220, 38, 38, 0.14);
+    border-color: rgba(220, 38, 38, 0.35);
+}
+
+.myhomes-page .owner-card__footer {
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.myhomes-page .owner-card__actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}

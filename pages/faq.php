@@ -371,6 +371,8 @@ include __DIR__ . '/../includes/header.php';
                 });
             });
         }
+        
+        document.addEventListener('DOMContentLoaded', initFaq);
     </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

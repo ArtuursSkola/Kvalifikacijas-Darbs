@@ -36,6 +36,51 @@ if (isset($_SESSION['property_success'])) {
 
 $ownerId = (int)($currentUser['lietotaja_id'] ?? $_SESSION['user_id'] ?? 0);
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    if (!isset($_POST['csrf']) || !hash_equals($_SESSION['csrf_token'] ?? '', (string)$_POST['csrf'])) {
+        $_SESSION['owner_flash'] = ['type' => 'error', 'message' => 'CSRF marķiera validācija neizdevās!'];
+        header('Location: ' . main_route('property.myhomes'));
+        exit;
+    }
+
+    $action = (string)($_POST['action'] ?? '');
+    $homeId = (int)($_POST['home_id'] ?? 0);
+    if ($homeId > 0 && $ownerId > 0) {
+        if ($action === 'delete_home') {
+            $stmt = $savienojums->prepare("DELETE FROM est_homes WHERE id = ? AND ipasnieka_id = ?");
+            if ($stmt) {
+                $stmt->bind_param('ii', $homeId, $ownerId);
+                if ($stmt->execute()) {
+                    $_SESSION['owner_flash'] = ['type' => 'success', 'message' => 'Sludinājums dzēsts.'];
+                } else {
+                    $_SESSION['owner_flash'] = ['type' => 'error', 'message' => 'Neizdevās dzēst sludinājumu.'];
+                }
+                $stmt->close();
+            }
+        }
+
+        if ($action === 'deactivate_home') {
+            $stmt = $savienojums->prepare("UPDATE est_homes SET statuss = 'Neaktivs' WHERE id = ? AND ipasnieka_id = ?");
+            if ($stmt) {
+                $stmt->bind_param('ii', $homeId, $ownerId);
+                if ($stmt->execute()) {
+                    $_SESSION['owner_flash'] = ['type' => 'success', 'message' => 'Sludinājums deaktivizēts.'];
+                } else {
+                    $_SESSION['owner_flash'] = ['type' => 'error', 'message' => 'Neizdevās deaktivizēt sludinājumu.'];
+                }
+                $stmt->close();
+            }
+        }
+    }
+
+    header('Location: ' . main_route('property.myhomes'));
+    exit;
+}
+
 $myHomes = [];
 if ($ownerId > 0) {
     $sql = "SELECT id, nosaukums, pilseta, statuss, cena, veids, galvenais_attels, created_at
@@ -139,6 +184,13 @@ if ($ownerId > 0) {
                                     </a>
                                     <a href="<?php echo main_route('property.create', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-edit" title="Rediģēt"><i class="fas fa-edit"></i></a>
                                     <a href="<?php echo main_route('property.stats', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-info" title="Info"><i class="fas fa-info"></i></a>
+                                    <a href="#listing-actions-modal"
+                                       class="btn-owner-action btn-owner-danger js-listing-actions"
+                                       data-home-id="<?php echo (int)$home['id']; ?>"
+                                       data-home-title="<?php echo htmlspecialchars((string)($home['nosaukums'] ?? ''), ENT_QUOTES); ?>"
+                                       title="Dzēst / deaktivizēt">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -148,5 +200,49 @@ if ($ownerId > 0) {
         <?php endif; ?>
     </div>
 </section>
+
+<div class="settings-modal" id="listing-actions-modal">
+    <div class="settings-modal__backdrop"></div>
+    <div class="settings-modal__dialog" style="max-width: 560px;">
+        <a class="settings-modal__close" href="#">×</a>
+        <div class="settings-modal__header">
+            <h2>Sludinājuma darbības</h2>
+            <p id="listing-actions-title"></p>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <form method="post" action="<?php echo main_route('property.myhomes'); ?>">
+                <input type="hidden" name="csrf" value="<?php echo htmlspecialchars((string)($_SESSION['csrf_token'] ?? ''), ENT_QUOTES); ?>">
+                <input type="hidden" name="action" value="deactivate_home">
+                <input type="hidden" name="home_id" id="listing-action-home-id-deactivate" value="">
+                <button type="submit" class="btn-owner-action btn-owner-edit">Deaktivizēt</button>
+            </form>
+            <form method="post" action="<?php echo main_route('property.myhomes'); ?>">
+                <input type="hidden" name="csrf" value="<?php echo htmlspecialchars((string)($_SESSION['csrf_token'] ?? ''), ENT_QUOTES); ?>">
+                <input type="hidden" name="action" value="delete_home">
+                <input type="hidden" name="home_id" id="listing-action-home-id-delete" value="">
+                <button type="submit" class="btn-owner-action btn-owner-danger">Dzēst</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var triggers = document.querySelectorAll('.js-listing-actions');
+    var inputDeactivate = document.getElementById('listing-action-home-id-deactivate');
+    var inputDelete = document.getElementById('listing-action-home-id-delete');
+    var title = document.getElementById('listing-actions-title');
+
+    triggers.forEach(function (el) {
+        el.addEventListener('click', function () {
+            var id = el.getAttribute('data-home-id') || '';
+            var t = el.getAttribute('data-home-title') || '';
+            if (inputDeactivate) inputDeactivate.value = id;
+            if (inputDelete) inputDelete.value = id;
+            if (title) title.textContent = t;
+        });
+    });
+});
+</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

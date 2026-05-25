@@ -48,6 +48,6 @@ require_once __DIR__ . '/../routes/main.php';
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script src="<?php echo asset_path('script.js'); ?>"></script>
+    <script src="<?php echo asset_path('script.js'); ?>?v=<?php echo is_file(dirname(__DIR__) . '/script.js') ? (string)filemtime(dirname(__DIR__) . '/script.js') : '1.0.1'; ?>"></script>
 </body>
 </html>

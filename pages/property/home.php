@@ -87,6 +87,14 @@ $isOwnerViewer = $viewerId > 0 && $viewerId === $ownerId;
 $canApply = $viewerId > 0 && !$isOwnerViewer;
 $applyHref = $canApply ? '#application-form' : ($viewerId <= 0 ? main_route('login') : '#');
 
+$status = (string)($home['statuss'] ?? '');
+$role = (string)($_SESSION['role'] ?? '');
+$isAdminOrMod = in_array($role, ['admin', 'moderator'], true);
+if ($status !== 'Aktivs' && !$isOwnerViewer && !$isAdminOrMod) {
+    header('Location: ' . main_route('property.list'));
+    exit;
+}
+
 
 $userPhone = '';
 $userEmail = '';
@@ -361,140 +369,6 @@ $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
                 <?php endif; ?>
             </div>
 
-            <?php if ($canApply): ?>
-                <div id="application-form" class="settings-modal">
-
-                    <div style="background: white; padding: 20px; margin: auto;" class="application-modal">
-                        <div id="application-top">
-                            <div class="application-top-top" style="display: flex; justify-content: space-between">
-                                <h2>Pieteikums</h2>
-                                <a href="#"><i class="fa-solid fa-x"></i></a>
-                            </div>
-                            <p style="font-size: 15px">Izveidot pieteikumu sludinājumam</p>
-                        </div>
-                        <div class="application-input">
-                            <div id="application-alert" style="display:none; margin: 0 0 12px 0; padding: 10px 12px; border-radius: 10px; font-weight: 600;"></div>
-
-                            <?php if (($home['veids'] ?? '') === 'ire'): ?>
-
-                                <div class="application-input-group">
-                                    <h4>Vārds un uzvārds</h4>
-                                    <input type="text" name="lt_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
-                                </div>
-                                <div class="application-input-group">
-                                    <h4>E-pasts</h4>
-                                    <input type="email" name="lt_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>Telefona nr.</h4>
-                                    <input type="tel" name="lt_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>īres periods mēnešos</h4>
-                                    <input type="number" name="lt_rent_months" id="lt_rent_months" min="1" max="99" placeholder="Piem. 6" oninput="if(this.value.length>2)this.value=this.value.slice(0,2);if(parseInt(this.value)>99)this.value=99;">
-                                    <label class="application-checkbox"><input type="checkbox" id="rent_unknown" name="lt_rent_unknown" value="1"> Pagaidām nav zināms</label>
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>Sākuma datums</h4>
-                                    <input type="datetime-local" name="lt_start_date" id="lt_start_date">
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>Papildu komentāri</h4>
-                                    <textarea name="lt_comment" rows="4" maxlength="300" placeholder="..."></textarea>
-                                </div>
-
-                                <div class="application-input-group">
-                                    <button class="btn-submit">Nosūtīt pieteikumu</button>
-                                </div>
-
-                            <?php elseif (($home['veids'] ?? '') === 'istermina_ire'): ?>
-
-                                <div class="application-input-group">
-                                    <h4>Vārds un uzvārds</h4>
-                                    <input type="text" name="st_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>E-pasts</h4>
-                                    <input type="email" name="st_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>Telefona nr.</h4>
-                                    <input type="tel" name="st_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>Sākuma datums</h4>
-                                    <input type="datetime-local" name="st_start_date" id="st_start_date">
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>Beigu datums</h4>
-                                    <input type="datetime-local" name="st_end_date" id="st_end_date">
-                                </div>
-
-                                <div class="application-input-group">
-                                    <h4>Komentāri</h4>
-                                    <textarea name="st_comment" rows="4" maxlength="300" placeholder="..."></textarea>
-                                </div>
-
-                                <div class="application-input-group">
-                                    <button class="btn-submit">Nosūtīt pieteikumu</button>
-                                </div>
-
-                            <?php else: ?>
-
-                            <div class="application-input-group">
-                                <h4>Vārds un uzvārds</h4>
-                                <input type="text" name="sale_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
-                            </div>
-
-                            <div class="application-input-group">
-                                <h4>E-pasts</h4>
-                                <input type="email" name="sale_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
-                            </div>
-
-                            <div class="application-input-group">
-                                <h4>Telefona nr.</h4>
-                                <input type="tel" name="sale_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
-                            </div>
-
-                            <div class="application-input-group">
-                                <h4>Piedāvātā summa</h4>
-                                <input type="number" name="sale_offer" placeholder="..." max="9999999" oninput="if(this.value.length>7)this.value=this.value.slice(0,7);">
-                            </div>
-
-                            <div class="application-input-group">
-                                <h4>Finansēšanas veids</h4>
-                                <div style="max-width: 200px;">
-                                    <select id="pay-method" name="pay-method"
-                                            style="padding: 5px; font-size: 14px; border-radius: 4px; width: 100%;">
-                                        <option value="cash">Skaidra nauda</option>
-                                        <option value="mortgage">Hipotēka</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="application-input-group">
-                                <h4>Papildu komentārs</h4>
-                                <input type="text" name="sale_comment" maxlength="300" placeholder="...">
-                            </div>
-
-                            <div class="application-input-group">
-                                <button class="btn-submit">Nosūtīt pieteikumu</button>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-
-                    </div>
-                </div>
-            <?php endif; ?>
-
             <div class="sidebar-widget sidebar-agent">
                 <h4>Kontaktpersona</h4>
                 <div class="agent-info">
@@ -693,5 +567,140 @@ $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
         };
     })();
     </script>
+
+<?php if ($canApply): ?>
+    <div id="application-form" class="settings-modal">
+
+        <div style="background: white; padding: 20px; margin: auto;" class="application-modal">
+            <div id="application-top">
+                <div class="application-top-top" style="display: flex; justify-content: space-between">
+                    <h2>Pieteikums</h2>
+                    <a href="#"><i class="fa-solid fa-x"></i></a>
+                </div>
+                <p style="font-size: 15px">Izveidot pieteikumu sludinājumam</p>
+            </div>
+            <div class="application-input">
+                <div id="application-alert" style="display:none; margin: 0 0 12px 0; padding: 10px 12px; border-radius: 10px; font-weight: 600;"></div>
+
+                <?php if (($home['veids'] ?? '') === 'ire'): ?>
+
+                    <div class="application-input-group">
+                        <h4>Vārds un uzvārds</h4>
+                        <input type="text" name="lt_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
+                    </div>
+                    <div class="application-input-group">
+                        <h4>E-pasts</h4>
+                        <input type="email" name="lt_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>Telefona nr.</h4>
+                        <input type="tel" name="lt_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>īres periods mēnešos</h4>
+                        <input type="number" name="lt_rent_months" id="lt_rent_months" min="1" max="99" placeholder="Piem. 6" oninput="if(this.value.length>2)this.value=this.value.slice(0,2);if(parseInt(this.value)>99)this.value=99;">
+                        <label class="application-checkbox"><input type="checkbox" id="rent_unknown" name="lt_rent_unknown" value="1"> Pagaidām nav zināms</label>
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>Sākuma datums</h4>
+                        <input type="datetime-local" name="lt_start_date" id="lt_start_date">
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>Papildu komentāri</h4>
+                        <textarea name="lt_comment" rows="4" maxlength="300" placeholder="..."></textarea>
+                    </div>
+
+                    <div class="application-input-group">
+                        <button class="btn-submit">Nosūtīt pieteikumu</button>
+                    </div>
+
+                <?php elseif (($home['veids'] ?? '') === 'istermina_ire'): ?>
+
+                    <div class="application-input-group">
+                        <h4>Vārds un uzvārds</h4>
+                        <input type="text" name="st_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>E-pasts</h4>
+                        <input type="email" name="st_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>Telefona nr.</h4>
+                        <input type="tel" name="st_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>Sākuma datums</h4>
+                        <input type="datetime-local" name="st_start_date" id="st_start_date">
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>Beigu datums</h4>
+                        <input type="datetime-local" name="st_end_date" id="st_end_date">
+                    </div>
+
+                    <div class="application-input-group">
+                        <h4>Komentāri</h4>
+                        <textarea name="st_comment" rows="4" maxlength="300" placeholder="..."></textarea>
+                    </div>
+
+                    <div class="application-input-group">
+                        <button class="btn-submit">Nosūtīt pieteikumu</button>
+                    </div>
+
+                <?php else: ?>
+
+                <div class="application-input-group">
+                    <h4>Vārds un uzvārds</h4>
+                    <input type="text" name="sale_full_name" placeholder="..." maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
+                </div>
+
+                <div class="application-input-group">
+                    <h4>E-pasts</h4>
+                    <input type="email" name="sale_email" value="<?php echo htmlspecialchars($userEmail); ?>" readonly>
+                </div>
+
+                <div class="application-input-group">
+                    <h4>Telefona nr.</h4>
+                    <input type="tel" name="sale_phone" value="<?php echo htmlspecialchars($userPhone); ?>" readonly>
+                </div>
+
+                <div class="application-input-group">
+                    <h4>Piedāvātā summa</h4>
+                    <input type="number" name="sale_offer" placeholder="..." max="9999999" oninput="if(this.value.length>7)this.value=this.value.slice(0,7);">
+                </div>
+
+                <div class="application-input-group">
+                    <h4>Finansēšanas veids</h4>
+                    <div style="max-width: 200px;">
+                        <select id="pay-method" name="pay-method"
+                                style="padding: 5px; font-size: 14px; border-radius: 4px; width: 100%;">
+                            <option value="cash">Skaidra nauda</option>
+                            <option value="mortgage">Hipotēka</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="application-input-group">
+                    <h4>Papildu komentārs</h4>
+                    <input type="text" name="sale_comment" maxlength="300" placeholder="...">
+                </div>
+
+                <div class="application-input-group">
+                    <button class="btn-submit">Nosūtīt pieteikumu</button>
+                </div>
+
+                <?php endif; ?>
+            </div>
+
+        </div>
+    </div>
+<?php endif; ?>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

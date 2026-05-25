@@ -55,7 +55,7 @@ if ($check_table && $check_table->num_rows > 0) {
 }
 
 $pageTitle = 'Mani ziņojumi - HomeEstate';
-$extraStyles = ['user', 'myapplications'];
+$extraStyles = ['user', 'myapplications', 'faq'];
 $bodyClass = 'myapplications-page';
 $navbarClass = 'navbar--hero';
 include __DIR__ . '/../includes/header.php';
@@ -312,11 +312,17 @@ include __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="form-group">
                         <label>Esošie attēli</label>
-                        <div id="existingImagesContainer" class="existing-images-list"></div>
+                        <div id="existingImagesContainer" class="palidziba-upload-previews"></div>
                     </div>
                     <div class="form-group">
-                        <label for="editHelpFiles">Pievienot jaunus attēlus (Maks. 3 kopā)</label>
-                        <input type="file" id="editHelpFiles" class="form-control" accept="image/jpeg,image/png" multiple>
+                        <label>Pievienot jaunus attēlus <span style="color:var(--gray-400);font-weight:500;">(Maks. 3 kopā)</span></label>
+                        <div class="palidziba-upload-zone" id="helpUploadZone">
+                            <input type="file" id="editHelpFiles" accept="image/jpeg,image/png" multiple>
+                            <div class="palidziba-upload-zone__icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                            <p>Noklikšķiniet vai velciet attēlus šeit</p>
+                            <span>JPG, PNG &bull; maks. 3 attēli &bull; maks. 5 MB katrs</span>
+                        </div>
+                        <div id="newImagesPreviewContainer" class="palidziba-upload-previews"></div>
                     </div>
                 </div>
                 
@@ -466,19 +472,21 @@ function editHelpMessage(id) {
     
     if (failsAttr.trim() !== '') {
         const images = failsAttr.split(',').map(s => s.trim()).filter(Boolean);
-        const assetBaseUrl = '<?php echo asset_path(""); ?>';
+        const assetBaseUrl = '<?php echo app_absolute_url(""); ?>';
         images.forEach(img => {
             const item = document.createElement('div');
-            item.className = 'existing-img-item';
+            item.className = 'palidziba-upload-preview';
             item.setAttribute('data-path', img);
             
             const imgTag = document.createElement('img');
             imgTag.src = assetBaseUrl + img;
+            imgTag.style.cursor = 'pointer';
+            imgTag.onclick = function() { window.open(this.src, '_blank'); };
             
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.className = 'remove-img-btn';
-            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'palidziba-upload-preview__remove';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
             removeBtn.onclick = function() {
                 item.remove();
             };
@@ -490,6 +498,9 @@ function editHelpMessage(id) {
     }
 
     document.getElementById('editHelpFiles').value = '';
+    const newContainer = document.getElementById('newImagesPreviewContainer');
+    if (newContainer) newContainer.innerHTML = '';
+    window.newHelpFiles = [];
     document.getElementById('editModal').style.display = 'flex';
 }
 
@@ -602,7 +613,7 @@ document.getElementById('editForm').addEventListener('submit', function(e) {
             alert('Kļūda atjauninot pieteikumu: ' + error.message);
         });
     } else if (type === 'help') {
-        const remainingImages = Array.from(document.querySelectorAll('#existingImagesContainer .existing-img-item'))
+        const remainingImages = Array.from(document.querySelectorAll('#existingImagesContainer .palidziba-upload-preview'))
             .map(item => item.getAttribute('data-path'))
             .filter(Boolean);
         const fileInput = document.getElementById('editHelpFiles');
@@ -658,6 +669,87 @@ document.addEventListener('keydown', function(e) {
         closeModal();
     }
 });
+
+window.newHelpFiles = [];
+const helpFileInput = document.getElementById('editHelpFiles');
+const newPreviewContainer = document.getElementById('newImagesPreviewContainer');
+
+const helpUploadZone = document.getElementById('helpUploadZone');
+
+if (helpFileInput) {
+    helpFileInput.addEventListener('change', function(e) {
+        const existingCount = document.querySelectorAll('#existingImagesContainer .palidziba-upload-preview').length;
+        Array.from(this.files).forEach(f => {
+            if (existingCount + window.newHelpFiles.length < 3) {
+                const isDuplicate = window.newHelpFiles.some(existing => existing.name === f.name && existing.size === f.size);
+                if (!isDuplicate) {
+                    window.newHelpFiles.push(f);
+                }
+            }
+        });
+        renderNewHelpPreviews();
+        syncHelpFileInput();
+    });
+}
+
+if (helpUploadZone) {
+    helpUploadZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+    helpUploadZone.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+    helpUploadZone.addEventListener('drop', function(e) {
+        e.preventDefault(); this.classList.remove('drag-over');
+        const existingCount = document.querySelectorAll('#existingImagesContainer .palidziba-upload-preview').length;
+        Array.from(e.dataTransfer.files).forEach(f => {
+            if (f.type.startsWith('image/') && existingCount + window.newHelpFiles.length < 3) {
+                const isDuplicate = window.newHelpFiles.some(existing => existing.name === f.name && existing.size === f.size);
+                if (!isDuplicate) {
+                    window.newHelpFiles.push(f);
+                }
+            }
+        });
+        renderNewHelpPreviews();
+        syncHelpFileInput();
+    });
+}
+
+function renderNewHelpPreviews() {
+    if (!newPreviewContainer) return;
+    newPreviewContainer.innerHTML = '';
+    
+    window.newHelpFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const item = document.createElement('div');
+            item.className = 'palidziba-upload-preview';
+            
+            const imgTag = document.createElement('img');
+            imgTag.src = e.target.result;
+            imgTag.style.cursor = 'pointer';
+            imgTag.onclick = function() { window.open(this.src, '_blank'); };
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'palidziba-upload-preview__remove';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.onclick = function() {
+                window.newHelpFiles.splice(index, 1);
+                syncHelpFileInput();
+                renderNewHelpPreviews();
+            };
+            
+            item.appendChild(imgTag);
+            item.appendChild(removeBtn);
+            newPreviewContainer.appendChild(item);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function syncHelpFileInput() {
+    if (!helpFileInput) return;
+    const dt = new DataTransfer();
+    window.newHelpFiles.forEach(f => dt.items.add(f));
+    helpFileInput.files = dt.files;
+}
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
