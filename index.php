@@ -18,33 +18,39 @@ if (isset($_SESSION['register_success'])) {
     echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Jūs veiksmīgi reģistrējāties', 'success'); });</script>";
 }
 
-
+// Jaunākie sludinājumi
 $newestHomes = [];
-$sql = "SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas, galvenais_attels 
+// Iegūst 3 jaunākos aktīvos sludinājumus
+$sql = "SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids,
+       cena, platiba, gulamistabas, vannasistabas, galvenais_attels 
         FROM est_homes WHERE statuss = 'Aktivs' ORDER BY created_at DESC LIMIT 3";
 $result = $savienojums->query($sql);
+// Saglabā rezultātus masīvā
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $row['owner_data'] = null;
         $newestHomes[] = $row;
     }
 }
-
+// Iegūst īpašnieku datus
 if ($newestHomes !== []) {
     $ownerIds = array_filter(array_unique(array_column($newestHomes, 'ipasnieka_id')));
     if ($ownerIds !== []) {
         $placeholders = implode(',', array_fill(0, count($ownerIds), '?'));
-        $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plans FROM est_lietotaji WHERE lietotaja_id IN ($placeholders)");
+        // SQL vaicājums īpašnieku datiem
+        $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde,
+       plans FROM est_lietotaji WHERE lietotaja_id IN ($placeholders)");
         if ($ownerStmt) {
             $ownerStmt->bind_param(str_repeat('i', count($ownerIds)), ...array_values($ownerIds));
             $ownerStmt->execute();
             $ownerRes = $ownerStmt->get_result();
             $owners = [];
+            // Saglabā īpašniekus pēc ID
             while ($o = $ownerRes->fetch_assoc()) {
                 $owners[$o['lietotaja_id']] = $o;
             }
             $ownerStmt->close();
-
+            // Pievieno īpašnieka datus katram sludinājumam
             foreach ($newestHomes as &$h) {
                 if (isset($owners[$h['ipasnieka_id']])) {
                     $h['owner_data'] = $owners[$h['ipasnieka_id']];

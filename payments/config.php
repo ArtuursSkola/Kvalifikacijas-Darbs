@@ -1,7 +1,6 @@
 <?php
-// Stripe konfigurācija (Pay-to-List plāni) bez lielās Stripe PHP bibliotēkas
 
-// Definējam vieglas \Stripe klases, lai nebūtu jāizmanto oficiālais SDK
+
 namespace Stripe {
     class Stripe {
         public static $apiKey;
@@ -50,19 +49,38 @@ namespace Stripe\Checkout {
 }
 
 namespace {
-    // 2) Stripe API atslēgas (testa režīms)
+
     $stripeSecretKey = 'sk_test_51SAuHU75uHE3uiPXz4cfnEoQaJ0P52Bkva6O6U3EsECjOZk6yTwpWes6HMmbRavFPITEHE9LorFHcwgNGCotGFV300xZwHlYcu';
     $stripePublishableKey = 'pk_test_51SAuHU75uHE3uiPXwDEQ1sk86mvAXqY4DaX8wcXIMQ4FlbWB022MHFVIDdLYHZUKFNsFuNTRxnLsQyOaVXF1gLt3000zWAf7F3';
 
-    // 3) Inicializē Stripe
+
     \Stripe\Stripe::setApiKey($stripeSecretKey);
 
-    // 4) Bāzes URL maksājumiem (pielāgo serverim dinamiskāk)
     function payments_base_url(): string {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'];
         $path = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
         return $protocol . '://' . $host . $path . '/';
+    }
+
+    function stripe_friendly_error(string $rawError): string {
+        $rawErrorLower = strtolower($rawError);
+        if (strpos($rawErrorLower, 'card was declined') !== false || strpos($rawErrorLower, 'card_declined') !== false) {
+            return 'Maksājums noraidīts: nederīga karte.';
+        }
+        if (strpos($rawErrorLower, 'insufficient funds') !== false || strpos($rawErrorLower, 'insufficient_funds') !== false) {
+            return 'Maksājums noraidīts: nepietiekami līdzekļi.';
+        }
+        if (strpos($rawErrorLower, 'expired card') !== false || strpos($rawErrorLower, 'expired_card') !== false) {
+            return 'Maksājums noraidīts: kartei beidzies derīguma termiņš.';
+        }
+        if (strpos($rawErrorLower, 'incorrect cvc') !== false || strpos($rawErrorLower, 'incorrect_cvc') !== false) {
+            return 'Maksājums noraidīts: nepareizs CVC kods.';
+        }
+        if (strpos($rawErrorLower, 'incorrect pin') !== false || strpos($rawErrorLower, 'incorrect_pin') !== false) {
+            return 'Maksājums noraidīts: nepareizs PIN kods.';
+        }
+        return 'Stripe kļūda: ' . $rawError;
     }
 }
 ?>

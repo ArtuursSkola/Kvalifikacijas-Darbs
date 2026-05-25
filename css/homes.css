@@ -37,6 +37,41 @@ body.homes-page {
     .homes-hero {
         margin-top: -70px;
     }
+
+    .homes-hero__inner {
+        grid-template-columns: 1fr;
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .homes-hero {
+        padding: 120px 16px 70px;
+    }
+
+    .homes-hero__inner {
+        padding: 0 16px;
+    }
+
+    .badge-pill {
+        font-size: 0.8rem;
+        padding: 8px 16px;
+    }
+
+    .homes-hero__text h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .homes-hero {
+        padding: 110px 12px 60px;
+    }
+
+    .badge-pill {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+    }
 }
 
 .homes-hero__inner {
@@ -233,6 +268,7 @@ body.homes-page {
 
 .filter-group select,
 .filter-group input {
+    width: 100%;
     padding: 14px 16px;
     border: 2px solid var(--gray-200);
     border-radius: var(--radius-sm);
@@ -390,86 +426,6 @@ body.homes-page {
     transform: scale(1.15);
     box-shadow: 0 0 0 8px rgba(48,182,7,0.1);
 }
-footer {
-    background: #1d2733;
-    color: rgba(255,255,255,0.8);
-    padding: 80px 20px 24px;
-}
-
-.footer-content {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 48px;
-    max-width: 1200px;
-    margin: 0 auto 48px;
-}
-
-.footer-col h3 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 20px;
-}
-
-.footer-col h3 span { color: #30b607; }
-
-.footer-col p {
-    line-height: 1.8;
-}
-
-.footer-col h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #fff;
-    margin-bottom: 20px;
-}
-
-.footer-col ul li {
-    margin-bottom: 12px;
-}
-
-.footer-col ul a {
-    color: rgba(255,255,255,0.7);
-    transition: all 0.2s;
-}
-
-.footer-col ul a:hover {
-    color: #30b607;
-    padding-left: 5px;
-}
-
-.footer-social {
-    display: flex;
-    gap: 12px;
-    margin-top: 24px;
-}
-
-.footer-social a {
-    width: 44px;
-    height: 44px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    transition: all 0.3s;
-}
-
-.footer-social a:hover {
-    background: #30b607;
-    transform: translateY(-4px);
-}
-
-.footer-bottom {
-    border-top: 1px solid rgba(255,255,255,0.1);
-    padding-top: 24px;
-    text-align: center;
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.5);
-    max-width: 1200px;
-    margin: 0 auto;
-}
 
 .filter-footer-actions {
     margin-top: 32px;
@@ -529,7 +485,8 @@ footer {
 }
 
 .area-inputs input {
-    width: 50%;
+    flex: 1;
+    min-width: 0;
 }
 
 .checkbox-group {
@@ -658,7 +615,7 @@ footer {
 
 .listing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
     gap: 28px;
 }
 
@@ -1041,6 +998,12 @@ footer {
 }
 
 
+@media (max-width: 1640px) {
+    .homes-hero__card { grid-template-columns: 1fr; }
+    .listing-grid { grid-template-columns: 1fr; }
+    .results-header { flex-direction: column; align-items: flex-start; }
+}
+
 @media (max-width: 1024px) {
     .homes-hero__inner { grid-template-columns: 1fr; gap: 40px; }
     .homes-hero__card { grid-template-columns: repeat(3, 1fr); }
@@ -1049,9 +1012,33 @@ footer {
 }
 
 @media (max-width: 768px) {
-    .homes-hero__card { grid-template-columns: 1fr; }
-    .listing-grid { grid-template-columns: 1fr; }
-    .results-header { flex-direction: column; align-items: flex-start; }
+    .filters {
+        grid-template-columns: 1fr;
+    }
+    .filter-shell {
+        padding: 20px;
+    }
+    .search-listings-section {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    .homes-hero__card { 
+        grid-template-columns: 1fr; 
+        gap: 12px; 
+    }
+    .advanced-filters {
+        padding: 20px;
+    }
+    .advanced-filters .filters {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .advanced-filters {
+        padding: 16px;
+    }
 }
 
 .property-card.sold {

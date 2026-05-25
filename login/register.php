@@ -28,6 +28,9 @@ if (isset($_POST['register_btn'])) {
 
     $errors = [];
 
+    if (preg_match('/[\'\"=;]/', $lietotajvards)) {
+        $errors[] = "Lietotājvārds satur nederīgus simbolus";
+    }
     if (preg_match('/[0-9]/', $lietotajvards)) {
         $errors[] = "Lietotājvārds nevar saturēt skaitļus";
     }
@@ -70,7 +73,8 @@ if (isset($_POST['register_btn'])) {
         $result = mysqli_query($savienojums, $check_query);
 
         if (mysqli_num_rows($result) > 0) {
-            $zinojums = "Lietotājvārds vai e-pasts jau eksistē!";
+            http_response_code(400);
+            $zinojums = "Lietotājvārds vai E-pasts jau reģistrēts";
         } else {
             $parole_hash = password_hash($parole_raw, PASSWORD_DEFAULT);
 

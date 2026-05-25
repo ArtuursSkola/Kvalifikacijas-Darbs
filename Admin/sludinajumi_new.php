@@ -16,8 +16,14 @@ if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin','moderato
 $errors = [];
 $success = '';
 
-// Handle delete
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
+    if (!isset($_GET['csrf']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_GET['csrf'])) {
+        die('CSRF marķiera validācija neizdevās!');
+    }
     $delId = (int)$_GET['delete'];
     $stmt = $savienojums->prepare("DELETE FROM est_homes WHERE id = ?");
     if ($stmt) {
@@ -290,7 +296,7 @@ function buildUrl($overrides = []) {
                                         <div class="actions">
                                             <button class="btn-sm edit" onclick='openEditModal(<?php echo json_encode($h); ?>)'><i class="fas fa-edit"></i></button>
                                             <a href="../home1.php?id=<?php echo $h['id']; ?>" class="btn-sm view" target="_blank"><i class="fas fa-eye"></i></a>
-                                            <a href="<?php echo buildUrl(['delete' => $h['id']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')"><i class="fas fa-trash"></i></a>
+                                            <a href="<?php echo buildUrl(['delete' => $h['id'], 'csrf' => $_SESSION['csrf_token']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')"><i class="fas fa-trash"></i></a>
                                         </div>
                                     </td>
                                 </tr>

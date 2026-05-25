@@ -119,7 +119,7 @@ try {
     }
 
 } catch (\Exception $e) {
-    $_SESSION["pazinojums_modal"] = "Nav iespējams iegūt maksājuma informāciju: " . $e->getMessage();
+    $_SESSION["pazinojums_modal"] = "Nav iespējams iegūt maksājuma informāciju: " . stripe_friendly_error($e->getMessage());
 }
 
 header("Location: " . main_route('home'));

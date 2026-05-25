@@ -17,8 +17,14 @@ if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin','moderato
 $errors = [];
 $success = '';
 
-// Handle delete
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
+    if (!isset($_GET['csrf']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_GET['csrf'])) {
+        die('CSRF marķiera validācija neizdevās!');
+    }
     $delId = (int)$_GET['delete'];
     $stmt = $savienojums->prepare("DELETE FROM est_homes WHERE id = ?");
     if ($stmt) {
@@ -356,7 +362,7 @@ if (isset($_SESSION['admin_success'])) {
                                             <a href="<?php echo main_route('property.show', ['id' => $h['id'], 'from' => 'admin_listings']); ?>" class="btn-sm view" target="_blank" title="Skatīt">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?php echo buildUrl(['delete' => $h['id']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')" title="Dzēst"><i class="fas fa-trash"></i></a>
+                                            <a href="<?php echo buildUrl(['delete' => $h['id'], 'csrf' => $_SESSION['csrf_token']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')" title="Dzēst"><i class="fas fa-trash"></i></a>
                                         </div>
                                     </td>
                                 </tr>

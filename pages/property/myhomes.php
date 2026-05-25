@@ -104,6 +104,7 @@ if ($ownerId > 0) {
                         'Melnraksts' => ['label' => 'Melnraksts', 'class' => 'status-draft'],
                         'Noraidīts' => ['label' => 'Noraidīts', 'class' => 'status-rejected'],
                         'Pardots' => ['label' => 'Pārdots', 'class' => 'status-inactive'],
+                        'Neaktivs' => ['label' => 'Neaktīvs', 'class' => 'status-inactive'],
                     ];
                     $st = $statusLabels[$status] ?? ['label' => (string)$status, 'class' => ''];
                     $fallbackImg = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';

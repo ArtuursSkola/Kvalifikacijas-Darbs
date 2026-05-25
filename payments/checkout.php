@@ -36,5 +36,5 @@ try {
     exit;
 
 } catch (\Exception $e) {
-    die('Neizdevās izveidot maksājuma sesiju: ' . $e->getMessage());
+    die(stripe_friendly_error($e->getMessage()));
 }

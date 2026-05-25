@@ -29,34 +29,38 @@ if ($homeRes->num_rows === 0) {
 $home = $homeRes->fetch_assoc();
 $homeStmt->close();
 
+// Nosaka vai īpašumam ir precīza kartes koordināte (pin)
 $detailMapLat = null;
 $detailMapLng = null;
 $hasDetailPin = false;
 $latCol = $home['latitude'] ?? null;
 $lngCol = $home['longitude'] ?? null;
+// Ja datubāzē ir derīgas koordinātes, izmanto tās
 if ($latCol !== null && $latCol !== '' && $lngCol !== null && $lngCol !== ''
         && is_numeric($latCol) && is_numeric($lngCol)) {
     $detailMapLat = (float)$latCol;
     $detailMapLng = (float)$lngCol;
     $hasDetailPin = true;
 } else {
+    // Ja nav precīza pina, izmanto pilsētas koordinātes ar nelielu nobīdi (privacy + izvairās no overlap)
     $bc = latvia_city_coordinates((string)($home['pilseta'] ?? ''));
     $jj = map_home_jitter($bc[0], $bc[1], $homeId);
     $detailMapLat = $jj[0];
     $detailMapLng = $jj[1];
 }
-
+// Palielina sludinājuma skatījumu skaitu
 $viewStmt = $savienojums->prepare("UPDATE est_homes SET skatijumi = skatijumi + 1 WHERE id = ?");
 if ($viewStmt) {
     $viewStmt->bind_param('i', $homeId);
     $viewStmt->execute();
     $viewStmt->close();
 }
-
+// Ielādē sludinājuma īpašnieka datus
 $ownerId = (int)($home['ipasnieka_id'] ?? 0);
 $owner = null;
 if ($ownerId > 0) {
-    $ownStmt = $savienojums->prepare("SELECT lietotajvards, epasts, profila_bilde, plans FROM est_lietotaji WHERE lietotaja_id = ? LIMIT 1");
+    $ownStmt = $savienojums->prepare("SELECT lietotajvards, epasts, profila_bilde,
+       plans FROM est_lietotaji WHERE lietotaja_id = ? LIMIT 1");
     if ($ownStmt) {
         $ownStmt->bind_param('i', $ownerId);
         $ownStmt->execute();

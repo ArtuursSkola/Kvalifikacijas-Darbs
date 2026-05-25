@@ -74,6 +74,17 @@ if (
     isset($_FILES['profile_picture']) &&
     is_array($_FILES['profile_picture']) &&
     $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK &&
+    $_FILES['profile_picture']['size'] > 5 * 1024 * 1024
+) {
+    $_SESSION['settings_flash'] = ['type' => 'error', 'message' => 'Fails pārāk liels'];
+    header('Location: ' . $redirectTo);
+    exit;
+}
+
+if (
+    isset($_FILES['profile_picture']) &&
+    is_array($_FILES['profile_picture']) &&
+    $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK &&
     $_FILES['profile_picture']['size'] > 0
 ) {
     $uploadDir = dirname(__DIR__) . '/uploads';

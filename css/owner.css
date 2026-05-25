@@ -35,7 +35,7 @@
             margin-top: 0;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1640px) {
             body.owner-page {
                 padding-top: 0;
             }
@@ -597,7 +597,7 @@
 
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1640px) {
             .owner-hero { padding: 120px 20px 80px; }
             .owner-hero__bullets { flex-direction: column; gap: 16px; }
             .cta-strip__inner { flex-direction: column; text-align: center; }
@@ -652,7 +652,7 @@
 
         .owner-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
             gap: 30px;
         }
 
@@ -758,4 +758,28 @@
         .empty-owner-state p {
             color: var(--gray-600);
             margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .owner-listings {
+                padding: 40px 16px;
+            }
+            .owner-grid {
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .owner-card__info {
+                padding: 16px;
+            }
+            .owner-card__footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .owner-card__actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
         }

@@ -115,6 +115,43 @@ $myHomesUrl = main_route('property.myhomes');
                         <?php endif; ?>
                     </div>
 
+                    <div class="profile-dropdown__nav-links-mobile">
+                        <a class="profile-dropdown__link" href="<?php echo main_route('home'); ?>">
+                            <i class="fas fa-home"></i>
+                            Sākums
+                        </a>
+                        <a class="profile-dropdown__link" href="<?php echo main_route('property.list'); ?>">
+                            <i class="fas fa-search"></i>
+                            Meklēt īpašumu
+                        </a>
+                        <?php if ($isOwner): ?>
+                            <a class="profile-dropdown__link" href="<?php echo main_route('owner'); ?>">
+                                <i class="fas fa-crown"></i>
+                                Kļūsti par īpašnieku
+                            </a>
+                        <?php endif; ?>
+                        <?php if ($canCreate): ?>
+                            <a class="profile-dropdown__link" href="<?php echo $myHomesUrl; ?>">
+                                <i class="fas fa-list"></i>
+                                Mani sludinājumi
+                            </a>
+                        <?php endif; ?>
+                        <?php if ($canCreate): ?>
+                            <a class="profile-dropdown__link" href="<?php echo main_route('property.create'); ?>">
+                                <i class="fas fa-plus"></i>
+                                Izveidot sludinājumu
+                            </a>
+                        <?php endif; ?>
+                        <a class="profile-dropdown__link" href="<?php echo main_route('about'); ?>">
+                            <i class="fas fa-info-circle"></i>
+                            Par mums
+                        </a>
+                        <a class="profile-dropdown__link" href="/pages/myapplications.php">
+                            <i class="fas fa-file-alt"></i>
+                            Mani pieteikumi
+                        </a>
+                    </div>
+
                     <a class="profile-dropdown__link" href="#settings-modal">
                         <i class="fas fa-user-cog"></i>
                         Iestatījumi

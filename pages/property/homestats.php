@@ -4,6 +4,7 @@ session_start();
 require_once __DIR__ . '/../../routes/main.php';
 require_once dirname(__DIR__, 2) . '/con_db.php';
 require_once dirname(__DIR__, 2) . '/includes/account.php';
+require_once dirname(__DIR__, 2) . '/includes/mailer.php';
 
 $currentUser = loadCurrentUserContext($savienojums);
 if (!$currentUser) {
@@ -23,26 +24,52 @@ if ($ownerId <= 0 || $infoId <= 0) {
     header('Location: ' . main_route('property.myhomes'));
     exit;
 }
-
-$stmt = $savienojums->prepare("SELECT id, nosaukums, veids, statuss, skatijumi, favoriti, created_at FROM est_homes WHERE id = ? AND ipasnieka_id = ? LIMIT 1");
+// SQL vaicājums īpašuma datu iegūšanai
+$stmt = $savienojums->prepare("SELECT id, nosaukums, veids, statuss, skatijumi,
+       favoriti, created_at FROM est_homes WHERE id = ? AND ipasnieka_id = ? LIMIT 1");
 if ($stmt) {
     $stmt->bind_param('ii', $infoId, $ownerId);
     $stmt->execute();
+    // Iegūst īpašuma informāciju
     $infoHome = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 }
-
+// Ja īpašums neeksistē, novirza atpakaļ
 if (!$infoHome) {
     header('Location: ' . main_route('property.myhomes'));
     exit;
 }
-
+// Apstrādā pieteikuma pieņemšanu vai noraidīšanu
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'pieteikums_decide') {
     $pieteikumsId = isset($_POST['pieteikums_id']) ? (int)$_POST['pieteikums_id'] : 0;
     $decision = trim((string)($_POST['decision'] ?? ''));
+    // Pārbauda vai darbība ir korekta
     if ($pieteikumsId > 0 && ($decision === 'accept' || $decision === 'reject')) {
+        $applicantEpasts = '';
+        $applicantVards = '';
+        $listingNosaukums = '';
+        // SQL vaicājums pieteicēja datu iegūšanai
+        $infoStmt = $savienojums->prepare(
+            'SELECT p.epasts, p.vards_uzvards, h.nosaukums FROM est_pieteikumi p '
+            . 'JOIN est_homes h ON h.id = p.sludinajuma_id WHERE p.id = ? AND p.sludinajuma_id = ? AND h.ipasnieka_id = ? LIMIT 1'
+        );
+        // Iegūst pieteikuma informāciju
+        if ($infoStmt) {
+            $infoStmt->bind_param('iii', $pieteikumsId, $infoId, $ownerId);
+            $infoStmt->execute();
+            $infoRow = $infoStmt->get_result()->fetch_assoc();
+            $infoStmt->close();
+            if ($infoRow) {
+                $applicantEpasts = (string)($infoRow['epasts'] ?? '');
+                $applicantVards = (string)($infoRow['vards_uzvards'] ?? '');
+                $listingNosaukums = (string)($infoRow['nosaukums'] ?? '');
+            }
+        }
+
         $savienojums->begin_transaction();
         $ok = false;
+        $mailAccepted = false;
+        $mailStatusLabel = '';
         try {
             $ps = $savienojums->prepare("SELECT p.id, h.veids FROM est_pieteikumi p JOIN est_homes h ON h.id = p.sludinajuma_id WHERE p.id = ? AND p.sludinajuma_id = ? AND h.ipasnieka_id = ? LIMIT 1");
             if ($ps) {
@@ -58,6 +85,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
                             $us->bind_param('i', $pieteikumsId);
                             $ok = $us->execute();
                             $us->close();
+                        }
+                        if ($ok) {
+                            $mailAccepted = false;
+                            $mailStatusLabel = 'Noraidīts';
                         }
                     } else {
                         $newStatus = $homeType === 'istermina_ire' ? 'Rezervets' : 'Apstiprinats';
@@ -75,11 +106,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
                                 $hs->close();
                             }
                         }
+                        if ($ok) {
+                            $mailAccepted = true;
+                            $mailStatusLabel = $newStatus === 'Rezervets' ? 'Rezervēts' : 'Apstiprināts';
+                        }
                     }
                 }
             }
             if ($ok) {
                 $savienojums->commit();
+                if (mail_is_configured() && $applicantEpasts !== '') {
+                    mail_notify_applicant_pieteikums_decision(
+                        $applicantEpasts,
+                        $applicantVards !== '' ? $applicantVards : 'Lietotājs',
+                        $listingNosaukums !== '' ? $listingNosaukums : 'Sludinājums',
+                        $mailAccepted,
+                        $mailStatusLabel
+                    );
+                }
             } else {
                 $savienojums->rollback();
             }
@@ -140,7 +184,7 @@ include __DIR__ . '/../../includes/header.php';
 
 <div class="homestats-container">
     <div class="homestats-header">
-        <div style="display:flex; align-items:center;">
+        <div class="homestats-title-area">
             <h1 class="homestats-title">Statistika: <span><?php echo htmlspecialchars((string)($infoHome['nosaukums'] ?? '')); ?></span></h1>
             <span class="status-badge status-<?php echo htmlspecialchars($infoHome['statuss']); ?>">
                 <?php echo htmlspecialchars($infoHome['statuss']); ?>

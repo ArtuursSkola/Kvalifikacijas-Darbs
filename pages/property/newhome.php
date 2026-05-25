@@ -206,46 +206,38 @@ if ($plan === 'Sudraba') {
 } elseif ($plan === 'Zelta') {
     $galleryLimit = 50;
 }
-
+// Apstrādā POST pieprasījumu (sludinājuma izveide vai rediģēšana)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim((string)($_POST['title'] ?? ''));
     $city = trim((string)($_POST['city'] ?? ''));
     $address = trim((string)($_POST['address'] ?? ''));
     $location_text = trim((string)($_POST['location_text'] ?? ''));
     $property_category = (string)($_POST['property_category'] ?? 'dzivoklis');
+    // Darījuma tips (īre / pārdošana / īstermiņa īre)
     $rawType = (string)($_POST['type'] ?? '');
-    if ($rawType === 'pardod') {
-        $type = 'pardod';
-    } elseif ($rawType === 'istermina_ire') {
-        $type = 'istermina_ire';
-    } else {
-        $type = 'ire';
-    }
-    if ($type === 'ire') {
-        $price_label = 'Cena (EUR / men.) *';
-    } elseif ($type === 'istermina_ire') {
-        $price_label = 'Cena (EUR / nakti) *';
-    } else {
-        $price_label = 'Cena (EUR) *';
-    }
+    if ($rawType === 'pardod') { $type = 'pardod'; } elseif ($rawType === 'istermina_ire') { $type = 'istermina_ire';
+    } else { $type = 'ire'; }
+    if ($type === 'ire') { $price_label = 'Cena (EUR / men.) *'; } elseif ($type === 'istermina_ire') { $price_label = 'Cena (EUR / nakti) *';
+    } else { $price_label = 'Cena (EUR) *'; }
     $price = trim((string)($_POST['price'] ?? ''));
     $area = trim((string)($_POST['area'] ?? ''));
     $bedrooms = trim((string)($_POST['bedrooms'] ?? ''));
     $bathrooms = trim((string)($_POST['bathrooms'] ?? ''));
     $floor = trim((string)($_POST['floor'] ?? ''));
     $total_floors = trim((string)($_POST['total_floors'] ?? ''));
+    // Apraksti un papildinformācija
     $description = trim((string)($_POST['description'] ?? ''));
     $layout_text = trim((string)($_POST['layout_text'] ?? ''));
     $map_text = trim((string)($_POST['map_text'] ?? ''));
     $amenities = trim((string)($_POST['amenities'] ?? ''));
+    // Kartes koordinātas
     $pin_lat = trim((string)($_POST['latitude'] ?? ''));
     $pin_lng = trim((string)($_POST['longitude'] ?? ''));
-
+    // Attēli
     $main_image_url = trim((string)($_POST['main_image_url'] ?? ''));
-    
+    // Īres papildizmaksas
     $utilities_price = $type === 'ire' ? trim((string)($_POST['utilities_price'] ?? '0')) : '0';
     $rent_price = $type === 'ire' ? $price : '0';
-
     $has_pirts = isset($_POST['has_pirts']) && (string)$_POST['has_pirts'] === '1';
     $has_balla = isset($_POST['has_balla']) && (string)$_POST['has_balla'] === '1';
     $pirts_price_per_day = $has_pirts ? trim((string)($_POST['pirts_price_per_day'] ?? '')) : '0';
@@ -301,6 +293,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if ($has_balla && $balla_price_per_day === '') {
             $errors[] = 'Lūdzu norādiet baļļas cenu par dienu.';
+        }
+    }
+
+    if (isset($_FILES['main_image_file']) && $_FILES['main_image_file']['error'] === UPLOAD_ERR_OK) {
+        if ($_FILES['main_image_file']['size'] > 5 * 1024 * 1024) {
+            $errors[] = "Fails pārāk liels";
+        }
+    }
+    if (isset($_FILES['gallery_files']) && is_array($_FILES['gallery_files']['name'])) {
+        $count = count($_FILES['gallery_files']['name']);
+        for ($i = 0; $i < $count; $i++) {
+            if ($_FILES['gallery_files']['error'][$i] === UPLOAD_ERR_OK) {
+                if ($_FILES['gallery_files']['size'][$i] > 5 * 1024 * 1024) {
+                    $errors[] = "Fails pārāk liels";
+                }
+            }
         }
     }
 

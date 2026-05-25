@@ -79,7 +79,7 @@ if (!empty($_FILES['pievienotais_fails']['name'][0])) {
         $maxBytes = 5 * 1024 * 1024;
         if ($files['size'][$i] > $maxBytes) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'Katra attēla izmērs nedrīkst pārsniegt 5 MB.']);
+            echo json_encode(['success' => false, 'message' => 'Fails pārāk liels']);
             exit;
         }
 

@@ -18,10 +18,10 @@ if (!isset($data['id'])) {
 }
 
 $message_id = (int)$data['id'];
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 
 try {
-    $query = "DELETE FROM est_palidzibas WHERE id = ? AND user_id = ?";
+    $query = "DELETE FROM est_palidziba WHERE id = ? AND lietotaja_id = ?";
     $stmt = $savienojums->prepare($query);
     $stmt->bind_param('ii', $message_id, $user_id);
     $result = $stmt->execute();
@@ -31,7 +31,7 @@ try {
     } else {
         echo json_encode(['success' => false, 'message' => 'Message not found']);
     }
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error']);
+} catch (Throwable $e) {
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>

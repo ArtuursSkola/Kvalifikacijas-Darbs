@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const escapeHtml = (str) => {
+        if (!str) return '';
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    };
+
     const initConfig = () => {
         if (window.__homeest && window.__homeest.favoritesIdsApi) return;
         const nav = document.getElementById('navbar');
@@ -88,20 +98,28 @@ document.addEventListener('DOMContentLoaded', () => {
             navLinks.appendChild(mobileAuth);
         }
 
-        hamburger.addEventListener('click', () => {
+        const toggleMobileMenu = () => {
+            navLinks.classList.toggle('mobile-active');
             navLinks.classList.toggle('active');
-            hamburger.querySelector('i').classList.toggle('fa-bars');
-            hamburger.querySelector('i').classList.toggle('fa-times');
             document.body.classList.toggle('no-scroll');
-        });
+        };
+
+        const closeMobileMenu = () => {
+            navLinks.classList.remove('mobile-active');
+            navLinks.classList.remove('active');
+            if (authButtons) authButtons.classList.remove('active');
+            document.body.classList.remove('no-scroll');
+        };
+
+        hamburger.addEventListener('click', toggleMobileMenu);
+
+        const closeBtn = navLinks.querySelector('.mobile-menu-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeMobileMenu);
+        }
 
         navLinks.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
-                if (authButtons) authButtons.classList.remove('active');
-                hamburger.querySelector('i').classList.add('fa-bars');
-                hamburger.querySelector('i').classList.remove('fa-times');
-            });
+            link.addEventListener('click', closeMobileMenu);
         });
     }
     const authArea = document.querySelector('.auth-buttons');
@@ -476,22 +494,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const shieldIcon = (item.owner_plan === 'Zelta' || item.owner_plan === 'Sudraba') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
                 const ownerInitial = (item.owner_username || 'U').charAt(0).toUpperCase();
                 const ownerPfpHtml = item.owner_pfp
-                    ? `<img src="${item.owner_pfp}" alt="${item.owner_username}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\'owner-mini-initial\'>${ownerInitial}</span>';">`
+                    ? `<img src="${item.owner_pfp}" alt="${escapeHtml(item.owner_username)}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\'owner-mini-initial\'>${ownerInitial}</span>';">`
                     : `<span class="owner-mini-initial">${ownerInitial}</span>`;
 
                 const card = document.createElement('div');
                 card.className = 'property-card';
                 card.innerHTML = `
                     <div class="property-image">
-                        <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
+                        <img src="${item.image}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
                         <span class="property-badge ${badgeClass(item.type)}">${item.badge}</span>
                         <button class="property-favorite" title="Pievienot favorītiem" type="button" data-home-id="${item.id}">
                             <i class="far fa-heart"></i>
                         </button>
                     </div>
                     <div class="property-details">
-                        <h3>${item.title}</h3>
-                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${item.location}</p>
+                        <h3>${escapeHtml(item.title)}</h3>
+                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}</p>
                         <div class="property-features">
                             <span><i class="fas fa-bed"></i> ${item.beds} guļamist.</span>
                             <span><i class="fas fa-ruler-combined"></i> ${item.size} m²</span>
@@ -500,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="property-owner-bar">
                             <div class="property-owner-info">
                                 ${ownerPfpHtml}
-                                <span class="owner-username">${item.owner_username || 'Īpašnieks'}${shieldIcon}</span>
+                                <span class="owner-username">${escapeHtml(item.owner_username || 'Īpašnieks')}${shieldIcon}</span>
                             </div>
                         </div>
                         <div class="property-footer">
@@ -785,8 +803,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const out = await toggleFavorite(homeId);
         if (!out || typeof out.favorited !== 'boolean') return;
 
-        if (out.favorited) favoriteIds.add(homeId);
-        else favoriteIds.delete(homeId);
+        if (out.favorited) {
+            favoriteIds.add(homeId);
+            if (typeof showPageAlert === 'function') {
+                showPageAlert("Sludinājums pievienots favorītiem", "success");
+            }
+        } else {
+            favoriteIds.delete(homeId);
+            if (typeof showPageAlert === 'function') {
+                showPageAlert("Sludinājums noņemts no favorītiem", "success");
+            }
+        }
 
         syncFavoriteButtons();
     });
@@ -817,22 +844,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const shieldIcon = (item.owner_plan === 'Zelta' || item.owner_plan === 'Sudraba') ? '<i class="fas fa-shield-alt" style="color: #30b607; margin-left: 5px;" title="Uzticams īpašnieks"></i>' : '';
                 const ownerInitial = (item.owner_username || 'U').charAt(0).toUpperCase();
                 const ownerPfpHtml = item.owner_pfp
-                    ? `<img src="${item.owner_pfp}" alt="${item.owner_username || ''}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\\'owner-mini-initial\\'>${ownerInitial}</span>';">`
+                    ? `<img src="${item.owner_pfp}" alt="${escapeHtml(item.owner_username || '')}" class="owner-mini-pfp" onerror="this.parentElement.innerHTML='<span class=\'owner-mini-initial\'>${ownerInitial}</span>';">`
                     : `<span class="owner-mini-initial">${ownerInitial}</span>`;
 
                 const card = document.createElement('div');
                 card.className = 'property-card';
                 card.innerHTML = `
                     <div class="property-image">
-                        <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
+                        <img src="${item.image}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
                         <span class="property-badge ${badgeClass(item.type)}">${item.badge}</span>
                         <button class="property-favorite active" title="Noņemt no favorītiem" type="button" data-home-id="${item.id}">
                             <i class="fas fa-heart"></i>
                         </button>
                     </div>
                     <div class="property-details">
-                        <h3>${item.title}</h3>
-                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${item.location}</p>
+                        <h3>${escapeHtml(item.title)}</h3>
+                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}</p>
                         <div class="property-features">
                             <span><i class="fas fa-bed"></i> ${item.beds} guļamist.</span>
                             <span><i class="fas fa-ruler-combined"></i> ${item.size} m²</span>
@@ -841,7 +868,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="property-owner-bar">
                             <div class="property-owner-info">
                                 ${ownerPfpHtml}
-                                <span class="owner-username">${item.owner_username || 'Īpašnieks'}${shieldIcon}</span>
+                                <span class="owner-username">${escapeHtml(item.owner_username || 'Īpašnieks')}${shieldIcon}</span>
                             </div>
                         </div>
                         <div class="property-footer">
@@ -1463,15 +1490,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.innerHTML = `
                         <div class="property-image">
                             ${isSold ? '<div class="status-sold-label">Pārdots</div>' : ''}
-                            <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
+                            <img src="${item.image}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';">
                             <span class="property-badge ${item.type === 'ire' ? 'ire' : 'sale'}">${item.badge}</span>
                             <button class="property-favorite active" title="Noņemt no favorītiem" type="button" data-home-id="${item.id}">
                                 <i class="fas fa-heart"></i>
                             </button>
                         </div>
                         <div class="property-details">
-                            <h3>${item.title}</h3>
-                            <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${item.location}</p>
+                            <h3>${escapeHtml(item.title)}</h3>
+                            <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}</p>
                             <div class="property-features">
                                 <span><i class="fas fa-bed"></i> ${item.beds} guļamist.</span>
                                 <span><i class="fas fa-ruler-combined"></i> ${item.size} m²</span>

@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 if (!isset($_SESSION['user_id'])) {
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -38,22 +40,77 @@ if (!isset($map[$status])) {
 
 $dbStatus = $map[$status];
 
+$vards_uzvards = isset($data['vards_uzvards']) ? trim((string)$data['vards_uzvards']) : '';
+$epasts = isset($data['epasts']) ? trim((string)$data['epasts']) : '';
+$telefons = isset($data['telefons']) ? trim((string)$data['telefons']) : '';
+$komentars = isset($data['komentars']) ? trim((string)$data['komentars']) : '';
+
+$ires_menesi = isset($data['ires_menesi']) && $data['ires_menesi'] !== '' ? (int)$data['ires_menesi'] : null;
+$nav_zinams = isset($data['nav_zinams']) ? (int)$data['nav_zinams'] : 0;
+
+$ires_sakuma_datums = null;
+if (isset($data['ires_sakuma_datums']) && $data['ires_sakuma_datums'] !== '') {
+    $ires_sakuma_datums = str_replace('T', ' ', substr(trim((string)$data['ires_sakuma_datums']), 0, 19));
+}
+
+$sakuma_datums = null;
+if (isset($data['sakuma_datums']) && $data['sakuma_datums'] !== '') {
+    $sakuma_datums = str_replace('T', ' ', substr(trim((string)$data['sakuma_datums']), 0, 19));
+}
+
+$beigu_datums = null;
+if (isset($data['beigu_datums']) && $data['beigu_datums'] !== '') {
+    $beigu_datums = str_replace('T', ' ', substr(trim((string)$data['beigu_datums']), 0, 19));
+}
+
+$piedavata_summa = isset($data['piedavata_summa']) && $data['piedavata_summa'] !== '' ? (float)$data['piedavata_summa'] : null;
+$finansesanas_veids = isset($data['finansesanas_veids']) && $data['finansesanas_veids'] !== '' ? trim((string)$data['finansesanas_veids']) : null;
+
 try {
-    $query = "UPDATE est_pieteikumi SET statuss = ? WHERE id = ? AND lietotaja_id = ?";
+    $query = "UPDATE est_pieteikumi SET 
+                statuss = ?, 
+                vards_uzvards = ?, 
+                epasts = ?, 
+                telefons = ?, 
+                komentars = ?, 
+                ires_menesi = ?, 
+                nav_zinams = ?, 
+                ires_sakuma_datums = ?, 
+                sakuma_datums = ?, 
+                beigu_datums = ?, 
+                piedavata_summa = ?, 
+                finansesanas_veids = ? 
+              WHERE id = ? AND lietotaja_id = ?";
     $stmt = $savienojums->prepare($query);
     if (!$stmt) {
         echo json_encode(['success' => false, 'message' => 'Database error']);
         exit();
     }
-    $stmt->bind_param('sii', $dbStatus, $application_id, $user_id);
+    $stmt->bind_param(
+        'sssssiissssdii',
+        $dbStatus,
+        $vards_uzvards,
+        $epasts,
+        $telefons,
+        $komentars,
+        $ires_menesi,
+        $nav_zinams,
+        $ires_sakuma_datums,
+        $sakuma_datums,
+        $beigu_datums,
+        $piedavata_summa,
+        $finansesanas_veids,
+        $application_id,
+        $user_id
+    );
     $result = $stmt->execute();
     $stmt->close();
 
-    if ($result && $savienojums->affected_rows > 0) {
+    if ($result) {
         echo json_encode(['success' => true, 'message' => 'Application updated successfully']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Application not found or no changes made']);
     }
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error']);
+} catch (Throwable $e) {
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

@@ -79,6 +79,14 @@ function expirePlanIfNeeded(mysqli $conn, array $user): array
         $stmt->close();
     }
 
+    $stmtListings = $conn->prepare("UPDATE est_homes SET statuss = 'Neaktivs' WHERE ipasnieka_id = ? AND statuss = 'Aktivs'");
+    if ($stmtListings) {
+        $userId = (int)$user['lietotaja_id'];
+        $stmtListings->bind_param('i', $userId);
+        $stmtListings->execute();
+        $stmtListings->close();
+    }
+
     $user['plans'] = 'Nekads';
     $user['plans_aktivizets'] = null;
     $user['plana_beigas'] = null;

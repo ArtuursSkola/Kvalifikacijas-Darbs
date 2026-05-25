@@ -5,6 +5,7 @@ session_start();
 require_once __DIR__ . '/../con_db.php';
 require_once __DIR__ . '/../routes/main.php';
 require_once __DIR__ . '/../includes/account.php';
+require_once __DIR__ . '/../includes/mailer.php';
 
 function json_out(array $payload, int $code = 200): never
 {
@@ -220,6 +221,30 @@ if ($action === 'pieteikums_create') {
 
     $newId = (int)$ins->insert_id;
     $ins->close();
+
+    if (mail_is_configured()) {
+        $ownStmt = $savienojums->prepare(
+            'SELECT h.nosaukums, u.epasts, u.lietotajvards FROM est_homes h '
+            . 'INNER JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
+        );
+        if ($ownStmt) {
+            $ownStmt->bind_param('i', $homeId);
+            $ownStmt->execute();
+            $ownRow = $ownStmt->get_result()->fetch_assoc();
+            $ownStmt->close();
+            if ($ownRow) {
+                mail_notify_owner_new_pieteikums(
+                    (string)($ownRow['epasts'] ?? ''),
+                    (string)($ownRow['lietotajvards'] ?? 'Īpašnieks'),
+                    (string)($ownRow['nosaukums'] ?? 'Sludinājums'),
+                    $vardsUzvards,
+                    $epasts,
+                    $newId
+                );
+            }
+        }
+    }
+
     $savienojums->close();
     json_out(['ok' => true, 'id' => $newId]);
 }
@@ -234,30 +259,33 @@ $where = " WHERE statuss = 'Aktivs'";
 $order = " ORDER BY created_at DESC";
 
 $stmt = null;
+// Iegūst visus aktīvos sludinājumus no datubāzes
 $result = $savienojums->query($select . $where . $order);
-
 
 $homes = [];
 $fallbackImg = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70';
 
 $rawHomes = [];
 $ownerIds = [];
-
+// Apstrādā datubāzes rezultātus
 if ($result && $result instanceof mysqli_result) {
     while ($row = $result->fetch_assoc()) {
         $ownerId = (int)($row['ipasnieka_id'] ?? 0);
+        // Saglabā īpašnieku ID atsevišķai informācijas izgūšanai
         if ($ownerId > 0) {
             $ownerIds[] = $ownerId;
         }
+        // Saglabā “raw” datus tālākai apstrādei
         $rawHomes[] = $row;
     }
 }
-
+// Iegūst īpašnieku informāciju vienā piegājienā (optimizācija)
 $ownersMap = [];
 if ($ownerIds !== []) {
     $uniqueOwnerIds = array_unique($ownerIds);
     $safeOwnerIds = implode(',', array_map('intval', $uniqueOwnerIds));
-    $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde, plans FROM est_lietotaji WHERE lietotaja_id IN ($safeOwnerIds)");
+    $ownerStmt = $savienojums->prepare("SELECT lietotaja_id, lietotajvards, profila_bilde,
+       plans FROM est_lietotaji WHERE lietotaja_id IN ($safeOwnerIds)");
     if ($ownerStmt) {
         $ownerStmt->execute();
         $ownerRes = $ownerStmt->get_result();

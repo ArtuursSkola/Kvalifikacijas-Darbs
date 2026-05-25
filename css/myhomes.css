@@ -183,7 +183,7 @@
     flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1640px) {
     .myhomes-page .myhomes-hero {
         padding: 120px 20px 70px;
     }

@@ -1,4 +1,3 @@
-
 :root {
     --primary: #1d2733;
     --primary-light: #2c3e50;
@@ -79,7 +78,7 @@
     right: 16px;
     width: 42px;
     height: 42px;
-    background: rgba(255,255,255,0.95);
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -116,8 +115,8 @@
     margin-bottom: 16px;
 }
 
-.property-location i { 
-    color: var(--accent); 
+.property-location i {
+    color: var(--accent);
 }
 
 .property-features {
@@ -210,7 +209,12 @@ body {
     color: var(--gray-800);
     overflow-x: hidden;
     padding-top: 80px;
+}
 
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
 }
 
 @media (max-width: 768px) {
@@ -231,6 +235,7 @@ ul {
 
 .navbar {
     display: flex;
+    justify-content: space-between;
     align-items: center;
     padding: 24px 48px;
     background-color: var(--white);
@@ -256,7 +261,7 @@ ul {
 .navbar.navbar--hero:not(.scrolled) .nav-links a,
 .navbar.navbar--hero:not(.scrolled) .hamburger,
 .navbar.navbar--hero:not(.scrolled) .hamburger i,
-.navbar.navbar--hero:not(.scrolled) .auth-buttons > span,
+.navbar.navbar--hero:not(.scrolled) .auth-buttons>span,
 .navbar.navbar--hero:not(.scrolled) .btn-login {
     color: var(--white) !important;
 }
@@ -288,7 +293,7 @@ ul {
 .navbar.scrolled .nav-links a,
 .navbar.scrolled .hamburger,
 .navbar.scrolled .hamburger i,
-.navbar.scrolled .auth-buttons > span,
+.navbar.scrolled .auth-buttons>span,
 .navbar.scrolled .btn-login {
     color: var(--primary) !important;
 }
@@ -307,7 +312,7 @@ ul {
     background: rgba(48, 182, 7, 0.1) !important;
 }
 
-.logo { 
+.logo {
     font-size: 1.6rem;
     font-weight: 800;
     color: var(--primary);
@@ -320,11 +325,10 @@ ul {
 
 .nav-links {
     display: flex;
+    flex: 1;
+    justify-content: center;
     gap: 8px;
     list-style: none;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     align-items: center;
     white-space: nowrap;
 }
@@ -341,8 +345,6 @@ ul {
     display: flex;
     align-items: center;
     gap: 12px;
-    position: absolute;
-    right: 48px;
 }
 
 
@@ -400,7 +402,7 @@ ul {
     background: var(--white);
     border: 1px solid rgba(44, 62, 80, 0.14);
     border-radius: 16px;
-    box-shadow: 0 22px 60px rgba(0,0,0,0.16);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.16);
     padding: 10px;
     z-index: 1200;
     opacity: 0;
@@ -502,6 +504,20 @@ ul {
     border-color: rgba(48, 182, 7, 0.18);
 }
 
+.profile-dropdown__nav-links-mobile {
+    display: none;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(44, 62, 80, 0.10);
+    margin-bottom: 10px;
+}
+
+
+@media (max-width: 1640px) {
+    .navbar[data-logged-in="true"] .profile-dropdown__nav-links-mobile {
+        display: block;
+    }
+}
+
 
 .settings-modal {
     position: fixed;
@@ -517,7 +533,7 @@ ul {
 .settings-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.55);
+    background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(2px);
 }
 
@@ -530,7 +546,7 @@ ul {
     background: var(--white);
     border-radius: 18px;
     border: 1px solid rgba(44, 62, 80, 0.14);
-    box-shadow: 0 24px 80px rgba(0,0,0,0.22);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
     padding: 18px 18px 22px;
 }
 
@@ -653,7 +669,7 @@ ul {
     border-radius: 50%;
     overflow: hidden;
     border: 1px solid rgba(44, 62, 80, 0.16);
-    background: rgba(44,62,80,0.05);
+    background: rgba(44, 62, 80, 0.05);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -740,11 +756,11 @@ ul {
     }
 }
 
-.auth-buttons > span {
+.auth-buttons>span {
     color: var(--primary);
 }
 
-.navbar.scrolled .auth-buttons > span {
+.navbar.scrolled .auth-buttons>span {
     color: var(--primary);
 }
 
@@ -797,42 +813,57 @@ body.no-scroll {
 
 }
 
-@media (max-width: 768px) {
-    .hamburger {
+
+
+@media (max-width: 1700px) {
+    .navbar[data-logged-in="true"] .nav-links {
+        display: none !important;
+    }
+    .navbar[data-logged-in="true"] .profile-dropdown__nav-links-mobile {
+        display: block;
+    }
+}
+
+
+@media (max-width: 1000px) {
+    .navbar[data-logged-in="false"] .nav-links {
+        display: none;
+    }
+    .navbar[data-logged-in="false"] .auth-buttons {
+        display: none;
+    }
+    .navbar[data-logged-in="false"] .hamburger {
         display: block;
     }
 
-    .nav-links {
+    .nav-links.mobile-active {
+        display: flex !important;
         position: fixed;
         top: 0;
-        right: -100%;
-        width: 70%;
+        left: 0;
+        width: 100%;
         height: 100vh;
         background-color: var(--white);
-        display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 30px;
-        transition: 0.5s;
+        transition: transform 0.5s;
         box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
         z-index: 1000;
+        transform: translateX(-100%);
     }
 
-    .nav-links.active {
-        right: 0;
+    .nav-links.mobile-active.active {
+        transform: translateX(0);
     }
 
-    .nav-links a {
+    .nav-links.mobile-active a {
         color: var(--gray-600);
         font-size: 1.2rem;
     }
 
-    .auth-buttons {
-        display: none;
-    }
-
-    .nav-links .auth-buttons-mobile {
+    .nav-links.mobile-active .auth-buttons-mobile {
         display: flex;
         flex-direction: column;
         gap: 15px;
@@ -842,30 +873,45 @@ body.no-scroll {
         border-top: 1px solid var(--gray-200);
     }
 
-    .nav-links .auth-buttons-mobile span {
+    .nav-links.mobile-active .auth-buttons-mobile span {
         color: var(--primary);
         margin-right: 0 !important;
         font-size: 1rem;
         font-weight: 600;
     }
 
-    .nav-links .auth-buttons-mobile .btn-login,
-    .nav-links .auth-buttons-mobile .btn-register {
+    .nav-links.mobile-active .auth-buttons-mobile .btn-login,
+    .nav-links.mobile-active .auth-buttons-mobile .btn-register {
         width: 100%;
         text-align: center;
         padding: 12px;
     }
 
-    .nav-links .auth-buttons-mobile .btn-login {
+    .nav-links.mobile-active .auth-buttons-mobile .btn-login {
         color: var(--primary);
     }
 
-    .nav-links .auth-buttons-mobile .btn-register {
+    .nav-links.mobile-active .auth-buttons-mobile .btn-register {
         background-color: var(--accent);
         color: var(--white);
     }
 }
 
+body.no-scroll .hamburger,
+body.no-scroll .hamburger i,
+body.no-scroll .navbar.navbar--hero:not(.scrolled) .hamburger,
+body.no-scroll .navbar.navbar--hero:not(.scrolled) .hamburger i {
+    color: var(--primary) !important;
+}
+
+body.no-scroll .navbar.navbar--hero:not(.scrolled) .nav-links.mobile-active a {
+    color: var(--gray-600) !important;
+}
+
+body.no-scroll .navbar.navbar--hero:not(.scrolled) .nav-links.mobile-active .auth-buttons-mobile span,
+body.no-scroll .navbar.navbar--hero:not(.scrolled) .nav-links.mobile-active .auth-buttons-mobile .btn-login {
+    color: var(--primary) !important;
+}
 
 .hero {
     min-height: 100vh;
@@ -907,6 +953,8 @@ body.no-scroll {
     position: relative;
     z-index: 10;
     max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
     transition: transform 0.6s ease-out, opacity 0.6s ease-out;
 }
 
@@ -2632,9 +2680,9 @@ body.auth-page {
 
 
 body.auth-page {
-    background: radial-gradient(circle at 18% 20%, rgba(48,182,7,0.08), transparent 32%),
-                radial-gradient(circle at 82% 8%, rgba(44,62,80,0.07), transparent 34%),
-                var(--light-bg);
+    background: radial-gradient(circle at 18% 20%, rgba(48, 182, 7, 0.08), transparent 32%),
+        radial-gradient(circle at 82% 8%, rgba(44, 62, 80, 0.07), transparent 34%),
+        var(--light-bg);
 }
 
 .auth-wrapper {
@@ -2650,7 +2698,7 @@ body.auth-page {
     margin: 0 auto;
     border-radius: 18px;
     padding: 34px 30px;
-    box-shadow: 0 18px 48px rgba(0,0,0,0.12);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
     border: 1px solid #e6ecf0;
     background: var(--white);
 }
@@ -2664,7 +2712,8 @@ body.auth-page {
     color: var(--primary-color);
 }
 
-.auth-subtitle, .auth-sub {
+.auth-subtitle,
+.auth-sub {
     text-align: center;
     font-weight: 600;
     color: var(--text-light);
@@ -2693,7 +2742,10 @@ body.auth-page {
     padding: 14px;
 }
 
-.error-msg, .error-message, .error, .msg.err {
+.error-msg,
+.error-message,
+.error,
+.msg.err {
     padding: 12px 12px;
     border-radius: 10px;
     font-weight: 600;
@@ -2703,7 +2755,8 @@ body.auth-page {
     border: 1px solid #f1c1bd;
 }
 
-.success-msg, .msg.ok {
+.success-msg,
+.msg.ok {
     padding: 12px 12px;
     border-radius: 10px;
     font-weight: 600;
@@ -2727,7 +2780,7 @@ body.auth-page {
 
 footer {
     background: #1d2733;
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
     padding: 80px 20px 24px;
     position: relative;
     z-index: 10;
@@ -2748,7 +2801,9 @@ footer {
     margin-bottom: 20px;
 }
 
-.footer-col h3 span { color: #30b607; }
+.footer-col h3 span {
+    color: #30b607;
+}
 
 .footer-col p {
     line-height: 1.8;
@@ -2766,7 +2821,7 @@ footer {
 }
 
 .footer-col ul a {
-    color: rgba(255,255,255,0.7);
+    color: rgba(255, 255, 255, 0.7);
     transition: all 0.2s;
 }
 
@@ -2784,7 +2839,7 @@ footer {
 .footer-social a {
     width: 44px;
     height: 44px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -2799,25 +2854,29 @@ footer {
 }
 
 .footer-bottom {
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 24px;
     text-align: center;
     font-size: 0.9rem;
-    color: rgba(255,255,255,0.5);
+    color: rgba(255, 255, 255, 0.5);
     max-width: 1200px;
     margin: 0 auto;
 }
 
 @media (max-width: 1024px) {
-    .footer-content { grid-template-columns: repeat(2, 1fr); }
+    .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 768px) {
-    .footer-content { 
-        grid-template-columns: 1fr; 
-        text-align: center; 
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
         gap: 32px;
     }
-    .footer-social { justify-content: center; }
-}
 
+    .footer-social {
+        justify-content: center;
+    }
+}
