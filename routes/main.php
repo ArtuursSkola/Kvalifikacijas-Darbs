@@ -134,6 +134,7 @@ function main_routes(): array
         'account.favourites' => 'account/favourites.php',
         'account.settings' => 'account/update_profile.php',
         'account.password' => 'account/change_password.php',
+        'account.subscription_toggle' => 'account/subscription_toggle.php',
         'account.become_owner' => 'account/become_owner.php',
         'payment.checkout' => 'payments/checkout.php',
         'payment.checkout_offer' => 'payments/checkout_offer.php',

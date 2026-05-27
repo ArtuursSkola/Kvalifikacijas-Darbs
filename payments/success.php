@@ -60,7 +60,7 @@ try {
             $activatedAt = date('Y-m-d H:i:s');
             $planExpiresAt = date('Y-m-d H:i:s', strtotime('+30 days'));
             $stmtUp = $savienojums->prepare("UPDATE est_lietotaji
-                SET loma='ipasnieks', plans=?, plans_aktivizets=?, plana_beigas=?
+                SET loma='ipasnieks', plans=?, plans_aktivizets=?, plana_beigas=?, abonements='Aktivs'
                 WHERE lietotajvards=?");
             if ($stmtUp) {
                 $stmtUp->bind_param("ssss", $plana_vards, $activatedAt, $planExpiresAt, $username);

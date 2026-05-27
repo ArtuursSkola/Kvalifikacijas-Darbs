@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/../con_db.php';
 
-
 $stmt = $savienojums->prepare("
     SELECT lietotaja_id, lietotajvards, plans, plana_beigas
     FROM est_lietotaji 
     WHERE plans IN ('Sudraba', 'Zelta') 
     AND plana_beigas IS NOT NULL
     AND plana_beigas <= NOW()
+    AND abonements = 'Aktivs'
 ");
 $stmt->execute();
 $result = $stmt->get_result();

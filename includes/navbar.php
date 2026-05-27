@@ -28,9 +28,17 @@ $settingsUrl = main_route('account.settings_page');
 $planHistory = $currentUser ? fetchUserPlanHistory($savienojums, (int)($currentUser['lietotaja_id'] ?? 0), $currentUser) : [];
 $propertyHistory = $currentUser ? fetchUserPropertyTransactions($savienojums, (int)($currentUser['lietotaja_id'] ?? 0)) : [];
 
+if (empty($_SESSION['csrf_token_main'])) {
+    $_SESSION['csrf_token_main'] = bin2hex(random_bytes(32));
+}
+
 $renewPlanName = in_array($currentPlanLabel, ['Sudraba', 'Zelta'], true) ? $currentPlanLabel : null;
 $renewPlanPrice = $renewPlanName === 'Zelta' ? 2999 : ($renewPlanName === 'Sudraba' ? 999 : null);
 $myHomesUrl = main_route('property.myhomes');
+
+$hasActivePaidPlan = $currentUser ? userHasActivePaidPlan($currentUser) : false;
+$abonementsStatus = $currentUser ? (string)($currentUser['abonements'] ?? 'Aktivs') : 'Aktivs';
+$abonementsActive = $abonementsStatus !== 'Neaktivs';
 ?>
 
 <nav class="navbar navbar--hero<?php echo $navbarClass !== '' ? ' ' . htmlspecialchars($navbarClass) : ''; ?>" id="navbar"
@@ -255,6 +263,15 @@ $myHomesUrl = main_route('property.myhomes');
                 <?php if ($isOwner): ?>
                 <section class="settings-panel">
                     <h3>Plāns</h3>
+                    <?php
+                    $flash = $_SESSION['settings_flash'] ?? null;
+                    if (is_array($flash) && !empty($flash['message']) && ($flash['section'] ?? '') === 'plan'):
+                        unset($_SESSION['settings_flash']);
+                    ?>
+                        <div class="settings-flash settings-flash--<?php echo htmlspecialchars((string)($flash['type'] ?? 'info')); ?>" style="margin-bottom: 15px; border-radius: 12px; padding: 10px; background: rgba(48, 182, 7, 0.08); color: #166534; border: 1px solid rgba(48, 182, 7, 0.2); font-weight: 600; font-size: 0.9rem;">
+                            <?php echo htmlspecialchars((string)$flash['message']); ?>
+                        </div>
+                    <?php endif; ?>
                     <div class="settings-stat-list">
                         <div class="settings-stat">
                             <span>Aktīvais plāns</span>
@@ -283,10 +300,42 @@ $myHomesUrl = main_route('property.myhomes');
                     </div>
 
                     <div style="margin-top: 12px; display:flex; gap:10px; flex-wrap:wrap;">
-                        <?php if ($renewPlanName && $renewPlanPrice !== null): ?>
-                            <a class="btn-submit" href="<?php echo main_route('payment.checkout', ['plan' => $renewPlanName, 'price' => $renewPlanPrice]); ?>">Atjaunot plānu</a>
+                        <?php if ($planDaysLeft !== null): ?>
+                            <?php if ($abonementsActive): ?>
+                                <form method="POST" action="<?php echo main_route('account.subscription_toggle'); ?>" style="margin:0;" onsubmit="return confirm('Atcelt abonementu? Plāns būs aktīvs līdz termiņa beigām.');">
+                                    <input type="hidden" name="csrf" value="<?php echo htmlspecialchars((string)($_SESSION['csrf_token_main'] ?? '')); ?>">
+                                    <input type="hidden" name="mode" value="cancel">
+                                    <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars((string)($_SERVER['REQUEST_URI'] ?? main_route('home')) . '#settings-modal'); ?>">
+                                    <button type="submit" class="btn-submit" style="background: rgba(231, 76, 60, 0.12); border: 1px solid rgba(231, 76, 60, 0.25); color: #b91c1c;">Atcelt abonementu</button>
+                                </form>
+                            <?php else: ?>
+                                <form method="POST" action="<?php echo main_route('account.subscription_toggle'); ?>" style="margin:0;">
+                                    <input type="hidden" name="csrf" value="<?php echo htmlspecialchars((string)($_SESSION['csrf_token_main'] ?? '')); ?>">
+                                    <input type="hidden" name="mode" value="continue">
+                                    <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars((string)($_SERVER['REQUEST_URI'] ?? main_route('home')) . '#settings-modal'); ?>">
+                                    <button type="submit" class="btn-submit" style="background: rgba(48, 182, 7, 0.12); border: 1px solid rgba(48, 182, 7, 0.25); color: #166534;">Turpināt abonementu</button>
+                                </form>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <?php
+                            $lastPlan = null;
+                            $lastPrice = null;
+                            if (!empty($planHistory)) {
+                                foreach ($planHistory as $ph) {
+                                    if (in_array($ph['plana_vards'] ?? '', ['Sudraba', 'Zelta'])) {
+                                        $lastPlan = $ph['plana_vards'];
+                                        $lastPrice = $lastPlan === 'Zelta' ? 2999 : 999;
+                                        break;
+                                    }
+                                }
+                            }
+                            ?>
+                            <?php if ($lastPlan): ?>
+                                <a class="btn-submit" href="<?php echo main_route('payment.checkout', ['plan' => $lastPlan, 'price' => $lastPrice]); ?>">Atjaunot abonementu</a>
+                            <?php else: ?>
+                                <a class="btn-submit" href="<?php echo main_route('owner'); ?>">Atjaunot abonementu</a>
+                            <?php endif; ?>
                         <?php endif; ?>
-
                     </div>
                 </section>
 
