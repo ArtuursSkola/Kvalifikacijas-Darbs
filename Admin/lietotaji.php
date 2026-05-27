@@ -264,7 +264,7 @@ if (!empty($errors)) {
             <li><a href="<?php echo admin_route('listings'); ?>"><i class="fas fa-building"></i> Sludinājumi</a></li>
             <li><a href="<?php echo admin_route('palidziba'); ?>"><i class="fas fa-headset"></i> Palīdzības centrs</a></li>
             <li><a href="<?php echo admin_route('subscription_dashboard'); ?>"><i class="fas fa-shopping-cart"></i> Abonementi</a></li>
-            <li><a href="<?php echo admin_route('subscription_dashboard'); ?>"><i class="fas fa-chart-bar"></i> Statistika</a></li>
+            <li><a href="<?php echo admin_route('statistics'); ?>"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>
         </ul>
         <div class="sidebar-user">

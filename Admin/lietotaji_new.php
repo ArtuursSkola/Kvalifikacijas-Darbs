@@ -187,7 +187,7 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
             <?php endif; ?>
             <li><a href="<?php echo admin_route('listings'); ?>"><i class="fas fa-building"></i> Sludinājumi</a></li>
             <li><a href="#"><i class="fas fa-shopping-cart"></i> Pirkumi</a></li>
-            <li><a href="#"><i class="fas fa-chart-bar"></i> Statistika</a></li>
+            <li><a href="<?php echo admin_route('statistics'); ?>"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>
         </ul>
         <div class="sidebar-user">

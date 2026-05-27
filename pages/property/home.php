@@ -314,9 +314,6 @@ $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
                         <a href="#" class="agent-contact" onclick="return false;" style="opacity:0.55; cursor:not-allowed;">
                             <i class="fas fa-envelope"></i> Izveidot pieteikumu
                         </a>
-                        <button class="chat-icon-btn" onclick="startChatWithUser(<?php echo $ownerId; ?>, '<?php echo htmlspecialchars($ownerName, ENT_QUOTES); ?>')" title="Sazināties ar īpašnieku">
-                            <i class="fas fa-comment"></i>
-                        </button>
                     <?php endif; ?>
                 </div>
             </div>
@@ -391,19 +388,43 @@ $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
         document.addEventListener('DOMContentLoaded', () => {
             const now = new Date();
             const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            const todayDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
             const ltStart = document.getElementById('lt_start_date');
             const stStart = document.getElementById('st_start_date');
             const stEnd = document.getElementById('st_end_date');
 
-            if (ltStart) ltStart.min = localNow;
-            if (stStart) stStart.min = localNow;
-            if (stEnd) stEnd.min = localNow;
+            function updateDateTimeMin(input) {
+                if (!input) return;
+                const currentValue = input.value;
+                if (!currentValue) {
+                    input.min = localNow;
+                    return;
+                }
+                const selectedDate = currentValue.slice(0, 10);
+                if (selectedDate > todayDate) {
+                    input.min = selectedDate + 'T00:00';
+                } else {
+                    input.min = localNow;
+                }
+            }
 
-            if (stStart && stEnd) {
+            if (ltStart) {
+                ltStart.min = localNow;
+                ltStart.addEventListener('change', () => updateDateTimeMin(ltStart));
+            }
+            if (stStart) {
+                stStart.min = localNow;
                 stStart.addEventListener('change', () => {
-                    stEnd.min = stStart.value;
+                    updateDateTimeMin(stStart);
+                    if (stEnd) {
+                        stEnd.min = stStart.value;
+                    }
                 });
+            }
+            if (stEnd) {
+                stEnd.min = localNow;
+                stEnd.addEventListener('change', () => updateDateTimeMin(stEnd));
             }
 
             const calendar = document.getElementById('sidebar-calendar');

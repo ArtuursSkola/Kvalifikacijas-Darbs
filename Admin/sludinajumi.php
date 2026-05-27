@@ -1,5 +1,6 @@
 <?php
 session_start();
+ob_start();
 require_once __DIR__ . '/../routes/admin.php';
 require_once __DIR__ . '/../includes/popup_system.php';
 
@@ -19,6 +20,58 @@ $success = '';
 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+if (isset($_POST['update_listing_status'])) {
+    if (ob_get_length() !== false) {
+        ob_clean();
+    }
+    header('Content-Type: application/json; charset=utf-8');
+
+    if (!isset($_POST['csrf']) || !hash_equals($_SESSION['csrf_token'] ?? '', (string)$_POST['csrf'])) {
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'message' => 'CSRF marķiera validācija neizdevās!']);
+        exit;
+    }
+
+    $id = (int)($_POST['listing_id'] ?? 0);
+    $status = (string)($_POST['status'] ?? '');
+
+    $allowed = ['Aktivs', 'Melnraksts', 'Noraidīts', 'Pardots', 'Neaktivs'];
+    if ($id <= 0 || !in_array($status, $allowed, true)) {
+        http_response_code(422);
+        echo json_encode(['ok' => false, 'message' => 'Nederīgi dati.']);
+        exit;
+    }
+
+    $stmt = $savienojums->prepare("UPDATE est_homes SET statuss = ? WHERE id = ?");
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'Neizdevās saglabāt.']);
+        exit;
+    }
+
+    $stmt->bind_param('si', $status, $id);
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    if (!$ok) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'Neizdevās saglabāt.']);
+        exit;
+    }
+
+    $statusClass = ['Aktivs' => 'green', 'Melnraksts' => 'gray', 'Noraidīts' => 'red', 'Pardots' => 'blue', 'Neaktivs' => 'gray'];
+    $statusLabel = ['Aktivs' => 'Aktīvs', 'Melnraksts' => 'Gaida apstiprinājumu', 'Noraidīts' => 'Noraidīts', 'Pardots' => 'Pārdots', 'Neaktivs' => 'Neaktīvs'];
+
+    echo json_encode([
+        'ok' => true,
+        'id' => $id,
+        'status' => $status,
+        'badgeClass' => $statusClass[$status] ?? 'gray',
+        'label' => $statusLabel[$status] ?? $status
+    ]);
+    exit;
 }
 
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
@@ -213,7 +266,7 @@ if (isset($_SESSION['admin_success'])) {
             <li><a href="<?php echo admin_route('listings'); ?>" class="active"><i class="fas fa-building"></i> Sludinājumi</a></li>
             <li><a href="<?php echo admin_route('palidziba'); ?>"><i class="fas fa-headset"></i> Palīdzības centrs</a></li>
             <li><a href="<?php echo admin_route('subscription_dashboard'); ?>"><i class="fas fa-shopping-cart"></i> Abonementi</a></li>
-            <li><a href="<?php echo admin_route('subscription_dashboard'); ?>"><i class="fas fa-chart-bar"></i> Statistika</a></li>
+            <li><a href="<?php echo admin_route('statistics'); ?>"><i class="fas fa-chart-bar"></i> Statistika</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Iestatījumi</a></li>
         </ul>
         <div class="sidebar-user">
@@ -329,7 +382,7 @@ if (isset($_SESSION['admin_success'])) {
                             <tr><td colspan="9" style="text-align:center;color:#6b7a8f;padding:40px;">Nav sludinājumu</td></tr>
                         <?php else: ?>
                             <?php foreach ($homes as $h): ?>
-                                <tr>
+                                <tr data-listing-id="<?php echo (int)$h['id']; ?>">
                                     <td><?php echo $h['id']; ?></td>
                                     <td><strong><?php echo htmlspecialchars($h['nosaukums']); ?></strong></td>
                                     <td><?php echo htmlspecialchars($h['pilseta']); ?></td>
@@ -342,11 +395,11 @@ if (isset($_SESSION['admin_success'])) {
                                     <td><?php echo htmlspecialchars($h['owner_name'] ?? '—'); ?></td>
                                     <td>
                                         <?php
-                                        $statusClass = ['Aktivs' => 'green', 'Melnraksts' => 'gray', 'Noraidīts' => 'red', 'Pardots' => 'blue'];
-                                        $statusLabel = ['Aktivs' => 'Aktīvs', 'Melnraksts' => 'Gaida apstiprinājumu', 'Noraidīts' => 'Noraidīts', 'Pardots' => 'Pārdots'];
+                                        $statusClass = ['Aktivs' => 'green', 'Melnraksts' => 'gray', 'Noraidīts' => 'red', 'Pardots' => 'blue', 'Neaktivs' => 'gray'];
+                                        $statusLabel = ['Aktivs' => 'Aktīvs', 'Melnraksts' => 'Gaida apstiprinājumu', 'Noraidīts' => 'Noraidīts', 'Pardots' => 'Pārdots', 'Neaktivs' => 'Neaktīvs'];
                                         $st = $h['statuss'] ?: 'Melnraksts';
                                         ?>
-                                        <span class="badge <?php echo $statusClass[$st] ?? 'gray'; ?>">
+                                        <span class="badge <?php echo $statusClass[$st] ?? 'gray'; ?>" data-status-badge="<?php echo (int)$h['id']; ?>">
                                             <?php echo $statusLabel[$st] ?? $st; ?>
                                         </span>
                                     </td>
@@ -357,10 +410,11 @@ if (isset($_SESSION['admin_success'])) {
                                                 <a href="<?php echo buildUrl(['approve' => $h['id']]); ?>" class="btn-sm approve" onclick="return confirm('Apstiprināt šo sludinājumu?')" title="Apstiprināt"><i class="fas fa-check"></i></a>
                                                 <a href="<?php echo buildUrl(['reject' => $h['id']]); ?>" class="btn-sm reject" onclick="return confirm('Noraidīt šo sludinājumu?')" title="Noraidīt"><i class="fas fa-times"></i></a>
                                             <?php endif; ?>
+                                            <a href="#" class="btn-sm status" data-action="status" data-id="<?php echo (int)$h['id']; ?>" data-status="<?php echo htmlspecialchars($st); ?>" title="Mainīt statusu"><i class="fas fa-eye"></i></a>
                                             <a class="btn-sm edit"
                                                href="<?php echo main_route('property.create'); ?>?id=<?php echo $h['id']; ?>&source=admin" title="Rediģēt"><i class="fas fa-edit"></i></a>
                                             <a href="<?php echo main_route('property.show', ['id' => $h['id'], 'from' => 'admin_listings']); ?>" class="btn-sm view" target="_blank" title="Skatīt">
-                                                <i class="fas fa-eye"></i>
+                                                <i class="fas fa-up-right-from-square"></i>
                                             </a>
                                             <a href="<?php echo buildUrl(['delete' => $h['id'], 'csrf' => $_SESSION['csrf_token']]); ?>" class="btn-sm delete" onclick="return confirm('Vai tiešām dzēst?')" title="Dzēst"><i class="fas fa-trash"></i></a>
                                         </div>
@@ -403,7 +457,7 @@ if (isset($_SESSION['admin_success'])) {
                     <div class="form-group">
                         <label>Nosaukums *</label>
                         <input type="text" name="title" required>
-                    </div>
+                    </div> q
                     <div class="form-row">
                         <div class="form-group">
                             <label>Pilsēta *</label>
@@ -497,6 +551,95 @@ if (isset($_SESSION['admin_success'])) {
             </form>
         </div>
     </div>
+
+    <div class="modal-overlay" id="statusModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-eye"></i> Mainīt statusu</h3>
+                <button class="modal-close" onclick="closeModal('statusModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="status_listing_id">
+                <div class="form-group">
+                    <label>Statuss</label>
+                    <select id="status_value">
+                        <option value="Melnraksts">Melnraksts</option>
+                        <option value="Aktivs">Aktīvs</option>
+                        <option value="Noraidīts">Noraidīts</option>
+                        <option value="Pardots">Pārdots</option>
+                        <option value="Neaktivs">Neaktīvs</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('statusModal')">Atcelt</button>
+                <button type="button" class="btn btn-primary" id="status_save_btn">Saglabāt</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const csrf = <?php echo json_encode($_SESSION['csrf_token']); ?>;
+            const modalIdInput = document.getElementById('status_listing_id');
+            const modalStatusSelect = document.getElementById('status_value');
+            const saveBtn = document.getElementById('status_save_btn');
+
+            const open = (id, status) => {
+                if (modalIdInput) modalIdInput.value = id;
+                if (modalStatusSelect) modalStatusSelect.value = status || 'Melnraksts';
+                if (window.openModal) window.openModal('statusModal');
+            };
+
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('a[data-action="status"]');
+                if (!btn) return;
+                e.preventDefault();
+                open(btn.getAttribute('data-id'), btn.getAttribute('data-status'));
+            });
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', async () => {
+                    const id = Number(modalIdInput && modalIdInput.value);
+                    const status = modalStatusSelect ? modalStatusSelect.value : '';
+                    if (!id || !status) return;
+
+                    saveBtn.disabled = true;
+                    try {
+                        const fd = new FormData();
+                        fd.append('update_listing_status', '1');
+                        fd.append('listing_id', String(id));
+                        fd.append('status', status);
+                        fd.append('csrf', csrf);
+
+                        const res = await fetch(window.location.href, { method: 'POST', body: fd, credentials: 'same-origin' });
+                        const data = await res.json().catch(() => null);
+
+                        if (!res.ok || !data || !data.ok) {
+                            showPageAlert((data && data.message) ? data.message : 'Neizdevās saglabāt.', 'error');
+                            return;
+                        }
+
+                        const badge = document.querySelector('[data-status-badge="' + id + '"]');
+                        if (badge) {
+                            badge.className = 'badge ' + (data.badgeClass || 'gray');
+                            badge.textContent = data.label || data.status || status;
+                        }
+
+                        const btn = document.querySelector('a[data-action="status"][data-id="' + id + '"]');
+                        if (btn) btn.setAttribute('data-status', data.status || status);
+
+                        closeModal('statusModal');
+                        showPageAlert('Statuss saglabāts.', 'success');
+                    } catch (_) {
+                        showPageAlert('Neizdevās saglabāt.', 'error');
+                    } finally {
+                        saveBtn.disabled = false;
+                    }
+                });
+            }
+        })();
+    </script>
 
     <script src="../script.js"></script>
 </body>

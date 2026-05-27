@@ -19,6 +19,11 @@ if (!$receiverId || empty($message)) {
     exit;
 }
 
+if ((int)$currentUserId === (int)$receiverId) {
+    echo json_encode(['success' => false, 'message' => 'Cannot message yourself']);
+    exit;
+}
+
 
 $checkStmt = $savienojums->prepare("SELECT lietotaja_id FROM est_lietotaji WHERE lietotaja_id = ?");
 $checkStmt->bind_param('i', $receiverId);

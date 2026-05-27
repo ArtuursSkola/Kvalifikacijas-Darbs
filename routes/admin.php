@@ -13,6 +13,7 @@ function admin_routes(): array
         'moderators' => 'Admin/moderatori.php',
         'palidziba' => 'Admin/palidziba.php',
         'subscription_dashboard' => 'Admin/subscription_dashboard.php',
+        'statistics' => 'Admin/statistics.php',
         'login' => 'Admin/login.php',
     ];
 

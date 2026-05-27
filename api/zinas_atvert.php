@@ -17,6 +17,11 @@ if (!$otherUserId) {
     exit;
 }
 
+if ((int)$currentUserId === (int)$otherUserId) {
+    echo json_encode([]);
+    exit;
+}
+
 
 $stmt = $savienojums->prepare("
     SELECT z.*, u.lietotajvards as sender_name

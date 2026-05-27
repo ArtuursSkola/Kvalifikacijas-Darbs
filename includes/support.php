@@ -184,8 +184,9 @@ function loadChatMessages(userId) {
 function sendMessage() {
     const input = document.getElementById('chatInput');
     const message = input.value.trim();
+    const currentUserId = <?php echo (int)($currentUserId ?? 0); ?>;
     
-    if (message === '' || !currentChatUserId) return;
+    if (message === '' || !currentChatUserId || currentChatUserId === currentUserId) return;
     
     const formData = new FormData();
     formData.append('receiver_id', currentChatUserId);
@@ -257,6 +258,10 @@ function formatTime(dateString) {
 }
 
 function startChatWithUser(userId, userName, listingId = null) {
+    const currentUserId = <?php echo (int)($currentUserId ?? 0); ?>;
+    if (userId === currentUserId) {
+        return;
+    }
     const chatWindow = document.getElementById('chatWindow');
     if (chatWindow.style.display !== 'flex') {
         chatWindow.style.display = 'flex';

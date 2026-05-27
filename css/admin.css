@@ -344,6 +344,7 @@ tbody tr:last-child td { border-bottom: none; }
 .btn-sm.edit { background: rgba(52,152,219,0.12); color: #3498db; }
 .btn-sm.delete { background: rgba(231,76,60,0.12); color: #e74c3c; }
 .btn-sm.view { background: rgba(39,174,96,0.12); color: #27ae60; }
+.btn-sm.status { background: rgba(155,89,182,0.12); color: #9b59b6; }
 .btn-sm.approve { background: rgba(39,174,96,0.15); color: #27ae60; }
 .btn-sm.reject { background: rgba(231,76,60,0.15); color: #e74c3c; }
 .btn-sm:hover { transform: scale(1.1); }
