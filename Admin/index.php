@@ -13,6 +13,29 @@ if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin','moderato
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_2fa') {
+    $configFile = dirname(__DIR__) . '/config/2fa_status.json';
+    $currentState = true;
+    if (file_exists($configFile)) {
+        $data = json_decode(file_get_contents($configFile), true);
+        if (isset($data['enabled'])) {
+            $currentState = (bool)$data['enabled'];
+        }
+    }
+    file_put_contents($configFile, json_encode(['enabled' => !$currentState]));
+    header('Location: ' . admin_route('dashboard'));
+    exit;
+}
+
+$twoFaConfigFile = dirname(__DIR__) . '/config/2fa_status.json';
+$twoFaEnabled = true;
+if (file_exists($twoFaConfigFile)) {
+    $data = json_decode(file_get_contents($twoFaConfigFile), true);
+    if (isset($data['enabled'])) {
+        $twoFaEnabled = (bool)$data['enabled'];
+    }
+}
+
 function fetchCount(mysqli $conn, string $sql): int {
     $res = $conn->query($sql);
     if ($res && $row = $res->fetch_row()) {
@@ -244,6 +267,13 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
                     <i class="fas fa-globe"></i>
                     <span>Publiskā lapa</span>
                 </a>
+                <form method="POST" action="<?php echo admin_route('dashboard'); ?>" style="margin:0; padding:0; display:flex;">
+                    <input type="hidden" name="action" value="toggle_2fa">
+                    <button type="submit" class="quick-action" style="border:none; cursor:pointer; font:inherit; width:100%;">
+                        <i class="fas <?php echo $twoFaEnabled ? 'fa-toggle-on' : 'fa-toggle-off'; ?>" style="font-size: 24px; color: <?php echo $twoFaEnabled ? '#30b607' : '#e74c3c'; ?>"></i>
+                        <span>2FA: <?php echo $twoFaEnabled ? 'Ieslēgts' : 'Izslēgts'; ?></span>
+                    </button>
+                </form>
             </div>
         </div>
     </main>

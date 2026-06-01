@@ -65,7 +65,7 @@ $abonementsActive = $abonementsStatus !== 'Neaktivs';
         <?php endif; ?>
         <li><a href="<?php echo main_route('about'); ?>" class="<?php echo isActive('about.php'); ?>">Par mums</a></li>
         <?php if ($currentUser): ?>
-            <li><a href="/pages/myapplications.php" class="<?php echo isActive('myapplications.php'); ?>">Mani pieteikumi</a></li>
+            <li><a href="<?php echo app_url('pages/myapplications.php'); ?>" class="<?php echo isActive('myapplications.php'); ?>">Mani pieteikumi</a></li>
         <?php endif; ?>
 
         <li class="auth-buttons-mobile">
@@ -154,7 +154,7 @@ $abonementsActive = $abonementsStatus !== 'Neaktivs';
                             <i class="fas fa-info-circle"></i>
                             Par mums
                         </a>
-                        <a class="profile-dropdown__link" href="/pages/myapplications.php">
+                        <a class="profile-dropdown__link" href="<?php echo app_url('pages/myapplications.php'); ?>">
                             <i class="fas fa-file-alt"></i>
                             Mani pieteikumi
                         </a>

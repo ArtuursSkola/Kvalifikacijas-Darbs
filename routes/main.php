@@ -22,12 +22,7 @@ function app_relative_url(string $targetPath): string
 
 function app_url(string $path, array $query = []): string
 {
-    $url = app_relative_url($path);
-    if ($query !== []) {
-        $url .= '?' . http_build_query($query);
-    }
-
-    return $url;
+    return app_absolute_url($path, $query);
 }
 
 function app_absolute_url(string $path, array $query = []): string

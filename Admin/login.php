@@ -17,7 +17,16 @@ if ($twoFaCheck && mysqli_num_rows($twoFaCheck) > 0) {
 	$twoFaColumnExists = true;
 }
 
-$useEmail2fa = mail_is_configured() && $twoFaColumnExists;
+$twoFaConfigFile = dirname(__DIR__) . '/config/2fa_status.json';
+$twoFaGloballyEnabled = true;
+if (file_exists($twoFaConfigFile)) {
+	$data = json_decode(file_get_contents($twoFaConfigFile), true);
+	if (isset($data['enabled'])) {
+		$twoFaGloballyEnabled = (bool)$data['enabled'];
+	}
+}
+
+$useEmail2fa = $twoFaGloballyEnabled && $twoFaColumnExists;
 
 $mail2faHint = '';
 if (!$useEmail2fa && $twoFaColumnExists) {
@@ -181,10 +190,6 @@ if (!$useEmail2fa && isset($_GET['twofa'])) {
 					<div class="form-group">
 						<label>Parole</label>
 						<input type="password" name="password" required>
-					</div>
-					<div class="form-group">
-						<label>2FA Kods</label>
-						<input type="text" placeholder="000000">
 					</div>
 					<button type="submit" name="login_btn" class="btn-submit">Pieslēgties</button>
 				</form>

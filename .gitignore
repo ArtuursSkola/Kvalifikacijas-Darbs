@@ -1,2 +1,5 @@
 /vendor/
 /config/mail.local.php
+/con_db.php
+/.idea/deployment.xml
+/.idea/webServers.xml
