@@ -3,6 +3,7 @@ session_start();
 ob_start();
 require_once __DIR__ . '/../routes/admin.php';
 require_once __DIR__ . '/../includes/popup_system.php';
+require_once __DIR__ . '/../includes/mailer.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -98,6 +99,31 @@ if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
         if ($stmt->execute()) {
             $success = 'Sludinājums apstiprināts un tagad ir aktīvs!';
             $_SESSION['admin_success'] = 'approve_property';
+            if (mail_is_configured()) {
+                $mStmt = $savienojums->prepare(
+                    'SELECT h.nosaukums, u.epasts, u.lietotajvards FROM est_homes h '
+                    . 'JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
+                );
+                if ($mStmt) {
+                    $mStmt->bind_param('i', $approveId);
+                    $mStmt->execute();
+                    $mRow = $mStmt->get_result()->fetch_assoc();
+                    $mStmt->close();
+                    if ($mRow) {
+                        $viewUrl = main_route_absolute('property.show', ['id' => $approveId]);
+                        mail_notify_owner_listing_approved(
+                            (string)($mRow['epasts'] ?? ''),
+                            (string)($mRow['lietotajvards'] ?? 'Īpašnieks'),
+                            (string)($mRow['nosaukums'] ?? 'Sludinājums'),
+                            $viewUrl
+                        );
+                    }
+                }
+            }
+            $params = $_GET;
+            unset($params['approve'], $params['reject'], $params['reason']);
+            header('Location: ' . admin_route('listings') . ($params ? ('?' . http_build_query($params)) : ''));
+            exit;
         }
         $stmt->close();
     }
@@ -105,12 +131,40 @@ if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
 
 if (isset($_GET['reject']) && is_numeric($_GET['reject'])) {
     $rejectId = (int)$_GET['reject'];
+    $rejectReason = trim((string)($_GET['reason'] ?? ''));
+    if ($rejectReason !== '') {
+        $rejectReason = function_exists('mb_substr') ? mb_substr($rejectReason, 0, 500) : substr($rejectReason, 0, 500);
+    }
     $stmt = $savienojums->prepare("UPDATE est_homes SET statuss = 'Noraidīts' WHERE id = ?");
     if ($stmt) {
         $stmt->bind_param('i', $rejectId);
         if ($stmt->execute()) {
             $success = 'Sludinājums noraidīts.';
             $_SESSION['admin_success'] = 'reject_property';
+            if (mail_is_configured()) {
+                $mStmt = $savienojums->prepare(
+                    'SELECT h.nosaukums, u.epasts, u.lietotajvards FROM est_homes h '
+                    . 'JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
+                );
+                if ($mStmt) {
+                    $mStmt->bind_param('i', $rejectId);
+                    $mStmt->execute();
+                    $mRow = $mStmt->get_result()->fetch_assoc();
+                    $mStmt->close();
+                    if ($mRow) {
+                        mail_notify_owner_listing_rejected(
+                            (string)($mRow['epasts'] ?? ''),
+                            (string)($mRow['lietotajvards'] ?? 'Īpašnieks'),
+                            (string)($mRow['nosaukums'] ?? 'Sludinājums'),
+                            $rejectReason
+                        );
+                    }
+                }
+            }
+            $params = $_GET;
+            unset($params['approve'], $params['reject'], $params['reason']);
+            header('Location: ' . admin_route('listings') . ($params ? ('?' . http_build_query($params)) : ''));
+            exit;
         }
         $stmt->close();
     }
@@ -223,7 +277,11 @@ $rejectedCount = $savienojums->query("SELECT COUNT(*) FROM est_homes WHERE statu
 
 function buildUrl($overrides = []) {
     $params = array_merge($_GET, $overrides);
-    unset($params['delete']);
+    foreach (['delete', 'csrf', 'approve', 'reject', 'reason'] as $k) {
+        if (!array_key_exists($k, $overrides)) {
+            unset($params[$k]);
+        }
+    }
     return '?' . http_build_query($params);
 }
 
@@ -408,7 +466,7 @@ if (isset($_SESSION['admin_success'])) {
                                         <div class="actions">
                                             <?php if (in_array($h['statuss'], ['Melnraksts', '', null])): ?>
                                                 <a href="<?php echo buildUrl(['approve' => $h['id']]); ?>" class="btn-sm approve" onclick="return confirm('Apstiprināt šo sludinājumu?')" title="Apstiprināt"><i class="fas fa-check"></i></a>
-                                                <a href="<?php echo buildUrl(['reject' => $h['id']]); ?>" class="btn-sm reject" onclick="return confirm('Noraidīt šo sludinājumu?')" title="Noraidīt"><i class="fas fa-times"></i></a>
+                                                <a href="<?php echo buildUrl(['reject' => $h['id']]); ?>" class="btn-sm reject" onclick="return rejectListing(this.href)" title="Noraidīt"><i class="fas fa-times"></i></a>
                                             <?php endif; ?>
                                             <a href="#" class="btn-sm status" data-action="status" data-id="<?php echo (int)$h['id']; ?>" data-status="<?php echo htmlspecialchars($st); ?>" title="Mainīt statusu"><i class="fas fa-eye"></i></a>
                                             <a class="btn-sm edit"
@@ -579,6 +637,13 @@ if (isset($_SESSION['admin_success'])) {
     </div>
 
     <script>
+        function rejectListing(href) {
+            const reason = window.prompt('Iemesls (nav obligāts):', '');
+            if (reason === null) return false;
+            const next = reason.trim() !== '' ? (href + (href.includes('?') ? '&' : '?') + 'reason=' + encodeURIComponent(reason.trim())) : href;
+            window.location.href = next;
+            return false;
+        }
         (function() {
             const csrf = <?php echo json_encode($_SESSION['csrf_token']); ?>;
             const modalIdInput = document.getElementById('status_listing_id');

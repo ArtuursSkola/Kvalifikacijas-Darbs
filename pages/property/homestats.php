@@ -121,7 +121,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
                         $applicantVards !== '' ? $applicantVards : 'Lietotājs',
                         $listingNosaukums !== '' ? $listingNosaukums : 'Sludinājums',
                         $mailAccepted,
-                        $mailStatusLabel
+                        (string)($currentUser['epasts'] ?? ''),
+                        (string)($currentUser['telefons'] ?? '')
                     );
                 }
             } else {
@@ -226,7 +227,7 @@ include __DIR__ . '/../../includes/header.php';
         <?php else: ?>
             <div class="apps-grid">
                 <?php foreach ($infoPieteikumi as $p): ?>
-                    <div class="app-card">
+                    <div class="app-card" id="pieteikums-<?php echo (int)$p['id']; ?>">
                         <div class="app-top">
                             <div class="app-name"><?php echo htmlspecialchars((string)($p['vards_uzvards'] ?? '')); ?></div>
                             <div class="app-status status-<?php echo htmlspecialchars((string)($p['statuss'] ?? '')); ?>">

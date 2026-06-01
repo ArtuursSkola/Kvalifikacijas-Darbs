@@ -233,13 +233,18 @@ if ($action === 'pieteikums_create') {
             $ownRow = $ownStmt->get_result()->fetch_assoc();
             $ownStmt->close();
             if ($ownRow) {
+                $pieteikumsTypeLabel = $veids === 'istermina_ire'
+                    ? 'īstermiņa īre'
+                    : (($veids === 'ire' || $veids === 'rent') ? 'ilgtermiņa īre' : 'pārdošana');
+                $viewUrl = main_route_absolute('property.stats', ['id' => $homeId]) . '#pieteikums-' . $newId;
                 mail_notify_owner_new_pieteikums(
                     (string)($ownRow['epasts'] ?? ''),
                     (string)($ownRow['lietotajvards'] ?? 'Īpašnieks'),
                     (string)($ownRow['nosaukums'] ?? 'Sludinājums'),
                     $vardsUzvards,
                     $epasts,
-                    $newId
+                    $pieteikumsTypeLabel,
+                    $viewUrl
                 );
             }
         }

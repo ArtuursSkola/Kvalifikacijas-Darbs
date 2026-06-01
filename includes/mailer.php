@@ -160,7 +160,8 @@ function mail_notify_owner_new_pieteikums(
     string $listingTitle,
     string $applicantName,
     string $applicantEmail,
-    int $pieteikumsId
+    string $pieteikumsType,
+    string $viewUrl
 ): void {
     if (!filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
         return;
@@ -168,18 +169,19 @@ function mail_notify_owner_new_pieteikums(
     $subject = 'Jauns pieteikums sludinājumam: ' . $listingTitle;
     $text = "Sveiki, {$ownerName}!\n\n"
         . "Jūsu sludinājumam «{$listingTitle}» ir iesniegts jauns pieteikums.\n"
-        . "Pieteikuma Nr.: {$pieteikumsId}\n"
+        . "Pieteikuma veids: {$pieteikumsType}\n"
         . "Pieteikējs: {$applicantName}\n"
-        . "E-pasts: {$applicantEmail}\n\n"
-        . "Pieteikumu var apstrādāt īpašnieka panelī (statistika / pieteikumi).\n\n"
-        . '— HomeEstate';
+        . "E-pasts: {$applicantEmail}\n"
+        . "Apskatīt pieteikumu: {$viewUrl}\n\n"
+        . '- HomeEstate';
     $safeTitle = htmlspecialchars($listingTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     $html = '<p>Sveiki, ' . htmlspecialchars($ownerName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '!</p>'
         . '<p>Jūsu sludinājumam <strong>' . $safeTitle . '</strong> ir iesniegts jauns pieteikums.</p>'
-        . '<ul><li>Pieteikuma Nr.: ' . (int)$pieteikumsId . '</li>'
+        . '<ul><li>Pieteikuma veids: ' . htmlspecialchars($pieteikumsType, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>'
         . '<li>Pieteikējs: ' . htmlspecialchars($applicantName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>'
-        . '<li>E-pasts: ' . htmlspecialchars($applicantEmail, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li></ul>'
-        . '<p>— HomeEstate</p>';
+        . '<li>E-pasts: ' . htmlspecialchars($applicantEmail, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>'
+        . '<li>Apskatīt pieteikumu: <a href="' . htmlspecialchars($viewUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">' . htmlspecialchars($viewUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a></li></ul>'
+        . '<p>- HomeEstate</p>';
     mail_send($ownerEmail, $subject, $text, $html, $applicantEmail);
 }
 
@@ -188,23 +190,39 @@ function mail_notify_applicant_pieteikums_decision(
     string $applicantName,
     string $listingTitle,
     bool $accepted,
-    string $statusLabel
+    string $ownerEmail = '',
+    string $ownerPhone = ''
 ): void {
     if (!filter_var($applicantEmail, FILTER_VALIDATE_EMAIL)) {
         return;
     }
-    $verb = $accepted ? 'apstiprināts' : 'noraidīts';
-    $subject = 'Jūsu pieteikums — ' . ($accepted ? 'apstiprināts' : 'noraidīts');
-    $text = "Sveiki, {$applicantName}!\n\n"
-        . "Jūsu pieteikums sludinājumam «{$listingTitle}» ir {$verb}.\n"
-        . "Statuss: {$statusLabel}\n\n"
-        . "— HomeEstate";
     $safeTitle = htmlspecialchars($listingTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+    if ($accepted) {
+        $subject = 'Jūsu pieteikums ir apstiprināts! HomeEstate';
+        $text = "Sveiki, {$applicantName}!\n\n"
+            . "Jūsu pieteikums sludinājumam «{$listingTitle}» ir apstiprināts.\n\n"
+            . "Īpašnieka kontakts:\n"
+            . "E-pasts: {$ownerEmail}\n"
+            . "Telefons: {$ownerPhone}\n\n"
+            . "- HomeEstate";
+        $html = '<p>Sveiki, ' . htmlspecialchars($applicantName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '!</p>'
+            . '<p>Jūsu pieteikums sludinājumam <strong>' . $safeTitle . '</strong> ir <strong>apstiprināts</strong>.</p>'
+            . '<p><strong>Īpašnieka kontakts:</strong><br>'
+            . 'E-pasts: ' . htmlspecialchars($ownerEmail, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '<br>'
+            . 'Telefons: ' . htmlspecialchars($ownerPhone, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>'
+            . '<p>- HomeEstate</p>';
+        mail_send($applicantEmail, $subject, $text, $html);
+        return;
+    }
+
+    $subject = 'Jūsu pieteikums ir noraidīts! HomeEstate';
+    $text = "Sveiki, {$applicantName}!\n\n"
+        . "Jūsu pieteikums sludinājumam «{$listingTitle}» ir noraidīts.\n\n"
+        . "- HomeEstate";
     $html = '<p>Sveiki, ' . htmlspecialchars($applicantName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '!</p>'
-        . '<p>Jūsu pieteikums sludinājumam <strong>' . $safeTitle . '</strong> ir '
-        . ($accepted ? '<strong>apstiprināts</strong>' : '<strong>noraidīts</strong>') . '.</p>'
-        . '<p>Statuss: ' . htmlspecialchars($statusLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>'
-        . '<p>— HomeEstate</p>';
+        . '<p>Jūsu pieteikums sludinājumam <strong>' . $safeTitle . '</strong> ir <strong>noraidīts</strong>.</p>'
+        . '<p>- HomeEstate</p>';
     mail_send($applicantEmail, $subject, $text, $html);
 }
 
@@ -214,15 +232,79 @@ function mail_send_login_2fa_code(string $to, string $recipientName, string $cod
         return false;
     }
     $who = $isAdmin ? 'administratora / moderatora' : 'lietotāja';
-    $subject = 'Piekļuves apstiprinājuma kods — HomeEstate';
+    $subject = 'Piekļuves apstiprinājuma kods. HomeEstate';
     $text = "Sveiki, {$recipientName}!\n\n"
         . "Jūsu {$who} kontam ir pieprasīts ierakstīšanās.\n"
         . "Jūsu vienreizējais 6 ciparu kods: {$code}\n\n"
         . "Ja nepieprasījāt šo kodu, ignorējiet šo vēstuli.\n\n"
-        . '— HomeEstate';
+        . '- HomeEstate';
     $html = '<p>Sveiki, ' . htmlspecialchars($recipientName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '!</p>'
         . '<p>Jūsu ' . htmlspecialchars($who, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ' kontam ir pieprasīts ierakstīšanās.</p>'
         . '<p style="font-size:1.4em;font-weight:bold;letter-spacing:0.2em;">' . htmlspecialchars($code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>'
-        . '<p>Ja nepieprasījāt šo kodu, ignorējiet šo vēstuli.</p><p>— HomeEstate</p>';
+        . '<p>Ja nepieprasījāt šo kodu, ignorējiet šo vēstuli.</p><p>- HomeEstate</p>';
     return mail_send($to, $subject, $text, $html);
+}
+
+function mail_notify_owner_listing_approved(string $ownerEmail, string $ownerName, string $listingTitle, string $viewUrl): void
+{
+    if (!filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
+        return;
+    }
+    $subject = 'Jūsu sludinājums ir apstiprināts! HomeEstate';
+    $text = "Sveiki, {$ownerName}!\n\n"
+        . "Jūsu sludinājums «{$listingTitle}» ir apstiprināts un tagad ir aktīvs un publiski redzams.\n"
+        . "Skatīt sludinājumu: {$viewUrl}\n\n"
+        . '- HomeEstate';
+    $safeTitle = htmlspecialchars($listingTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $safeUrl = htmlspecialchars($viewUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $html = '<p>Sveiki, ' . htmlspecialchars($ownerName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '!</p>'
+        . '<p>Jūsu sludinājums <strong>' . $safeTitle . '</strong> ir <strong>apstiprināts</strong> un tagad ir aktīvs un publiski redzams.</p>'
+        . '<p><a href="' . $safeUrl . '">' . $safeUrl . '</a></p>'
+        . '<p>- HomeEstate</p>';
+    mail_send($ownerEmail, $subject, $text, $html);
+}
+
+function mail_notify_owner_listing_rejected(string $ownerEmail, string $ownerName, string $listingTitle, string $reason = ''): void
+{
+    if (!filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
+        return;
+    }
+    $reason = trim((string)$reason);
+    $subject = 'Jūsu sludinājums ir noraidīts! HomeEstate';
+    $text = "Sveiki, {$ownerName}!\n\n"
+        . "Jūsu sludinājums «{$listingTitle}» ir noraidīts.\n";
+    if ($reason !== '') {
+        $text .= "\nIemesls: {$reason}\n";
+    }
+    $text .= "\n- HomeEstate";
+    $safeTitle = htmlspecialchars($listingTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $html = '<p>Sveiki, ' . htmlspecialchars($ownerName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '!</p>'
+        . '<p>Jūsu sludinājums <strong>' . $safeTitle . '</strong> ir <strong>noraidīts</strong>.</p>';
+    if ($reason !== '') {
+        $html .= '<p><strong>Iemesls:</strong> ' . nl2br(htmlspecialchars($reason, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>';
+    }
+    $html .= '<p>- HomeEstate</p>';
+    mail_send($ownerEmail, $subject, $text, $html);
+}
+
+function mail_notify_user_palidziba_reply(string $userEmail, string $userName, string $topic, string $replyText): void
+{
+    if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
+        return;
+    }
+    $userName = trim($userName) !== '' ? $userName : 'Lietotājs';
+    $topic = trim((string)$topic) !== '' ? (string)$topic : 'Palīdzības centrs';
+    $replyText = trim((string)$replyText);
+    $subject = 'Atbilde no palīdzības centra. HomeEstate';
+    $text = "Sveiki, {$userName}!\n\n"
+        . "Jūsu jautājumam ir sniegta atbilde.\n"
+        . "Tēma: {$topic}\n\n"
+        . "Atbilde:\n{$replyText}\n\n"
+        . '- HomeEstate';
+    $html = '<p>Sveiki, ' . htmlspecialchars($userName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '!</p>'
+        . '<p>Jūsu jautājumam ir sniegta atbilde.</p>'
+        . '<p><strong>Tēma:</strong> ' . htmlspecialchars($topic, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>'
+        . '<p><strong>Atbilde:</strong><br>' . nl2br(htmlspecialchars($replyText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>'
+        . '<p>- HomeEstate</p>';
+    mail_send($userEmail, $subject, $text, $html);
 }
