@@ -4,6 +4,7 @@ ob_start();
 require_once __DIR__ . '/../routes/admin.php';
 require_once __DIR__ . '/../includes/popup_system.php';
 require_once __DIR__ . '/../includes/mailer.php';
+require_once __DIR__ . '/../includes/chat.php';
 
 $configPath = dirname(__DIR__) . '/con_db.php';
 if (!file_exists($configPath)) {
@@ -99,23 +100,31 @@ if (isset($_GET['approve']) && is_numeric($_GET['approve'])) {
         if ($stmt->execute()) {
             $success = 'Sludinājums apstiprināts un tagad ir aktīvs!';
             $_SESSION['admin_success'] = 'approve_property';
-            if (mail_is_configured()) {
-                $mStmt = $savienojums->prepare(
-                    'SELECT h.nosaukums, u.epasts, u.lietotajvards FROM est_homes h '
-                    . 'JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
-                );
-                if ($mStmt) {
-                    $mStmt->bind_param('i', $approveId);
-                    $mStmt->execute();
-                    $mRow = $mStmt->get_result()->fetch_assoc();
-                    $mStmt->close();
-                    if ($mRow) {
-                        $viewUrl = main_route_absolute('property.show', ['id' => $approveId]);
+            $mStmt = $savienojums->prepare(
+                'SELECT h.nosaukums, h.ipasnieka_id, u.epasts, u.lietotajvards FROM est_homes h '
+                . 'JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
+            );
+            if ($mStmt) {
+                $mStmt->bind_param('i', $approveId);
+                $mStmt->execute();
+                $mRow = $mStmt->get_result()->fetch_assoc();
+                $mStmt->close();
+                if ($mRow) {
+                    $viewUrl = main_route_absolute('property.show', ['id' => $approveId]);
+                    if (mail_is_configured()) {
                         mail_notify_owner_listing_approved(
                             (string)($mRow['epasts'] ?? ''),
                             (string)($mRow['lietotajvards'] ?? 'Īpašnieks'),
                             (string)($mRow['nosaukums'] ?? 'Sludinājums'),
                             $viewUrl
+                        );
+                    }
+                    $ownerId = (int)($mRow['ipasnieka_id'] ?? 0);
+                    if ($ownerId > 0) {
+                        chat_send_system_message(
+                            $savienojums,
+                            $ownerId,
+                            "Jūsu sludinājums «" . (string)($mRow['nosaukums'] ?? 'Sludinājums') . "» ir apstiprināts un tagad ir aktīvs un publiski redzams.\nSkatīt: {$viewUrl}"
                         );
                     }
                 }
@@ -141,23 +150,31 @@ if (isset($_GET['reject']) && is_numeric($_GET['reject'])) {
         if ($stmt->execute()) {
             $success = 'Sludinājums noraidīts.';
             $_SESSION['admin_success'] = 'reject_property';
-            if (mail_is_configured()) {
-                $mStmt = $savienojums->prepare(
-                    'SELECT h.nosaukums, u.epasts, u.lietotajvards FROM est_homes h '
-                    . 'JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
-                );
-                if ($mStmt) {
-                    $mStmt->bind_param('i', $rejectId);
-                    $mStmt->execute();
-                    $mRow = $mStmt->get_result()->fetch_assoc();
-                    $mStmt->close();
-                    if ($mRow) {
+            $mStmt = $savienojums->prepare(
+                'SELECT h.nosaukums, h.ipasnieka_id, u.epasts, u.lietotajvards FROM est_homes h '
+                . 'JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
+            );
+            if ($mStmt) {
+                $mStmt->bind_param('i', $rejectId);
+                $mStmt->execute();
+                $mRow = $mStmt->get_result()->fetch_assoc();
+                $mStmt->close();
+                if ($mRow) {
+                    if (mail_is_configured()) {
                         mail_notify_owner_listing_rejected(
                             (string)($mRow['epasts'] ?? ''),
                             (string)($mRow['lietotajvards'] ?? 'Īpašnieks'),
                             (string)($mRow['nosaukums'] ?? 'Sludinājums'),
                             $rejectReason
                         );
+                    }
+                    $ownerId = (int)($mRow['ipasnieka_id'] ?? 0);
+                    if ($ownerId > 0) {
+                        $msg = "Jūsu sludinājums «" . (string)($mRow['nosaukums'] ?? 'Sludinājums') . "» ir noraidīts.";
+                        if ($rejectReason !== '') {
+                            $msg .= "\nIemesls: {$rejectReason}";
+                        }
+                        chat_send_system_message($savienojums, $ownerId, $msg);
                     }
                 }
             }

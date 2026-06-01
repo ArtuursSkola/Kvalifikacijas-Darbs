@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../routes/main.php';
 require_once dirname(__DIR__, 2) . '/con_db.php';
 require_once dirname(__DIR__, 2) . '/includes/account.php';
 require_once dirname(__DIR__, 2) . '/includes/mailer.php';
+require_once dirname(__DIR__, 2) . '/includes/chat.php';
 
 $currentUser = loadCurrentUserContext($savienojums);
 if (!$currentUser) {
@@ -48,9 +49,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
         $applicantEpasts = '';
         $applicantVards = '';
         $listingNosaukums = '';
+        $applicantUserId = 0;
         // SQL vaicājums pieteicēja datu iegūšanai
         $infoStmt = $savienojums->prepare(
-            'SELECT p.epasts, p.vards_uzvards, h.nosaukums FROM est_pieteikumi p '
+            'SELECT p.epasts, p.vards_uzvards, p.lietotaja_id, h.nosaukums FROM est_pieteikumi p '
             . 'JOIN est_homes h ON h.id = p.sludinajuma_id WHERE p.id = ? AND p.sludinajuma_id = ? AND h.ipasnieka_id = ? LIMIT 1'
         );
         // Iegūst pieteikuma informāciju
@@ -63,6 +65,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
                 $applicantEpasts = (string)($infoRow['epasts'] ?? '');
                 $applicantVards = (string)($infoRow['vards_uzvards'] ?? '');
                 $listingNosaukums = (string)($infoRow['nosaukums'] ?? '');
+                $applicantUserId = (int)($infoRow['lietotaja_id'] ?? 0);
             }
         }
 
@@ -124,6 +127,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
                         (string)($currentUser['epasts'] ?? ''),
                         (string)($currentUser['telefons'] ?? '')
                     );
+                }
+                if ($applicantUserId > 0) {
+                    if ($mailAccepted) {
+                        chat_send_system_message(
+                            $savienojums,
+                            $applicantUserId,
+                            "Jūsu pieteikums sludinājumam «" . ($listingNosaukums !== '' ? $listingNosaukums : 'Sludinājums') . "» ir apstiprināts.\n\n"
+                            . "Īpašnieka kontakts:\n"
+                            . "E-pasts: " . (string)($currentUser['epasts'] ?? '') . "\n"
+                            . "Telefons: " . (string)($currentUser['telefons'] ?? '')
+                        );
+                    } else {
+                        chat_send_system_message(
+                            $savienojums,
+                            $applicantUserId,
+                            "Jūsu pieteikums sludinājumam «" . ($listingNosaukums !== '' ? $listingNosaukums : 'Sludinājums') . "» ir noraidīts."
+                        );
+                    }
                 }
             } else {
                 $savienojums->rollback();

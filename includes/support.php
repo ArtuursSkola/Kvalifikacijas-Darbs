@@ -75,6 +75,15 @@ if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['lietotājs', 'liet
 let currentChatUserId = null;
 let currentChatUserName = '';
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
 function toggleChat() {
     const chatWindow = document.getElementById('chatWindow');
     const chatButton = document.getElementById('chatButton');
@@ -103,10 +112,16 @@ function openChat(userId, userName) {
     document.getElementById('chatTitle').textContent = userName;
     document.getElementById('chatParticipantName').textContent = userName;
     document.getElementById('chatParticipantStatus').textContent = 'Online';
+
+    const inputWrap = document.querySelector('.chat-input');
+    if (inputWrap) {
+        inputWrap.style.display = Number(userId) === 0 ? 'none' : 'flex';
+    }
     
     loadChatMessages(userId);
     markMessagesAsRead();
-    document.getElementById('chatInput').focus();
+    const input = document.getElementById('chatInput');
+    if (input && Number(userId) !== 0) input.focus();
 }
 
 function loadChatList() {
@@ -126,20 +141,22 @@ function loadChatList() {
                 conversationDiv.className = 'chat-conversation';
                 conversationDiv.onclick = () => openChat(chat.user_id, chat.username);
 
-                const avatarHtml = chat.profila_bilde
+                const avatarHtml = Number(chat.user_id) === 0
+                    ? `<div class="conversation-avatar"><i class="fas fa-gear"></i></div>`
+                    : (chat.profila_bilde
                     ? `<img src="<?php echo app_absolute_url(''); ?>${chat.profila_bilde}"
                             style="width:40px;height:40px;border-radius:50%;object-fit:cover;"
                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                        <div class="conversation-avatar" style="display:none;"><i class="fas fa-user"></i></div>`
-                    : `<div class="conversation-avatar"><i class="fas fa-user"></i></div>`;
+                    : `<div class="conversation-avatar"><i class="fas fa-user"></i></div>`);
 
                 conversationDiv.innerHTML = `
                     <div style="margin-right:15px;width:40px;height:40px;flex-shrink:0;">
                         ${avatarHtml}
                     </div>
                     <div class="conversation-info">
-                        <div class="conversation-name">${chat.username}</div>
-                        <div class="conversation-message">${chat.last_message}</div>
+                        <div class="conversation-name">${escapeHtml(chat.username)}</div>
+                        <div class="conversation-message">${escapeHtml(chat.last_message)}</div>
                     </div>
                     <div class="conversation-meta">
                         <div class="conversation-time">${formatTime(chat.created_at)}</div>
@@ -163,15 +180,23 @@ function loadChatMessages(userId) {
             data.forEach(message => {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `chat-message ${message.sutitaja_id == <?php echo (int)($currentUserId ?? 0); ?> ? 'sent' : 'received'}`;
-                
-                messageDiv.innerHTML = `
-                    <div class="message-content">${message.zina}</div>
-                    <div class="message-time">${formatTime(message.created_at)}</div>
-                    ${message.sutitaja_id == <?php echo (int)($currentUserId ?? 0); ?> ? `<div class="message-status">
-           <i class="fas ${message.izlasita ? 'fa-check-double' : 'fa-check'}"></i>
-       </div>`
-                    : ''}
-                `;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = String(message.zina ?? '');
+                messageDiv.appendChild(contentDiv);
+
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = formatTime(message.created_at);
+                messageDiv.appendChild(timeDiv);
+
+                if (message.sutitaja_id == <?php echo (int)($currentUserId ?? 0); ?>) {
+                    const statusDiv = document.createElement('div');
+                    statusDiv.className = 'message-status';
+                    statusDiv.innerHTML = `<i class="fas ${message.izlasita ? 'fa-check-double' : 'fa-check'}"></i>`;
+                    messageDiv.appendChild(statusDiv);
+                }
                 
                 container.appendChild(messageDiv);
             });

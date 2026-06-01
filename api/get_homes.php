@@ -6,6 +6,7 @@ require_once __DIR__ . '/../con_db.php';
 require_once __DIR__ . '/../routes/main.php';
 require_once __DIR__ . '/../includes/account.php';
 require_once __DIR__ . '/../includes/mailer.php';
+require_once __DIR__ . '/../includes/chat.php';
 
 function json_out(array $payload, int $code = 200): never
 {
@@ -222,21 +223,21 @@ if ($action === 'pieteikums_create') {
     $newId = (int)$ins->insert_id;
     $ins->close();
 
-    if (mail_is_configured()) {
-        $ownStmt = $savienojums->prepare(
-            'SELECT h.nosaukums, u.epasts, u.lietotajvards FROM est_homes h '
-            . 'INNER JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
-        );
-        if ($ownStmt) {
-            $ownStmt->bind_param('i', $homeId);
-            $ownStmt->execute();
-            $ownRow = $ownStmt->get_result()->fetch_assoc();
-            $ownStmt->close();
-            if ($ownRow) {
-                $pieteikumsTypeLabel = $veids === 'istermina_ire'
-                    ? 'īstermiņa īre'
-                    : (($veids === 'ire' || $veids === 'rent') ? 'ilgtermiņa īre' : 'pārdošana');
-                $viewUrl = main_route_absolute('property.stats', ['id' => $homeId]) . '#pieteikums-' . $newId;
+    $ownStmt = $savienojums->prepare(
+        'SELECT h.nosaukums, h.ipasnieka_id, u.epasts, u.lietotajvards FROM est_homes h '
+        . 'INNER JOIN est_lietotaji u ON u.lietotaja_id = h.ipasnieka_id WHERE h.id = ? LIMIT 1'
+    );
+    if ($ownStmt) {
+        $ownStmt->bind_param('i', $homeId);
+        $ownStmt->execute();
+        $ownRow = $ownStmt->get_result()->fetch_assoc();
+        $ownStmt->close();
+        if ($ownRow) {
+            $pieteikumsTypeLabel = $veids === 'istermina_ire'
+                ? 'īstermiņa īre'
+                : (($veids === 'ire' || $veids === 'rent') ? 'ilgtermiņa īre' : 'pārdošana');
+            $viewUrl = main_route_absolute('property.stats', ['id' => $homeId]) . '#pieteikums-' . $newId;
+            if (mail_is_configured()) {
                 mail_notify_owner_new_pieteikums(
                     (string)($ownRow['epasts'] ?? ''),
                     (string)($ownRow['lietotajvards'] ?? 'Īpašnieks'),
@@ -245,6 +246,17 @@ if ($action === 'pieteikums_create') {
                     $epasts,
                     $pieteikumsTypeLabel,
                     $viewUrl
+                );
+            }
+            $ownerId = (int)($ownRow['ipasnieka_id'] ?? 0);
+            if ($ownerId > 0) {
+                chat_send_system_message(
+                    $savienojums,
+                    $ownerId,
+                    "Jauns pieteikums sludinājumam «" . (string)($ownRow['nosaukums'] ?? 'Sludinājums') . "».\n"
+                    . "Pieteikuma veids: {$pieteikumsTypeLabel}\n"
+                    . "Pieteikējs: {$vardsUzvards}\n"
+                    . "Skatīt: {$viewUrl}"
                 );
             }
         }

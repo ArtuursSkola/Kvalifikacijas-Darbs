@@ -19,6 +19,11 @@ if (!$receiverId || empty($message)) {
     exit;
 }
 
+if ((int)$receiverId === 0) {
+    echo json_encode(['success' => false, 'message' => 'Cannot message system']);
+    exit;
+}
+
 if ((int)$currentUserId === (int)$receiverId) {
     echo json_encode(['success' => false, 'message' => 'Cannot message yourself']);
     exit;

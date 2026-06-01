@@ -8,6 +8,7 @@ if (!file_exists($configPath)) die('Nav atrasts con_db.php');
 require $configPath;
 require_once dirname(__DIR__) . '/includes/account.php';
 require_once dirname(__DIR__) . '/includes/mailer.php';
+require_once dirname(__DIR__) . '/includes/chat.php';
 
 if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'moderator'], true)) {
     header('Location: ' . admin_route('login'));
@@ -71,6 +72,25 @@ if (isset($_GET['buj_toggle']) && ctype_digit((string)$_GET['buj_toggle'])) {
             if ($bStmt->execute()) {
                 $success = 'BUJ statuss atjaunināts.';
                 showSuccessPopup('BUJ statuss veiksmīgi atjaunināts!');
+                if ($newBuj === 1) {
+                    $nStmt = $savienojums->prepare(
+                        'SELECT p.tema, p.lietotaja_id FROM est_palidziba p WHERE p.id = ? LIMIT 1'
+                    );
+                    if ($nStmt) {
+                        $nStmt->bind_param('i', $bujId);
+                        $nStmt->execute();
+                        $nRow = $nStmt->get_result()->fetch_assoc();
+                        $nStmt->close();
+                        $uid = (int)($nRow['lietotaja_id'] ?? 0);
+                        if ($uid > 0) {
+                            chat_send_system_message(
+                                $savienojums,
+                                $uid,
+                                "Jūsu jautājums ir publicēts BUJ.\nTēma: " . (string)($nRow['tema'] ?? '')
+                            );
+                        }
+                    }
+                }
             } else {
                 $error = 'Neizdevās atjaunināt BUJ statusu: ' . $bStmt->error;
             }
@@ -95,22 +115,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reply_submit'])) {
         if ($rStmt->execute()) {
             $success = 'Atbilde saglabāta.';
             showSuccessPopup('Atbilde veiksmīgi saglabāta!');
-            if (mail_is_configured()) {
-                $sStmt = $savienojums->prepare(
-                    'SELECT p.tema, l.epasts, l.lietotajvards FROM est_palidziba p '
-                    . 'JOIN est_lietotaji l ON l.lietotaja_id = p.lietotaja_id WHERE p.id = ? LIMIT 1'
-                );
-                if ($sStmt) {
-                    $sStmt->bind_param('i', $msgId);
-                    $sStmt->execute();
-                    $sRow = $sStmt->get_result()->fetch_assoc();
-                    $sStmt->close();
-                    if ($sRow) {
+            $sStmt = $savienojums->prepare(
+                'SELECT p.tema, p.lietotaja_id, l.epasts, l.lietotajvards FROM est_palidziba p '
+                . 'JOIN est_lietotaji l ON l.lietotaja_id = p.lietotaja_id WHERE p.id = ? LIMIT 1'
+            );
+            if ($sStmt) {
+                $sStmt->bind_param('i', $msgId);
+                $sStmt->execute();
+                $sRow = $sStmt->get_result()->fetch_assoc();
+                $sStmt->close();
+                if ($sRow) {
+                    if (mail_is_configured()) {
                         mail_notify_user_palidziba_reply(
                             (string)($sRow['epasts'] ?? ''),
                             (string)($sRow['lietotajvards'] ?? 'Lietotājs'),
                             (string)($sRow['tema'] ?? ''),
                             $atbilde
+                        );
+                    }
+                    $userId = (int)($sRow['lietotaja_id'] ?? 0);
+                    if ($userId > 0) {
+                        chat_send_system_message(
+                            $savienojums,
+                            $userId,
+                            "Jūsu jautājumam palīdzības centrā ir sniegta atbilde.\n"
+                            . "Tēma: " . (string)($sRow['tema'] ?? '') . "\n\n"
+                            . "Atbilde:\n{$atbilde}"
                         );
                     }
                 }

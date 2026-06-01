@@ -10,29 +10,42 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $currentUserId = $_SESSION['user_id'];
-$otherUserId = $_GET['user_id'] ?? 0;
+$otherUserIdRaw = $_GET['user_id'] ?? null;
 
-if (!$otherUserId) {
+if ($otherUserIdRaw === null || $otherUserIdRaw === '') {
     echo json_encode([]);
     exit;
 }
 
-if ((int)$currentUserId === (int)$otherUserId) {
+ $otherUserId = (int)$otherUserIdRaw;
+
+if ($otherUserId !== 0 && (int)$currentUserId === $otherUserId) {
     echo json_encode([]);
     exit;
 }
 
 
-$stmt = $savienojums->prepare("
-    SELECT z.*, u.lietotajvards as sender_name
-    FROM est_zinas z
-    INNER JOIN est_lietotaji u ON z.sutitaja_id = u.lietotaja_id
-    WHERE (z.sutitaja_id = ? AND z.sanemeja_id = ?) 
-    OR (z.sutitaja_id = ? AND z.sanemeja_id = ?)
-    ORDER BY z.created_at ASC
-");
+if ($otherUserId === 0) {
+    $stmt = $savienojums->prepare("
+        SELECT z.*, COALESCE(u.lietotajvards, 'Sistēma') as sender_name
+        FROM est_zinas z
+        LEFT JOIN est_lietotaji u ON z.sutitaja_id = u.lietotaja_id
+        WHERE z.sutitaja_id IS NULL AND z.sanemeja_id = ?
+        ORDER BY z.created_at ASC
+    ");
+    $stmt->bind_param('i', $currentUserId);
+} else {
+    $stmt = $savienojums->prepare("
+        SELECT z.*, u.lietotajvards as sender_name
+        FROM est_zinas z
+        LEFT JOIN est_lietotaji u ON z.sutitaja_id = u.lietotaja_id
+        WHERE (z.sutitaja_id = ? AND z.sanemeja_id = ?) 
+        OR (z.sutitaja_id = ? AND z.sanemeja_id = ?)
+        ORDER BY z.created_at ASC
+    ");
+    $stmt->bind_param('iiii', $currentUserId, $otherUserId, $otherUserId, $currentUserId);
+}
 
-$stmt->bind_param('iiii', $currentUserId, $otherUserId, $otherUserId, $currentUserId);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -45,19 +58,28 @@ while ($row = $result->fetch_assoc()) {
         'zina' => $row['zina'],
         'izlasita' => $row['izlasita'],
         'created_at' => $row['created_at'],
-        'sender_name' => $row['sender_name']
+        'sender_name' => $row['sender_name'] ?? 'Sistēma'
     ];
 }
 
 $stmt->close();
 
 
-$updateStmt = $savienojums->prepare("
-    UPDATE est_zinas 
-    SET izlasita = 1 
-    WHERE sutitaja_id = ? AND sanemeja_id = ? AND izlasita = 0
-");
-$updateStmt->bind_param('ii', $otherUserId, $currentUserId);
+if ($otherUserId === 0) {
+    $updateStmt = $savienojums->prepare("
+        UPDATE est_zinas 
+        SET izlasita = 1 
+        WHERE sutitaja_id IS NULL AND sanemeja_id = ? AND izlasita = 0
+    ");
+    $updateStmt->bind_param('i', $currentUserId);
+} else {
+    $updateStmt = $savienojums->prepare("
+        UPDATE est_zinas 
+        SET izlasita = 1 
+        WHERE sutitaja_id = ? AND sanemeja_id = ? AND izlasita = 0
+    ");
+    $updateStmt->bind_param('ii', $otherUserId, $currentUserId);
+}
 $updateStmt->execute();
 $updateStmt->close();
 
