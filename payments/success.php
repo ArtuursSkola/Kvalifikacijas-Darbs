@@ -94,6 +94,8 @@ try {
                 $ins->close();
             }
 
+            deactivateListingsExceedingPlanLimit($savienojums, $userId, $plana_vards);
+
             $updatedUser = fetchUserById($savienojums, $userId);
             if ($updatedUser) {
                 storeUserSessionData($updatedUser);

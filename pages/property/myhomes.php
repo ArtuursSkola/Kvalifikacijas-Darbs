@@ -59,15 +59,45 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         }
 
         if ($action === 'activate_home') {
-            $stmt = $savienojums->prepare("UPDATE est_homes SET statuss = 'Melnraksts' WHERE id = ? AND ipasnieka_id = ? AND statuss = 'Neaktivs'");
-            if ($stmt) {
-                $stmt->bind_param('ii', $homeId, $ownerId);
-                if ($stmt->execute()) {
-                    $_SESSION['owner_flash'] = ['type' => 'success', 'message' => 'Sludinājums nosūtīts kā melnraksts apstiprināšanai.'];
-                } else {
-                    $_SESSION['owner_flash'] = ['type' => 'error', 'message' => 'Neizdevās aktivizēt sludinājumu.'];
+            $stmtCheck = $savienojums->prepare("SELECT galvenais_attels, galerija FROM est_homes WHERE id = ? AND ipasnieka_id = ? AND statuss = 'Neaktivs' LIMIT 1");
+            $canActivate = false;
+            $imageBlockMessage = '';
+            if ($stmtCheck) {
+                $stmtCheck->bind_param('ii', $homeId, $ownerId);
+                $stmtCheck->execute();
+                $rowCheck = $stmtCheck->get_result()->fetch_assoc();
+                $stmtCheck->close();
+                if ($rowCheck) {
+                    $currentPlan = (string)($currentUser['plans'] ?? 'Nekads');
+                    $planLimit = getPlanImageLimit($currentPlan);
+                    $galleryCheck = json_decode((string)($rowCheck['galerija'] ?? '[]'), true);
+                    if (!is_array($galleryCheck)) {
+                        $galleryCheck = [];
+                    }
+                    $mainCount = trim((string)($rowCheck['galvenais_attels'] ?? '')) !== '' ? 1 : 0;
+                    $totalImages = $mainCount + count($galleryCheck);
+                    if ($totalImages > $planLimit) {
+                        $imageBlockMessage = 'Nevari aktivizēt šo sludinājumu. Tam ir ' . $totalImages . ' attēli, bet tavs pašreizējais plāns atļauj maksimāli ' . $planLimit . ' attēlus. Samazini attēlu skaitu vai jaunini plānu.';
+                    } else {
+                        $canActivate = true;
+                    }
                 }
-                $stmt->close();
+            }
+            if ($imageBlockMessage !== '') {
+                $_SESSION['owner_flash'] = ['type' => 'error', 'message' => $imageBlockMessage];
+            } elseif ($canActivate) {
+                $stmt = $savienojums->prepare("UPDATE est_homes SET statuss = 'Melnraksts' WHERE id = ? AND ipasnieka_id = ? AND statuss = 'Neaktivs'");
+                if ($stmt) {
+                    $stmt->bind_param('ii', $homeId, $ownerId);
+                    if ($stmt->execute()) {
+                        $_SESSION['owner_flash'] = ['type' => 'success', 'message' => 'Sludinājums nosūtīts kā melnraksts apstiprināšanai.'];
+                    } else {
+                        $_SESSION['owner_flash'] = ['type' => 'error', 'message' => 'Neizdevās aktivizēt sludinājumu.'];
+                    }
+                    $stmt->close();
+                }
+            } else {
+                $_SESSION['owner_flash'] = ['type' => 'error', 'message' => 'Neizdevās aktivizēt sludinājumu.'];
             }
         }
     }
@@ -94,9 +124,11 @@ if (isset($_SESSION['property_success'])) {
     }
 }
 
+$planLimit = getPlanImageLimit((string)($currentUser['plans'] ?? 'Nekads'));
+
 $myHomes = [];
 if ($ownerId > 0) {
-    $sql = "SELECT id, nosaukums, pilseta, statuss, cena, veids, galvenais_attels, created_at
+    $sql = "SELECT id, nosaukums, pilseta, statuss, cena, veids, galvenais_attels, galerija, created_at
         FROM est_homes
         WHERE ipasnieka_id = ?
         ORDER BY created_at DESC";
@@ -197,14 +229,26 @@ if ($ownerId > 0) {
                                     </a>
                                     <a href="<?php echo main_route('property.create', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-edit" title="Rediģēt"><i class="fas fa-edit"></i></a>
                                     <a href="<?php echo main_route('property.stats', ['id' => (int)$home['id']]); ?>" class="btn-owner-action btn-owner-info" title="Info"><i class="fas fa-info"></i></a>
-                                    <a href="#listing-actions-modal"
+                                    <?php
+                                    $homeGallery = json_decode((string)($home['galerija'] ?? '[]'), true);
+                                    if (!is_array($homeGallery)) {
+                                        $homeGallery = [];
+                                    }
+                                    $homeMainCount = trim((string)($home['galvenais_attels'] ?? '')) !== '' ? 1 : 0;
+                                    $homeTotalImages = $homeMainCount + count($homeGallery);
+                                    $homeOverLimit = $homeTotalImages > $planLimit;
+                                    ?>
+                                     <a href="#listing-actions-modal"
                                        class="btn-owner-action btn-owner-danger js-listing-actions"
                                        data-home-id="<?php echo (int)$home['id']; ?>"
                                        data-home-status="<?php echo htmlspecialchars((string)($home['statuss'] ?? ''), ENT_QUOTES); ?>"
                                        data-home-title="<?php echo htmlspecialchars((string)($home['nosaukums'] ?? ''), ENT_QUOTES); ?>"
+                                       data-home-images="<?php echo $homeTotalImages; ?>"
+                                       data-plan-limit="<?php echo $planLimit; ?>"
+                                       data-over-limit="<?php echo $homeOverLimit ? '1' : '0'; ?>"
                                        title="Dzēst / deaktivizēt">
                                         <i class="fas fa-trash"></i>
-                                    </a>
+                                     </a>
                                 </div>
                             </div>
                         </div>
@@ -223,6 +267,7 @@ if ($ownerId > 0) {
             <h2>Sludinājuma darbības</h2>
             <p id="listing-actions-title"></p>
         </div>
+        <div id="listing-actions-plan-warning" style="display:none; margin-bottom:12px; padding:10px 14px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:8px; color:#f87171; font-size:0.9rem;"></div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
             <form method="post" action="<?php echo main_route('property.myhomes'); ?>" id="listing-action-form-deactivate">
                 <input type="hidden" name="csrf" value="<?php echo htmlspecialchars((string)($_SESSION['csrf_token'] ?? ''), ENT_QUOTES); ?>">
@@ -234,7 +279,7 @@ if ($ownerId > 0) {
                 <input type="hidden" name="csrf" value="<?php echo htmlspecialchars((string)($_SESSION['csrf_token'] ?? ''), ENT_QUOTES); ?>">
                 <input type="hidden" name="action" value="activate_home">
                 <input type="hidden" name="home_id" id="listing-action-home-id-activate" value="">
-                <button type="submit" class="btn-owner-action btn-owner-edit">Aktivizēt sludinājumu</button>
+                <button type="submit" class="btn-owner-action btn-owner-edit" id="listing-action-activate-btn">Aktivizēt sludinājumu</button>
             </form>
             <form method="post" action="<?php echo main_route('property.myhomes'); ?>">
                 <input type="hidden" name="csrf" value="<?php echo htmlspecialchars((string)($_SESSION['csrf_token'] ?? ''), ENT_QUOTES); ?>">
@@ -255,12 +300,17 @@ document.addEventListener('DOMContentLoaded', function () {
     var title = document.getElementById('listing-actions-title');
     var formDeactivate = document.getElementById('listing-action-form-deactivate');
     var formActivate = document.getElementById('listing-action-form-activate');
+    var activateBtn = document.getElementById('listing-action-activate-btn');
+    var planWarning = document.getElementById('listing-actions-plan-warning');
 
     triggers.forEach(function (el) {
         el.addEventListener('click', function () {
             var id = el.getAttribute('data-home-id') || '';
             var t = el.getAttribute('data-home-title') || '';
             var s = el.getAttribute('data-home-status') || '';
+            var overLimit = el.getAttribute('data-over-limit') === '1';
+            var totalImages = parseInt(el.getAttribute('data-home-images') || '0', 10);
+            var planLimit = parseInt(el.getAttribute('data-plan-limit') || '0', 10);
             if (inputDeactivate) inputDeactivate.value = id;
             if (inputActivate) inputActivate.value = id;
             if (inputDelete) inputDelete.value = id;
@@ -268,6 +318,24 @@ document.addEventListener('DOMContentLoaded', function () {
             var isInactive = s === 'Neaktivs';
             if (formDeactivate) formDeactivate.style.display = isInactive ? 'none' : '';
             if (formActivate) formActivate.style.display = isInactive ? '' : 'none';
+            if (isInactive && overLimit) {
+                if (planWarning) {
+                    planWarning.textContent = 'Nevari aktivizēt šo sludinājumu. Tam ir ' + totalImages + ' attēli, bet tavs pašreizējais plāns atļauj maksimāli ' + planLimit + '. Samazini attēlu skaitu vai jaunini plānu.';
+                    planWarning.style.display = '';
+                }
+                if (activateBtn) {
+                    activateBtn.disabled = true;
+                    activateBtn.style.opacity = '0.5';
+                    activateBtn.style.cursor = 'not-allowed';
+                }
+            } else {
+                if (planWarning) planWarning.style.display = 'none';
+                if (activateBtn) {
+                    activateBtn.disabled = false;
+                    activateBtn.style.opacity = '';
+                    activateBtn.style.cursor = '';
+                }
+            }
         });
     });
 });

@@ -1,5 +1,48 @@
 <?php
 
+function getPlanImageLimit(string $plan): int
+{
+    if ($plan === 'Zelta') {
+        return 51;
+    }
+    if ($plan === 'Sudraba') {
+        return 10;
+    }
+    return 3;
+}
+
+function deactivateListingsExceedingPlanLimit(mysqli $conn, int $userId, string $newPlan): void
+{
+    $limit = getPlanImageLimit($newPlan);
+    $stmt = $conn->prepare("SELECT id, galvenais_attels, galerija FROM est_homes WHERE ipasnieka_id = ? AND statuss = 'Aktivs'");
+    if (!$stmt) {
+        return;
+    }
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $toDeactivate = [];
+    while ($res && $row = $res->fetch_assoc()) {
+        $gallery = json_decode((string)($row['galerija'] ?? '[]'), true);
+        if (!is_array($gallery)) {
+            $gallery = [];
+        }
+        $mainCount = trim((string)($row['galvenais_attels'] ?? '')) !== '' ? 1 : 0;
+        $total = $mainCount + count($gallery);
+        if ($total > $limit) {
+            $toDeactivate[] = (int)$row['id'];
+        }
+    }
+    $stmt->close();
+    foreach ($toDeactivate as $homeId) {
+        $upd = $conn->prepare("UPDATE est_homes SET statuss = 'Neaktivs' WHERE id = ? AND ipasnieka_id = ?");
+        if ($upd) {
+            $upd->bind_param('ii', $homeId, $userId);
+            $upd->execute();
+            $upd->close();
+        }
+    }
+}
 
 
 function isValidMysqlDateTime(?string $value): bool
@@ -56,6 +99,17 @@ function expirePlanIfNeeded(mysqli $conn, array $user): array
 {
     $plan = $user['plans'] ?? 'Nekads';
     $expiresAt = $user['plana_beigas'] ?? null;
+
+    if ($plan === 'Nekads') {
+        $userId = (int)$user['lietotaja_id'];
+        $stmtDeact = $conn->prepare("UPDATE est_homes SET statuss = 'Neaktivs' WHERE ipasnieka_id = ? AND statuss = 'Aktivs'");
+        if ($stmtDeact) {
+            $stmtDeact->bind_param('i', $userId);
+            $stmtDeact->execute();
+            $stmtDeact->close();
+        }
+        return $user;
+    }
 
     if (!in_array($plan, ['Sudraba', 'Zelta'], true) || empty($expiresAt)) {
         return $user;

@@ -38,6 +38,7 @@ if ($stmt) {
             storeUserSessionData($user);
         }
         if ($selectedPlan === 'Bezmaksas') {
+            deactivateListingsExceedingPlanLimit($savienojums, $userId, 'Bezmaksas');
             $_SESSION['plan_change_success'] = true;
             $_SESSION['plan_change_message'] = 'Jums tagad ir Bezmaksas plāns!';
             header('Location: ' . main_route('owner') . '#plans');
