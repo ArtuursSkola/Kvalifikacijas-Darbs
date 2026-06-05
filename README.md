@@ -2,7 +2,7 @@
 
 HomeEstate ir moderna un droša nekustamo īpašumu platforma Latvijā, kas izstrādāta, lai vienkāršotu īpašumu īrēšanas un pirkšanas procesu. Vietnei ir skaists un atsaucīgs lietotāja interfeiss (UI), uzlabota meklēšanas sistēma un īpašs īpašnieku panelis sludinājumu pārvaldībai ar Stripe maksājumu integrāciju premium plāniem.
 
-**Apmeklējiet vietni:** [http://homeest.unaux.com/](http://homeest.unaux.com/)
+**Apmeklējiet vietni:** [https://kristovskis.lv/4pt/kliecis/homeest/](http://homeest.unaux.com/)
 
 ---
 

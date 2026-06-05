@@ -79,6 +79,7 @@ function fetchUserById(mysqli $conn, int $userId, string $type = 'user'): ?array
 
     if ($user && $type === 'admin') {
         $user['lietotaja_id'] = $user['admin_id'];
+        $user['is_admin'] = true;
     }
 
     return $user ?: null;
@@ -97,6 +98,10 @@ function storeUserSessionData(array $user): void
 
 function expirePlanIfNeeded(mysqli $conn, array $user): array
 {
+    if (isset($user['is_admin']) && $user['is_admin'] === true) {
+        return $user;
+    }
+
     $plan = $user['plans'] ?? 'Nekads';
     $expiresAt = $user['plana_beigas'] ?? null;
 
@@ -171,6 +176,10 @@ function userHasActivePaidPlan(?array $user): bool
         return false;
     }
 
+    if (isset($user['is_admin']) && $user['is_admin'] === true) {
+        return false;
+    }
+
     $plan = $user['plans'] ?? 'Nekads';
     $expiresAt = $user['plana_beigas'] ?? null;
 
@@ -183,6 +192,10 @@ function userHasActivePaidPlan(?array $user): bool
 function userHasActiveOwnerPlan(?array $user): bool
 {
     if (!$user) {
+        return false;
+    }
+
+    if (isset($user['is_admin']) && $user['is_admin'] === true) {
         return false;
     }
 
