@@ -2922,7 +2922,25 @@ footer {
     text-shadow: 0 2px 5px rgba(0,0,0,0.5);
     transition: color 0.2s;
 }
+
 .global-lightbox-close:hover {
     color: var(--accent, #30b607);
 }
 
+@media (min-width: 1701px) {
+    .nav-links:not(.mobile-active) {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        flex: none;
+    }
+}
+@media (min-width: 1001px) and (max-width: 1700px) {
+    .navbar[data-logged-in="false"] .nav-links:not(.mobile-active),
+    .navbar:not([data-logged-in]) .nav-links:not(.mobile-active) {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        flex: none;
+    }
+}

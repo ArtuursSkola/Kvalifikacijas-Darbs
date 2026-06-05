@@ -23,7 +23,7 @@ if ($userId > 0 && isset($savienojums) && $savienojums instanceof mysqli) {
 
     if (!empty($homeIds)) {
         $safeIds = implode(',', array_map('intval', $homeIds));
-        $homeStmt = $savienojums->prepare("SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas, apraksts, galvenais_attels, statuss, kategorija FROM est_homes WHERE id IN ($safeIds)");
+        $homeStmt = $savienojums->prepare("SELECT id, ipasnieka_id, nosaukums, pilseta, atrasanas_vieta, veids, cena, platiba, gulamistabas, vannasistabas, apraksts, galvenais_attels, statuss, kategorija FROM est_homes WHERE id IN ($safeIds) AND statuss = 'Aktivs'");
         
         $rawHomes = [];
         $ownerIds = [];

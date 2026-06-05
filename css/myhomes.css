@@ -206,6 +206,7 @@
     background: var(--gray-100);
     color: var(--primary);
     border: 1px solid var(--gray-200);
+    cursor: pointer;
 }
 
 .btn-owner-action:hover {
@@ -221,8 +222,9 @@
 }
 
 .btn-owner-edit:hover {
-    background: rgba(48, 182, 7, 0.1);
-    border-color: var(--accent);
+    background: var(--accent);
+    border-color: var(--accent-dark);
+    color: var(--white);
 }
 
 .btn-owner-info {
@@ -244,8 +246,9 @@
 }
 
 .btn-owner-danger:hover {
-    background: rgba(220, 38, 38, 0.14);
-    border-color: rgba(220, 38, 38, 0.35);
+    background: #dc2626;
+    border-color: #b91c1c;
+    color: var(--white);
 }
 
 .myhomes-page .owner-card__footer {
