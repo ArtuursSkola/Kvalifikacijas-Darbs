@@ -119,8 +119,10 @@ if (isset($_SESSION['property_success'])) {
     unset($_SESSION['property_success']);
     if ($successType === 'create') {
         echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Sludinājums veiksmīgi izveidots', 'success'); });</script>";
+    } elseif ($successType === 'edit_price_only') {
+        echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Cenas veiksmīgi atjaunotas — sludinājums paliek aktīvs!', 'success'); });</script>";
     } elseif ($successType === 'edit') {
-        echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Sludinājums veiksmīgi rediģēts', 'success'); });</script>";
+        echo "<script>document.addEventListener('DOMContentLoaded', function() { showPageAlert('Sludinājums veiksmīgi rediģēts un nosūtīts apstiprināšanai', 'success'); });</script>";
     }
 }
 

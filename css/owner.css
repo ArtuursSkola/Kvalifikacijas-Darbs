@@ -783,3 +783,39 @@
                 justify-content: flex-end;
             }
         }
+
+.plan-confirm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+}
+.plan-confirm-btn--cancel {
+    background-color: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+.plan-confirm-btn--cancel:hover {
+    background-color: #dc2626;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
+}
+.plan-confirm-btn--confirm {
+    background-color: var(--accent);
+    color: var(--white);
+}
+.plan-confirm-btn--confirm:hover {
+    background-color: var(--accent-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(48, 182, 7, 0.35);
+}
+        }

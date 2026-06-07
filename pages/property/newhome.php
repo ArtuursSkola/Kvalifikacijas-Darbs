@@ -384,16 +384,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($isEdit) {
+            // Determine whether only price-related fields changed.
+            // If the listing is currently 'Aktivs' and nothing else changed, keep it active
+            // so the owner doesn't have to wait for mod approval after a simple price update.
+            $existingStatus = (string)($existingHome['statuss'] ?? '');
+            $priceOnlyFields = true;
+            if ($existingStatus === 'Aktivs') {
+                // Non-price fields that would require re-review
+                $nonPriceChanged =
+                    $title          !== (string)($existingHome['nosaukums'] ?? '')
+                    || $city            !== (string)($existingHome['pilseta'] ?? '')
+                    || $address         !== (string)($existingHome['adrese'] ?? '')
+                    || $location_text   !== (string)($existingHome['atrasanas_vieta'] ?? '')
+                    || $property_category !== (string)($existingHome['kategorija'] ?? '')
+                    || $type            !== (string)($existingHome['veids'] ?? '')
+                    || abs($areaVal  - (float)($existingHome['platiba']        ?? 0)) > 0.001
+                    || $bedsVal      !== (int)($existingHome['gulamistabas']   ?? 0)
+                    || $bathsVal     !== (int)($existingHome['vannasistabas']  ?? 0)
+                    || $floorInfo    !== (string)($existingHome['stavu_info']  ?? '')
+                    || $description  !== (string)($existingHome['apraksts']    ?? '')
+                    || $layout_text  !== (string)($existingHome['planojums']   ?? '')
+                    || $map_text     !== (string)($existingHome['karte']       ?? '')
+                    || $amenities    !== (string)($existingHome['ertibas']     ?? '')
+                    || $main_image   !== (string)($existingHome['galvenais_attels'] ?? '')
+                    || $gallery_json !== (string)($existingHome['galerija']    ?? '[]')
+                    || ($latBind !== null && abs((float)$latBind - (float)($existingHome['latitude']  ?? 0)) > 0.0000001)
+                    || ($lngBind !== null && abs((float)$lngBind - (float)($existingHome['longitude'] ?? 0)) > 0.0000001);
+                $priceOnlyFields = !$nonPriceChanged;
+            } else {
+                $priceOnlyFields = false;
+            }
+            // If only prices changed on an active listing, keep the existing status; otherwise require re-review
+            $newStatus = ($priceOnlyFields) ? 'Aktivs' : 'Melnraksts';
+
             if ($isAdminOrMod) {
                 $sql = "UPDATE est_homes SET 
                     nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
                     cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
                     apraksts=?, planojums=?, karte=?, ertibas=?, 
-                    galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, latitude=?, longitude=?, statuss='Melnraksts'
+                    galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, latitude=?, longitude=?, statuss=?
                     WHERE id=?";
                 $stmt = $savienojums->prepare($sql);
                 if ($stmt) {
-                    $adminBindTypes = 'ssssss' . 'dd' . 'iii' . str_repeat('s', 7) . 'ddddd' . 'ss' . 'i';
+                    $adminBindTypes = 'ssssss' . 'dd' . 'iii' . str_repeat('s', 7) . 'ddddd' . 'ss' . 'si';
                     $stmt->bind_param(
                         $adminBindTypes,
                         $title, $city, $address, $location_text, $property_category, $type,
@@ -401,7 +434,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $description, $layout_text, $map_text, $amenities,
                         $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
                         $latBind, $lngBind,
-                        $editId
+                        $newStatus, $editId
                     );
                 }
 
@@ -410,11 +443,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         nosaukums=?, pilseta=?, adrese=?, atrasanas_vieta=?, kategorija=?, veids=?, 
         cena=?, platiba=?, gulamistabas=?, vannasistabas=?, stavs=?, stavu_info=?, 
         apraksts=?, planojums=?, karte=?, ertibas=?, 
-        galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, latitude=?, longitude=?, statuss='Melnraksts'
+        galvenais_attels=?, galerija=?, ires_maksa=?, komunalo_maksa=?, kopa_maksa=?, pirts_cena_diena=?, balla_cena_diena=?, latitude=?, longitude=?, statuss=?
         WHERE id=? AND ipasnieka_id=?";
                 $stmt = $savienojums->prepare($sql);
                 if ($stmt) {
-                    $ownerBindTypes = 'ssssss' . 'dd' . 'iii' . str_repeat('s', 7) . 'ddddd' . 'ss' . 'ii';
+                    $ownerBindTypes = 'ssssss' . 'dd' . 'iii' . str_repeat('s', 7) . 'ddddd' . 'ss' . 'sii';
                     $stmt->bind_param(
                             $ownerBindTypes,
                             $title, $city, $address, $location_text, $property_category, $type,
@@ -422,7 +455,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $description, $layout_text, $map_text, $amenities,
                             $main_image, $gallery_json, $rentVal, $utilVal, $totalVal, $pirtsVal, $ballaVal,
                             $latBind, $lngBind,
-                            $editId, $ownerId
+                            $newStatus, $editId, $ownerId
                     );
                 }
             }
@@ -451,7 +484,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: ' . admin_route('listings'));
                     exit;
                 }
-                $_SESSION['property_success'] = $isEdit ? 'edit' : 'create';
+                $_SESSION['property_success'] = $isEdit
+                    ? ($priceOnlyFields ? 'edit_price_only' : 'edit')
+                    : 'create';
 
                 if (function_exists('main_redirect')) {
                     main_redirect('property.myhomes');
