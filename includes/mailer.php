@@ -161,7 +161,9 @@ function mail_notify_owner_new_pieteikums(
     string $applicantName,
     string $applicantEmail,
     string $pieteikumsType,
-    string $viewUrl
+    string $viewUrl,
+    string $comment = '',
+    ?float $piedavataSumma = null
 ): void {
     if (!filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
         return;
@@ -171,16 +173,28 @@ function mail_notify_owner_new_pieteikums(
         . "Jūsu sludinājumam «{$listingTitle}» ir iesniegts jauns pieteikums.\n"
         . "Pieteikuma veids: {$pieteikumsType}\n"
         . "Pieteikējs: {$applicantName}\n"
-        . "E-pasts: {$applicantEmail}\n"
-        . "Apskatīt pieteikumu: {$viewUrl}\n\n"
+        . "E-pasts: {$applicantEmail}\n";
+    if ($comment !== '') {
+        $text .= "Komentārs: {$comment}\n";
+    }
+    if ($piedavataSumma !== null) {
+        $text .= "Piedāvātā summa: " . number_format($piedavataSumma, 0, ',', ' ') . " €\n";
+    }
+    $text .= "Apskatīt pieteikumu: {$viewUrl}\n\n"
         . '- HomeEstate';
     $safeTitle = htmlspecialchars($listingTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     $html = '<p>Sveiki, ' . htmlspecialchars($ownerName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '!</p>'
         . '<p>Jūsu sludinājumam <strong>' . $safeTitle . '</strong> ir iesniegts jauns pieteikums.</p>'
         . '<ul><li>Pieteikuma veids: ' . htmlspecialchars($pieteikumsType, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>'
         . '<li>Pieteikējs: ' . htmlspecialchars($applicantName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>'
-        . '<li>E-pasts: ' . htmlspecialchars($applicantEmail, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>'
-        . '<li>Apskatīt pieteikumu: <a href="' . htmlspecialchars($viewUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">' . htmlspecialchars($viewUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a></li></ul>'
+        . '<li>E-pasts: ' . htmlspecialchars($applicantEmail, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>';
+    if ($comment !== '') {
+        $html .= '<li>Komentārs: ' . nl2br(htmlspecialchars($comment, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</li>';
+    }
+    if ($piedavataSumma !== null) {
+        $html .= '<li>Piedāvātā summa: <strong>' . number_format($piedavataSumma, 0, ',', ' ') . ' €</strong></li>';
+    }
+    $html .= '<li>Apskatīt pieteikumu: <a href="' . htmlspecialchars($viewUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">' . htmlspecialchars($viewUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a></li></ul>'
         . '<p>- HomeEstate</p>';
     mail_send($ownerEmail, $subject, $text, $html, $applicantEmail);
 }

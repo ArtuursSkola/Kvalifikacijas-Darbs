@@ -264,7 +264,10 @@ include __DIR__ . '/../../includes/header.php';
 
                         <div class="app-details">
                             <?php if (!empty($p['sakuma_datums']) || !empty($p['beigu_datums'])): ?>
-                                <strong>Periods:</strong> <?php echo htmlspecialchars((string)$p['sakuma_datums']); ?> - <?php echo htmlspecialchars((string)$p['beigu_datums']); ?>
+                                <strong>Periods:</strong> <?php echo htmlspecialchars((string)$p['sakuma_datums']); ?> - <?php echo htmlspecialchars((string)$p['beigu_datums']); ?><br>
+                                <?php if (!empty($p['piedavata_summa'])): ?>
+                                    <strong>Aprēķinātā kopsumma:</strong> <?php echo number_format((float)$p['piedavata_summa'], 0, ',', ' '); ?> €
+                                <?php endif; ?>
                             <?php elseif (!empty($p['ires_sakuma_datums'])): ?>
                                 <strong>Sākums:</strong> <?php echo htmlspecialchars((string)$p['ires_sakuma_datums']); ?><br>
                                 <strong>Ilgums:</strong> <?php if (!empty($p['ires_menesi'])): ?><?php echo (int)$p['ires_menesi']; ?> mēn.<?php endif; ?><?php if (!empty($p['nav_zinams'])): ?> (nav zināms)<?php endif; ?>
@@ -275,6 +278,7 @@ include __DIR__ . '/../../includes/header.php';
                                 <?php endif; ?>
                             <?php endif; ?>
                         </div>
+
 
                         <?php if (!empty($p['komentars'])): ?>
                             <div class="app-comment">

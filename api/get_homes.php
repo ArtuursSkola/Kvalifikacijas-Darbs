@@ -137,6 +137,17 @@ if ($action === 'pieteikums_create') {
             json_out(['ok' => false, 'error' => 'Beigu datumam jābūt pēc sākuma datuma.'], 422);
         }
 
+        $diffTime = strtotime($beiguDatums) - strtotime($sakumaDatums);
+        $maxDays = 0;
+        if ($diffTime >= 0) {
+            $maxDays = (int)round($diffTime / 86400) + 1;
+        }
+        $pirtsDienas = isset($_POST['pirts_dienas']) ? (int)$_POST['pirts_dienas'] : 0;
+        $ballaDienas = isset($_POST['balla_dienas']) ? (int)$_POST['balla_dienas'] : 0;
+        if ($pirtsDienas > $maxDays || $ballaDienas > $maxDays) {
+            json_out(['ok' => false, 'error' => 'Pirts vai baļļas dienas nevar pārsniegt uzturēšanās dienu skaitu.'], 422);
+        }
+
         $overlapStmt = $savienojums->prepare("
             SELECT id
             FROM est_pieteikumi
@@ -157,6 +168,10 @@ if ($action === 'pieteikums_create') {
                 json_out(['ok' => false, 'error' => 'Izvēlētie datumi nav pieejami.'], 409);
             }
         }
+
+        $piedavataSummaRaw = trim((string)($_POST['piedavata_summa'] ?? ''));
+        $piedavataSumma = $piedavataSummaRaw !== '' && is_numeric($piedavataSummaRaw) ? (float)$piedavataSummaRaw : null;
+
     } else {
         $piedavataRaw = trim((string)($_POST['piedavata_summa'] ?? ''));
         $piedavataSumma = $piedavataRaw === '' ? null : (float)$piedavataRaw;
@@ -245,7 +260,9 @@ if ($action === 'pieteikums_create') {
                     $vardsUzvards,
                     $epasts,
                     $pieteikumsTypeLabel,
-                    $viewUrl
+                    $viewUrl,
+                    $komentars,
+                    $piedavataSumma
                 );
             }
             $ownerId = (int)($ownRow['ipasnieka_id'] ?? 0);

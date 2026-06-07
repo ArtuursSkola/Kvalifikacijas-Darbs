@@ -640,6 +640,11 @@ $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
                     </div>
 
                 <?php elseif (($home['veids'] ?? '') === 'istermina_ire'): ?>
+                <?php
+                    $pirtsDay = (float)($home['pirts_cena_diena'] ?? 0);
+                    $ballaDay = (float)($home['balla_cena_diena'] ?? 0);
+                    $pricePerNight = (float)($home['cena'] ?? 0);
+                ?>
 
                     <div class="application-input-group">
                         <h4>Vārds un uzvārds</h4>
@@ -671,9 +676,114 @@ $startDate = fixDateTime($_POST['lt_start_date'] ?? '');
                         <textarea name="st_comment" rows="4" maxlength="300" placeholder="..."></textarea>
                     </div>
 
-                    <div class="application-input-group">
-                        <button class="btn-submit">Nosūtīt pieteikumu</button>
+                    <?php if ($pirtsDay > 0): ?>
+                    <div class="application-input-group" id="pirts-days-group">
+                        <h4>Pirts (<span style="color:var(--accent)"><?php echo number_format($pirtsDay, 0); ?> € / dienā</span>)</h4>
+                        <input type="number" name="st_pirts_dienas" id="st_pirts_dienas" min="0" max="999" placeholder="0 dienas" oninput="updatePieteikumsTotal()">
                     </div>
+                    <?php endif; ?>
+
+                    <?php if ($ballaDay > 0): ?>
+                    <div class="application-input-group" id="balla-days-group">
+                        <h4>Baļļa (<span style="color:var(--accent)"><?php echo number_format($ballaDay, 0); ?> € / dienā</span>)</h4>
+                        <input type="number" name="st_balla_dienas" id="st_balla_dienas" min="0" max="999" placeholder="0 dienas" oninput="updatePieteikumsTotal()">
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($pirtsDay > 0 || $ballaDay > 0): ?>
+                    <div class="application-input-group" id="pieteikums-total-block" style="background:rgba(var(--accent-rgb,99,102,241),0.07);border:1px solid rgba(var(--accent-rgb,99,102,241),0.18);border-radius:10px;padding:14px 16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;font-size:0.95rem;">Aprēķinātā kopsumma</span>
+                            <span id="pieteikums-total-val" style="font-size:1.2rem;font-weight:700;color:var(--accent);">—</span>
+                        </div>
+                        <p style="margin:6px 0 0;font-size:0.8rem;color:var(--gray-400);">Nakšņošana + papildpakalpojumi. Precīza summa var atšķirties.</p>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="application-input-group">
+                        <button class="btn-submit"
+                            data-price-night="<?php echo $pricePerNight; ?>"
+                            data-pirts-day="<?php echo $pirtsDay; ?>"
+                            data-balla-day="<?php echo $ballaDay; ?>"
+                        >Nosūtīt pieteikumu</button>
+                    </div>
+
+                    <script>
+                    function validatePirtsBallaInputs(isDateChange) {
+                        var startEl = document.getElementById('st_start_date');
+                        var endEl = document.getElementById('st_end_date');
+                        var pirtsEl = document.getElementById('st_pirts_dienas');
+                        var ballaEl = document.getElementById('st_balla_dienas');
+                        var maxDays = 0;
+                        if (startEl && endEl && startEl.value && endEl.value) {
+                            var s = new Date(startEl.value.split('T')[0]);
+                            var e = new Date(endEl.value.split('T')[0]);
+                            var diff = Math.round((e - s) / 86400000);
+                            if (diff >= 0) {
+                                maxDays = diff + 1;
+                            }
+                        }
+                        if (pirtsEl) {
+                            pirtsEl.max = maxDays;
+                            var pVal = parseInt(pirtsEl.value) || 0;
+                            if (pVal > maxDays) {
+                                pirtsEl.value = isDateChange ? '' : maxDays;
+                            }
+                        }
+                        if (ballaEl) {
+                            ballaEl.max = maxDays;
+                            var bVal = parseInt(ballaEl.value) || 0;
+                            if (bVal > maxDays) {
+                                ballaEl.value = isDateChange ? '' : maxDays;
+                            }
+                        }
+                    }
+                    function updatePieteikumsTotal() {
+                        var startEl = document.getElementById('st_start_date');
+                        var endEl   = document.getElementById('st_end_date');
+                        var totalEl = document.getElementById('pieteikums-total-val');
+                        if (!totalEl) return;
+                        var priceNight = <?php echo $pricePerNight; ?>;
+                        var pirtsDay   = <?php echo $pirtsDay; ?>;
+                        var ballaDay   = <?php echo $ballaDay; ?>;
+                        var nights = 0;
+                        if (startEl && endEl && startEl.value && endEl.value) {
+                            var s = new Date(startEl.value);
+                            var e = new Date(endEl.value);
+                            var diff = Math.floor((e - s) / 86400000);
+                            if (diff > 0) nights = diff;
+                        }
+                        var pirtsDias  = parseInt((document.getElementById('st_pirts_dienas') || {}).value || '0') || 0;
+                        var ballaDias  = parseInt((document.getElementById('st_balla_dienas') || {}).value || '0') || 0;
+                        if (pirtsDias < 0) pirtsDias = 0;
+                        if (ballaDias < 0) ballaDias = 0;
+                        var total = (nights * priceNight) + (pirtsDias * pirtsDay) + (ballaDias * ballaDay);
+                        totalEl.textContent = total > 0 ? total.toLocaleString('lv-LV') + ' €' : '—';
+                    }
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var s = document.getElementById('st_start_date');
+                        var e = document.getElementById('st_end_date');
+                        var pirtsEl = document.getElementById('st_pirts_dienas');
+                        var ballaEl = document.getElementById('st_balla_dienas');
+                        if (s) s.addEventListener('change', function() {
+                            validatePirtsBallaInputs(true);
+                            updatePieteikumsTotal();
+                        });
+                        if (e) e.addEventListener('change', function() {
+                            validatePirtsBallaInputs(true);
+                            updatePieteikumsTotal();
+                        });
+                        if (pirtsEl) pirtsEl.addEventListener('input', function() {
+                            validatePirtsBallaInputs(false);
+                            updatePieteikumsTotal();
+                        });
+                        if (ballaEl) ballaEl.addEventListener('input', function() {
+                            validatePirtsBallaInputs(false);
+                            updatePieteikumsTotal();
+                        });
+                        validatePirtsBallaInputs(true);
+                    });
+                    </script>
 
                 <?php else: ?>
 

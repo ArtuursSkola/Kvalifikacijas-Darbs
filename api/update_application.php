@@ -63,6 +63,13 @@ if (isset($data['beigu_datums']) && $data['beigu_datums'] !== '') {
     $beigu_datums = str_replace('T', ' ', substr(trim((string)$data['beigu_datums']), 0, 19));
 }
 
+if ($sakuma_datums !== null && $beigu_datums !== null) {
+    if (strtotime($beigu_datums) <= strtotime($sakuma_datums)) {
+        echo json_encode(['success' => false, 'message' => 'Beigu datumam jābūt pēc sākuma datuma.']);
+        exit();
+    }
+}
+
 $piedavata_summa = isset($data['piedavata_summa']) && $data['piedavata_summa'] !== '' ? (float)$data['piedavata_summa'] : null;
 $finansesanas_veids = isset($data['finansesanas_veids']) && $data['finansesanas_veids'] !== '' ? trim((string)$data['finansesanas_veids']) : null;
 

@@ -1439,9 +1439,36 @@ document.addEventListener('DOMContentLoaded', () => {
                             vards = pick('st_full_name');
                             epasts = pick('st_email');
                             telefons = pick('st_phone');
-                            komentars = (modal.querySelector('[name="st_comment"]')?.value || '').trim();
+                            const rawComment = (modal.querySelector('[name="st_comment"]')?.value || '').trim();
                             fd.set('sakuma_datums', pick('st_start_date'));
                             fd.set('beigu_datums', pick('st_end_date'));
+
+                            const pirtsDienas = parseInt((modal.querySelector('[name="st_pirts_dienas"]')?.value || '0')) || 0;
+                            const ballaDienas = parseInt((modal.querySelector('[name="st_balla_dienas"]')?.value || '0')) || 0;
+                            fd.set('pirts_dienas', String(pirtsDienas));
+                            fd.set('balla_dienas', String(ballaDienas));
+
+                            const submitEl = modal.querySelector('.btn-submit');
+                            const priceNight = parseFloat(submitEl?.getAttribute('data-price-night') || '0') || 0;
+                            const pirtsDay   = parseFloat(submitEl?.getAttribute('data-pirts-day')   || '0') || 0;
+                            const ballaDay   = parseFloat(submitEl?.getAttribute('data-balla-day')   || '0') || 0;
+
+                            const startVal = pick('st_start_date');
+                            const endVal   = pick('st_end_date');
+                            let nights = 0;
+                            if (startVal && endVal) {
+                                const diff = Math.floor((new Date(endVal) - new Date(startVal)) / 86400000);
+                                if (diff > 0) nights = diff;
+                            }
+                            const totalPrice = (nights * priceNight) + (pirtsDienas * pirtsDay) + (ballaDienas * ballaDay);
+                            if (totalPrice > 0) fd.set('piedavata_summa', String(totalPrice));
+
+                            const extraParts = [];
+                            if (pirtsDienas > 0) extraParts.push(`Pirts: ${pirtsDienas} dien${pirtsDienas === 1 ? 'u' : 'as'}`);
+                            if (ballaDienas > 0) extraParts.push(`Baļļa: ${ballaDienas} dien${ballaDienas === 1 ? 'u' : 'as'}`);
+                            const extrasStr = extraParts.join(', ');
+                            komentars = extrasStr ? (extrasStr + (rawComment ? '\n' + rawComment : '')) : rawComment;
+
                         } else {
                             vards = pick('sale_full_name');
                             epasts = pick('sale_email');

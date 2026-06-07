@@ -37,8 +37,10 @@ if ($check_table && $check_table->num_rows > 0) {
     $app_query = "SELECT p.id, p.sludinajuma_id, p.sludinajuma_veids, p.lietotaja_id, 
                          p.vards_uzvards, p.epasts, p.telefons, p.komentars, p.statuss, 
                          p.ires_menesi, p.nav_zinams, p.ires_sakuma_datums, p.sakuma_datums, 
-                         p.beigu_datums, p.piedavata_summa, p.finansesanas_veids, p.created_at
+                         p.beigu_datums, p.piedavata_summa, p.finansesanas_veids, p.created_at,
+                         h.cena AS home_cena, h.pirts_cena_diena, h.balla_cena_diena
                   FROM est_pieteikumi p
+                  LEFT JOIN est_homes h ON h.id = p.sludinajuma_id
                   WHERE p.lietotaja_id = $user_id
                   ORDER BY p.created_at DESC";
     
@@ -99,7 +101,10 @@ include __DIR__ . '/../includes/header.php';
                          data-app-sakuma-datums="<?php echo htmlspecialchars((string)($app['sakuma_datums'] ?? '')); ?>"
                          data-app-beigu-datums="<?php echo htmlspecialchars((string)($app['beigu_datums'] ?? '')); ?>"
                          data-app-piedavata-summa="<?php echo htmlspecialchars((string)($app['piedavata_summa'] ?? '')); ?>"
-                         data-app-finansesanas-veids="<?php echo htmlspecialchars((string)($app['finansesanas_veids'] ?? '')); ?>">
+                         data-app-finansesanas-veids="<?php echo htmlspecialchars((string)($app['finansesanas_veids'] ?? '')); ?>"
+                         data-app-home-cena="<?php echo htmlspecialchars((string)($app['home_cena'] ?? '0')); ?>"
+                         data-app-pirts-cena="<?php echo htmlspecialchars((string)($app['pirts_cena_diena'] ?? '0')); ?>"
+                         data-app-balla-cena="<?php echo htmlspecialchars((string)($app['balla_cena_diena'] ?? '0')); ?>">
                         <div class="app-top">
                             <div class="app-name">Pieteikums</div>
                             <div class="app-status status-<?php echo htmlspecialchars((string)($app['statuss'] ?? '')); ?>">
@@ -129,6 +134,9 @@ include __DIR__ . '/../includes/header.php';
                         <div class="app-details">
                             <p><strong>Sludinājuma veids:</strong> <?php echo htmlspecialchars($app['sludinajuma_veids']); ?></p>
                             <p><strong>Vārds un uzvārds:</strong> <?php echo htmlspecialchars($app['vards_uzvards']); ?></p>
+                            <?php if ($app['sludinajuma_veids'] === 'istermina_ire' && !empty($app['piedavata_summa'])): ?>
+                                <p><strong>Aprēķinātā kopsumma:</strong> <?php echo htmlspecialchars(number_format((float)$app['piedavata_summa'], 0, ',', ' ')); ?> €</p>
+                            <?php endif; ?>
                         </div>
 
                         <?php if (!empty($app['komentars'])): ?>
@@ -136,6 +144,7 @@ include __DIR__ . '/../includes/header.php';
                                 "<?php echo nl2br(htmlspecialchars((string)$app['komentars'])); ?>"
                             </div>
                         <?php endif; ?>
+
 
                         <?php $appLocked = in_array($app['statuss'], ['Apstiprinats', 'Rezervets', 'Apstiprināts', 'approved'], true); ?>
                         <div class="app-actions">
@@ -240,20 +249,20 @@ include __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="form-group">
                         <label for="editFullName">Vārds un uzvārds</label>
-                        <input type="text" id="editFullName" class="form-control" required>
+                        <input type="text" id="editFullName" class="form-control" required maxlength="50" pattern="[A-Za-zĀ-ž\s]+" oninput="this.value=this.value.replace(/[^A-Za-zĀ-ž\s]/g,'')" title="Lūdzu ievadiet tikai burtus un atstarpes">
                     </div>
                     <div class="form-group">
                         <label for="editEmail">E-pasts</label>
-                        <input type="email" id="editEmail" class="form-control" required>
+                        <input type="email" id="editEmail" class="form-control" required maxlength="50">
                     </div>
                     <div class="form-group">
                         <label for="editPhone">Telefona nr.</label>
-                        <input type="tel" id="editPhone" class="form-control" required>
+                        <input type="tel" id="editPhone" class="form-control" required maxlength="15" oninput="this.value=this.value.replace(/[^0-9+\s]/g,'')" title="Lūdzu ievadiet tikai ciparus, atstarpes un + zīmi">
                     </div>
                     <div id="editRentFields" style="display: none;">
                         <div class="form-group">
                             <label for="editRentMonths">Īres periods mēnešos</label>
-                            <input type="number" id="editRentMonths" class="form-control" min="1" max="99">
+                            <input type="number" id="editRentMonths" class="form-control" min="1" max="99" oninput="if(this.value.length>2)this.value=this.value.slice(0,2);if(parseInt(this.value)>99)this.value=99;">
                         </div>
                         <div class="form-group">
                             <label class="checkbox-inline">
@@ -274,11 +283,25 @@ include __DIR__ . '/../includes/header.php';
                             <label for="editBeiguDatums">Beigu datums</label>
                             <input type="datetime-local" id="editBeiguDatums" class="form-control">
                         </div>
+                        <div class="form-group" id="editPirtsGroup" style="display: none;">
+                            <label for="editPirtsDienas">Pirts (<span id="editPirtsPriceLabel" style="color:var(--accent)">0</span> € / dienā)</label>
+                            <input type="number" id="editPirtsDienas" class="form-control" min="0">
+                        </div>
+                        <div class="form-group" id="editBallaGroup" style="display: none;">
+                            <label for="editBallaDienas">Baļļa (<span id="editBallaPriceLabel" style="color:var(--accent)">0</span> € / dienā)</label>
+                            <input type="number" id="editBallaDienas" class="form-control" min="0">
+                        </div>
+                        <div class="form-group" id="editTotalGroup" style="background:rgba(var(--accent-rgb,99,102,241),0.07);border:1px solid rgba(var(--accent-rgb,99,102,241),0.18);border-radius:10px;padding:14px 16px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-weight:600;font-size:0.95rem;">Aprēķinātā kopsumma</span>
+                                <span id="editTotalVal" style="font-size:1.2rem;font-weight:700;color:var(--accent);">—</span>
+                            </div>
+                        </div>
                     </div>
                     <div id="editSaleFields" style="display: none;">
                         <div class="form-group">
                             <label for="editPiedavataSumma">Piedāvātā summa</label>
-                            <input type="number" id="editPiedavataSumma" class="form-control" step="0.01">
+                            <input type="number" id="editPiedavataSumma" class="form-control" max="9999999" oninput="if(this.value.length>7)this.value=this.value.slice(0,7);">
                         </div>
                         <div class="form-group">
                             <label for="editFinansesanasVeids">Finansēšanas veids</label>
@@ -290,7 +313,7 @@ include __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="form-group">
                         <label for="editComment">Komentārs</label>
-                        <textarea id="editComment" class="form-control" rows="4"></textarea>
+                        <textarea id="editComment" class="form-control" rows="4" maxlength="300"></textarea>
                     </div>
                 </div>
                 
@@ -308,7 +331,7 @@ include __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="form-group">
                         <label for="editApraksts">Apraksts</label>
-                        <textarea id="editApraksts" class="form-control" rows="4" required></textarea>
+                        <textarea id="editApraksts" class="form-control" rows="4" required maxlength="500"></textarea>
                     </div>
                     <div class="form-group">
                         <label>Esošie attēli</label>
@@ -358,6 +381,100 @@ function formatDateTimeLocal(dtStr) {
     return clean.replace(' ', 'T').substring(0, 16);
 }
 
+function parseExtrasFromComment(comment) {
+    var pirts = 0;
+    var balla = 0;
+    var cleanComment = comment || '';
+    var pirtsMatch = cleanComment.match(/Pirts:\s*(\d+)\s*dien(as|u)/i);
+    if (pirtsMatch) {
+        pirts = parseInt(pirtsMatch[1]) || 0;
+    }
+    var ballaMatch = cleanComment.match(/Baļļa:\s*(\d+)\s*dien(as|u)/i);
+    if (ballaMatch) {
+        balla = parseInt(ballaMatch[1]) || 0;
+    }
+    var lines = cleanComment.split('\n');
+    if (lines.length > 0 && (lines[0].indexOf('Pirts:') !== -1 || lines[0].indexOf('Baļļa:') !== -1)) {
+        lines.shift();
+        cleanComment = lines.join('\n');
+    }
+    return { pirts: pirts, balla: balla, comment: cleanComment };
+}
+
+function updateEditTotal() {
+    var startEl = document.getElementById('editSakumaDatums');
+    var endEl = document.getElementById('editBeiguDatums');
+    var pirtsEl = document.getElementById('editPirtsDienas');
+    var ballaEl = document.getElementById('editBallaDienas');
+    var totalEl = document.getElementById('editTotalVal');
+    var priceNight = parseFloat(window.currentEditHomeCena) || 0;
+    var pirtsDay = parseFloat(window.currentEditPirtsCena) || 0;
+    var ballaDay = parseFloat(window.currentEditBallaCena) || 0;
+    var nights = 0;
+    var maxDays = 0;
+    if (startEl && endEl && startEl.value && endEl.value) {
+        var s = new Date(startEl.value.split('T')[0]);
+        var e = new Date(endEl.value.split('T')[0]);
+        var diff = Math.round((e - s) / 86400000);
+        if (diff >= 0) {
+            nights = diff;
+            maxDays = diff + 1;
+        }
+    }
+    if (pirtsEl) {
+        pirtsEl.max = maxDays;
+        var pVal = parseInt(pirtsEl.value) || 0;
+        if (pVal > maxDays) {
+            pirtsEl.value = maxDays;
+        }
+    }
+    if (ballaEl) {
+        ballaEl.max = maxDays;
+        var bVal = parseInt(ballaEl.value) || 0;
+        if (bVal > maxDays) {
+            ballaEl.value = maxDays;
+        }
+    }
+    var pirtsDias = parseInt(pirtsEl ? pirtsEl.value : '0') || 0;
+    var ballaDias = parseInt(ballaEl ? ballaEl.value : '0') || 0;
+    if (pirtsDias < 0) pirtsDias = 0;
+    if (ballaDias < 0) ballaDias = 0;
+    var total = (nights * priceNight) + (pirtsDias * pirtsDay) + (ballaDias * ballaDay);
+    if (totalEl) {
+        totalEl.textContent = total > 0 ? total.toLocaleString('lv-LV') + ' €' : '—';
+    }
+    window.currentEditTotal = total;
+}
+
+function handleEditDateChange() {
+    var startEl = document.getElementById('editSakumaDatums');
+    var endEl = document.getElementById('editBeiguDatums');
+    var pirtsEl = document.getElementById('editPirtsDienas');
+    var ballaEl = document.getElementById('editBallaDienas');
+    var maxDays = 0;
+    if (startEl && endEl && startEl.value && endEl.value) {
+        var s = new Date(startEl.value.split('T')[0]);
+        var e = new Date(endEl.value.split('T')[0]);
+        var diff = Math.round((e - s) / 86400000);
+        if (diff >= 0) {
+            maxDays = diff + 1;
+        }
+    }
+    if (pirtsEl) {
+        var pVal = parseInt(pirtsEl.value) || 0;
+        if (pVal > maxDays) {
+            pirtsEl.value = '';
+        }
+    }
+    if (ballaEl) {
+        var bVal = parseInt(ballaEl.value) || 0;
+        if (bVal > maxDays) {
+            ballaEl.value = '';
+        }
+    }
+    updateEditTotal();
+}
+
 function editApplication(id) {
     const appCard = document.querySelector(`[onclick*="editApplication(${id})"]`).closest('.app-card');
     if (!appCard) {
@@ -394,10 +511,20 @@ function editApplication(id) {
     const piedavataSumma = (appCard.getAttribute('data-app-piedavata-summa') || '').trim();
     const finansesanasVeids = (appCard.getAttribute('data-app-finansesanas-veids') || '').trim();
 
+    var parsedComment = comment;
+    var pirtsVal = 0;
+    var ballaVal = 0;
+    if (veids === 'istermina_ire') {
+        var parsed = parseExtrasFromComment(comment);
+        parsedComment = parsed.comment;
+        pirtsVal = parsed.pirts;
+        ballaVal = parsed.balla;
+    }
+
     document.getElementById('editFullName').value = vards;
     document.getElementById('editEmail').value = email;
     document.getElementById('editPhone').value = phone;
-    document.getElementById('editComment').value = comment;
+    document.getElementById('editComment').value = parsedComment;
 
     document.getElementById('editRentFields').style.display = 'none';
     document.getElementById('editShortRentFields').style.display = 'none';
@@ -420,6 +547,33 @@ function editApplication(id) {
 
         document.getElementById('editSakumaDatums').value = formatDateTimeLocal(sakumaDatums);
         document.getElementById('editBeiguDatums').value = formatDateTimeLocal(beiguDatums);
+
+        window.currentEditHomeCena = parseFloat(appCard.getAttribute('data-app-home-cena') || '0') || 0;
+        window.currentEditPirtsCena = parseFloat(appCard.getAttribute('data-app-pirts-cena') || '0') || 0;
+        window.currentEditBallaCena = parseFloat(appCard.getAttribute('data-app-balla-cena') || '0') || 0;
+
+        var editPirtsGroup = document.getElementById('editPirtsGroup');
+        var editBallaGroup = document.getElementById('editBallaGroup');
+
+        if (window.currentEditPirtsCena > 0) {
+            editPirtsGroup.style.display = 'block';
+            document.getElementById('editPirtsPriceLabel').textContent = window.currentEditPirtsCena;
+            document.getElementById('editPirtsDienas').value = pirtsVal > 0 ? pirtsVal : '';
+        } else {
+            editPirtsGroup.style.display = 'none';
+            document.getElementById('editPirtsDienas').value = '';
+        }
+
+        if (window.currentEditBallaCena > 0) {
+            editBallaGroup.style.display = 'block';
+            document.getElementById('editBallaPriceLabel').textContent = window.currentEditBallaCena;
+            document.getElementById('editBallaDienas').value = ballaVal > 0 ? ballaVal : '';
+        } else {
+            editBallaGroup.style.display = 'none';
+            document.getElementById('editBallaDienas').value = '';
+        }
+
+        updateEditTotal();
     } else {
         document.getElementById('editSaleFields').style.display = 'block';
         toggleInputs('editSaleFields', true);
@@ -582,6 +736,19 @@ document.getElementById('editForm').addEventListener('submit', function(e) {
         if (sakumaDatumsEl && !sakumaDatumsEl.disabled) {
             data.sakuma_datums = sakumaDatumsEl.value;
             data.beigu_datums = document.getElementById('editBeiguDatums').value;
+
+            var pirtsEl = document.getElementById('editPirtsDienas');
+            var ballaEl = document.getElementById('editBallaDienas');
+            var pirtsDienas = parseInt(pirtsEl ? pirtsEl.value : '0') || 0;
+            var ballaDienas = parseInt(ballaEl ? ballaEl.value : '0') || 0;
+            var rawComment = document.getElementById('editComment').value.trim();
+            var extraParts = [];
+            if (pirtsDienas > 0) extraParts.push(`Pirts: ${pirtsDienas} dien${pirtsDienas === 1 ? 'u' : 'as'}`);
+            if (ballaDienas > 0) extraParts.push(`Baļļa: ${ballaDienas} dien${ballaDienas === 1 ? 'u' : 'as'}`);
+            var extrasStr = extraParts.join(', ');
+            var finalComment = extrasStr ? (extrasStr + (rawComment ? '\n' + rawComment : '')) : rawComment;
+            data.komentars = finalComment;
+            data.piedavata_summa = window.currentEditTotal || 0;
         }
 
         const piedavataSummaEl = document.getElementById('editPiedavataSumma');
@@ -750,6 +917,16 @@ function syncHelpFileInput() {
     window.newHelpFiles.forEach(f => dt.items.add(f));
     helpFileInput.files = dt.files;
 }
+
+window.newHelpFiles = [];
+var editStart = document.getElementById('editSakumaDatums');
+var editEnd = document.getElementById('editBeiguDatums');
+var editPirts = document.getElementById('editPirtsDienas');
+var editBalla = document.getElementById('editBallaDienas');
+if (editStart) editStart.addEventListener('change', handleEditDateChange);
+if (editEnd) editEnd.addEventListener('change', handleEditDateChange);
+if (editPirts) editPirts.addEventListener('input', updateEditTotal);
+if (editBalla) editBalla.addEventListener('input', updateEditTotal);
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
