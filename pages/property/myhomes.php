@@ -59,7 +59,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         }
 
         if ($action === 'activate_home') {
-            $stmtCheck = $savienojums->prepare("SELECT galvenais_attels, galerija FROM est_homes WHERE id = ? AND ipasnieka_id = ? AND statuss = 'Neaktivs' LIMIT 1");
+            $stmtCheck = $savienojums->prepare("SELECT galvenais_attels, galerija FROM est_homes WHERE id = ? AND ipasnieka_id = ? AND statuss IN ('Neaktivs','Pardots','Noraidīts') LIMIT 1");
             $canActivate = false;
             $imageBlockMessage = '';
             if ($stmtCheck) {
@@ -86,7 +86,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             if ($imageBlockMessage !== '') {
                 $_SESSION['owner_flash'] = ['type' => 'error', 'message' => $imageBlockMessage];
             } elseif ($canActivate) {
-                $stmt = $savienojums->prepare("UPDATE est_homes SET statuss = 'Melnraksts' WHERE id = ? AND ipasnieka_id = ? AND statuss = 'Neaktivs'");
+                $stmt = $savienojums->prepare("UPDATE est_homes SET statuss = 'Melnraksts' WHERE id = ? AND ipasnieka_id = ? AND statuss IN ('Neaktivs','Pardots','Noraidīts')");
                 if ($stmt) {
                     $stmt->bind_param('ii', $homeId, $ownerId);
                     if ($stmt->execute()) {
@@ -317,10 +317,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (inputActivate) inputActivate.value = id;
             if (inputDelete) inputDelete.value = id;
             if (title) title.textContent = t;
-            var isInactive = s === 'Neaktivs';
-            if (formDeactivate) formDeactivate.style.display = isInactive ? 'none' : '';
-            if (formActivate) formActivate.style.display = isInactive ? '' : 'none';
-            if (isInactive && overLimit) {
+            var canActivate = s === 'Neaktivs' || s === 'Pardots' || s === 'Noraidīts';
+            if (formDeactivate) formDeactivate.style.display = canActivate ? 'none' : '';
+            if (formActivate) formActivate.style.display = canActivate ? '' : 'none';
+            if (canActivate && overLimit) {
                 if (planWarning) {
                     planWarning.textContent = 'Nevari aktivizēt šo sludinājumu. Tam ir ' + totalImages + ' attēli, bet tavs pašreizējais plāns atļauj maksimāli ' + planLimit + '. Samazini attēlu skaitu vai jaunini plānu.';
                     planWarning.style.display = '';

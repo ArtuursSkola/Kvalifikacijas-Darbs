@@ -179,7 +179,10 @@ function buildUrl($overrides = []) {
     <main class="main-content">
         <div class="page-header">
             <h1><i class="fas fa-building"></i> Sludinājumi</h1>
-            <button class="btn-add" onclick="openModal('createModal')"><i class="fas fa-plus"></i> Jauns sludinājums</button>
+            <div class="header-actions">
+                <button type="button" class="btn-icon admin-burger" aria-label="Atvērt navigāciju"><i class="fas fa-bars"></i></button>
+                <button class="btn-add" onclick="openModal('createModal')"><i class="fas fa-plus"></i> Jauns sludinājums</button>
+            </div>
         </div>
 
         <?php if ($success): ?>

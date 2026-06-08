@@ -202,9 +202,12 @@ $todayCount = $savienojums->query("SELECT COUNT(*) FROM est_lietotaji WHERE DATE
     <main class="main-content">
         <div class="page-header">
             <h1><i class="fas fa-users"></i> Lietotāji</h1>
-            <?php if ($_SESSION['role'] === 'admin'): ?>
-                <button class="btn-add" onclick="openModal('createModal')"><i class="fas fa-plus"></i> Jauns lietotājs</button>
-            <?php endif; ?>
+            <div class="header-actions">
+                <button type="button" class="btn-icon admin-burger" aria-label="Atvērt navigāciju"><i class="fas fa-bars"></i></button>
+                <?php if ($_SESSION['role'] === 'admin'): ?>
+                    <button class="btn-add" onclick="openModal('createModal')"><i class="fas fa-plus"></i> Jauns lietotājs</button>
+                <?php endif; ?>
+            </div>
         </div>
 
         <?php if ($success): ?>

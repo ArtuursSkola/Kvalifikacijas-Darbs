@@ -290,6 +290,7 @@ $recentApplications = fetchAllPrepared(
                 <div class="header-date"><i class="far fa-calendar-alt"></i> <?php echo date('d.m.Y'); ?></div>
             </div>
             <div class="header-actions">
+                <button type="button" class="btn-icon admin-burger" aria-label="Atvērt navigāciju"><i class="fas fa-bars"></i></button>
                 <a href="<?php echo main_route('home'); ?>" class="btn-icon" title="Publiskā lapa"><i class="fas fa-globe"></i></a>
                 <a href="<?php echo main_route('logout'); ?>" class="btn-icon" title="Iziet"><i class="fas fa-sign-out-alt"></i></a>
             </div>
@@ -689,5 +690,6 @@ $recentApplications = fetchAllPrepared(
             })();
         </script>
     </main>
+    <script src="../script.js"></script>
 </body>
 </html>

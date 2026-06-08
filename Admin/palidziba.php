@@ -222,6 +222,7 @@ $bujCount     = count(array_filter($messages, fn($m) => (int)($m['radata_buj'] ?
         <div class="page-header">
             <h1><i class="fas fa-headset"></i> Palīdzības centrs</h1>
             <div class="header-actions">
+                <button type="button" class="btn-icon admin-burger" aria-label="Atvērt navigāciju"><i class="fas fa-bars"></i></button>
                 <a href="<?php echo main_route('faq'); ?>" class="btn-icon" title="Publiskā FAQ lapa" target="_blank"><i class="fas fa-external-link-alt"></i></a>
                 <a href="<?php echo main_route('logout'); ?>" class="btn-icon" title="Iziet"><i class="fas fa-sign-out-alt"></i></a>
             </div>
@@ -410,5 +411,6 @@ $bujCount     = count(array_filter($messages, fn($m) => (int)($m['radata_buj'] ?
             if (e.key === 'Escape') closeReplyModal();
         });
     </script>
+    <script src="../script.js"></script>
     </body>
 </html>

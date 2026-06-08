@@ -119,6 +119,7 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
                 </div>
             </div>
             <div class="header-actions">
+                <button type="button" class="btn-icon admin-burger" aria-label="Atvērt navigāciju"><i class="fas fa-bars"></i></button>
                 <a href="<?php echo main_route('home'); ?>" class="btn-icon" title="Publiskā lapa"><i class="fas fa-globe"></i></a>
                 <a href="<?php echo main_route('logout'); ?>" class="btn-icon" title="Iziet"><i class="fas fa-sign-out-alt"></i></a>
             </div>
@@ -277,5 +278,6 @@ $dayNames = ['Svētdiena','Pirmdiena','Otrdiena','Trešdiena','Ceturtdiena','Pie
             </div>
         </div>
     </main>
+    <script src="../script.js"></script>
 </body>
 </html>

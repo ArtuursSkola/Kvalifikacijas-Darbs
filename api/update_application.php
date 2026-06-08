@@ -70,6 +70,51 @@ if ($sakuma_datums !== null && $beigu_datums !== null) {
     }
 }
 
+$appStmt = $savienojums->prepare("SELECT sludinajuma_id, sludinajuma_veids FROM est_pieteikumi WHERE id = ? AND lietotaja_id = ? LIMIT 1");
+if (!$appStmt) {
+    echo json_encode(['success' => false, 'message' => 'Database error']);
+    exit();
+}
+$appStmt->bind_param('ii', $application_id, $user_id);
+$appStmt->execute();
+$appRow = $appStmt->get_result()->fetch_assoc();
+$appStmt->close();
+if (!$appRow) {
+    echo json_encode(['success' => false, 'message' => 'Application not found']);
+    exit();
+}
+
+$sludinajuma_id = (int)($appRow['sludinajuma_id'] ?? 0);
+$sludinajuma_veids = (string)($appRow['sludinajuma_veids'] ?? '');
+
+if ($sludinajuma_veids === 'istermina_ire' && $sakuma_datums !== null && $beigu_datums !== null) {
+    $checkStart = substr($sakuma_datums, 0, 10);
+    $checkEnd = substr($beigu_datums, 0, 10);
+    $overlapStmt = $savienojums->prepare("
+        SELECT id
+        FROM est_pieteikumi
+        WHERE sludinajuma_id = ?
+          AND id <> ?
+          AND statuss IN ('Apstiprinats', 'Rezervets')
+          AND sakuma_datums IS NOT NULL
+          AND beigu_datums IS NOT NULL
+          AND sakuma_datums < ?
+          AND beigu_datums > ?
+        LIMIT 1
+    ");
+    if ($overlapStmt) {
+        $overlapStmt->bind_param('iiss', $sludinajuma_id, $application_id, $checkEnd, $checkStart);
+        $overlapStmt->execute();
+        $overlap = $overlapStmt->get_result()->fetch_assoc();
+        $overlapStmt->close();
+        if ($overlap) {
+            http_response_code(409);
+            echo json_encode(['success' => false, 'message' => 'Izvēlētie datumi nav pieejami.']);
+            exit();
+        }
+    }
+}
+
 $piedavata_summa = isset($data['piedavata_summa']) && $data['piedavata_summa'] !== '' ? (float)$data['piedavata_summa'] : null;
 $finansesanas_veids = isset($data['finansesanas_veids']) && $data['finansesanas_veids'] !== '' ? trim((string)$data['finansesanas_veids']) : null;
 

@@ -479,8 +479,24 @@ h2 { margin: 0 0 6px; color: var(--primary-color); }
 @media (max-width: 1100px) {
     .content-grid { flex-direction: column; }
 }
-@media (max-width: 768px) {
-    .sidebar { display: none; }
+.admin-burger { display: none; }
+.admin-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 1000;
+}
+@media (max-width: 769px) {
+    .admin-burger { display: flex; }
+    .sidebar {
+        transform: translateX(-110%);
+        transition: transform 0.25s ease;
+        z-index: 1001;
+    }
+    body.admin-sidebar-open .sidebar { transform: translateX(0); }
+    body.admin-sidebar-open .admin-sidebar-overlay { display: block; }
+    body.admin-sidebar-open { overflow: hidden; }
     .main-content { margin-left: 0; padding: 16px; }
     .stats-grid, .stats-row { flex-direction: column; }
     .quick-actions { flex-wrap: wrap; }

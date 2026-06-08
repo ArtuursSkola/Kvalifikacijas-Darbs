@@ -790,6 +790,25 @@ ul {
     box-shadow: 0 6px 20px rgba(48, 182, 7, 0.35);
 }
 
+.btn-admin-panel {
+    margin-right: 12px;
+    background: #1d2733;
+    color: #fff;
+    border: none;
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.profile-dropdown__admin-link { display: none; }
+
+@media (max-width: 480px) {
+    .btn-admin-panel { display: none; }
+    .profile-dropdown__admin-link { display: flex; }
+}
+
 .hamburger {
     display: none;
     color: var(--primary);

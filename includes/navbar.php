@@ -82,7 +82,7 @@ $abonementsActive = $abonementsStatus !== 'Neaktivs';
     <div class="auth-buttons">
         <?php if ($currentUser): ?>
             <?php if (in_array(($currentUser['loma'] ?? ''), ['admin', 'moderator'], true)): ?>
-                <a href="<?php echo admin_route('dashboard'); ?>" class="btn-admin-panel" style="margin-right: 12px; background: #1d2733; color: #fff; border: none; font-size: 0.9rem; padding: 10px 16px;">Admin panelis</a>
+                <a href="<?php echo admin_route('dashboard'); ?>" class="btn-admin-panel">Admin panelis</a>
             <?php endif; ?>
             <details class="profile-menu">
                 <summary
@@ -160,6 +160,12 @@ $abonementsActive = $abonementsStatus !== 'Neaktivs';
                         </a>
                     </div>
 
+                    <?php if (in_array(($currentUser['loma'] ?? ''), ['admin', 'moderator'], true)): ?>
+                        <a class="profile-dropdown__link profile-dropdown__admin-link" href="<?php echo admin_route('dashboard'); ?>">
+                            <i class="fas fa-toolbox"></i>
+                            Admin panelis
+                        </a>
+                    <?php endif; ?>
                     <a class="profile-dropdown__link" href="#settings-modal">
                         <i class="fas fa-user-cog"></i>
                         Iestatījumi

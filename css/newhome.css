@@ -268,7 +268,7 @@
 .rent-only.hidden,
 .buy-only.hidden,
 .short-rent-only.hidden,
-.short-rent-only.hidden {
+.apartment-only.hidden {
     display: none;
 }
 

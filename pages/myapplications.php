@@ -94,6 +94,7 @@ include __DIR__ . '/../includes/header.php';
                          data-app-email="<?php echo htmlspecialchars((string)($app['epasts'] ?? '')); ?>"
                          data-app-phone="<?php echo htmlspecialchars((string)($app['telefons'] ?? '')); ?>"
                          data-app-comment="<?php echo htmlspecialchars((string)($app['komentars'] ?? '')); ?>"
+                         data-app-home-id="<?php echo (int)($app['sludinajuma_id'] ?? 0); ?>"
                          data-app-veids="<?php echo htmlspecialchars((string)($app['sludinajuma_veids'] ?? '')); ?>"
                          data-app-ires-menesi="<?php echo htmlspecialchars((string)($app['ires_menesi'] ?? '')); ?>"
                          data-app-nav-zinams="<?php echo htmlspecialchars((string)($app['nav_zinams'] ?? '')); ?>"
@@ -482,6 +483,8 @@ function editApplication(id) {
         return;
     }
 
+    window.currentEditHomeId = parseInt(appCard.getAttribute('data-app-home-id') || '0', 10) || 0;
+
     document.getElementById('modalTitle').textContent = 'Rediģēt pieteikumu';
     document.getElementById('editId').value = id;
     document.getElementById('editType').value = 'application';
@@ -710,7 +713,52 @@ function deleteHelpMessage(id) {
     }
 }
 
-document.getElementById('editForm').addEventListener('submit', function(e) {
+async function fetchAvailabilityRanges(homeId, fromDateStr, toDateStr) {
+    const start = new Date(fromDateStr + 'T00:00:00');
+    const end = new Date(toDateStr + 'T00:00:00');
+    const months = [];
+    let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+    const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+    while (cur <= endMonth) {
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        months.push(`${y}-${m}`);
+        cur = new Date(y, cur.getMonth() + 1, 1);
+    }
+
+    const all = [];
+    for (const month of months) {
+        const url = `<?php echo asset_path("api/get_homes.php"); ?>?action=availability&home_id=${encodeURIComponent(homeId)}&month=${encodeURIComponent(month)}`;
+        const res = await fetch(url, { method: 'GET' });
+        const json = await res.json();
+        if (json && json.ok && Array.isArray(json.ranges)) {
+            json.ranges.forEach(r => all.push(r));
+        }
+    }
+    return all;
+}
+
+function datesOverlap(aStart, aEnd, bStart, bEnd) {
+    return aStart < bEnd && aEnd > bStart;
+}
+
+async function isShortRentSelectionAvailable(homeId, startValue, endValue) {
+    const startDate = (startValue || '').split('T')[0];
+    const endDate = (endValue || '').split('T')[0];
+    if (!startDate || !endDate) return true;
+    const ranges = await fetchAvailabilityRanges(homeId, startDate, endDate);
+    for (const r of ranges) {
+        const rStart = String(r.from || '').substring(0, 10);
+        const rEnd = String(r.to || '').substring(0, 10);
+        if (!rStart || !rEnd) continue;
+        if (datesOverlap(rStart, rEnd, startDate, endDate)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+document.getElementById('editForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const id = document.getElementById('editId').value;
@@ -736,6 +784,19 @@ document.getElementById('editForm').addEventListener('submit', function(e) {
         if (sakumaDatumsEl && !sakumaDatumsEl.disabled) {
             data.sakuma_datums = sakumaDatumsEl.value;
             data.beigu_datums = document.getElementById('editBeiguDatums').value;
+
+            const homeId = parseInt(window.currentEditHomeId || '0', 10) || 0;
+            if (homeId > 0) {
+                try {
+                    const available = await isShortRentSelectionAvailable(homeId, data.sakuma_datums, data.beigu_datums);
+                    if (!available) {
+                        showPageAlert('Izvēlētie datumi nav pieejami.', 'error');
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Availability check failed:', err);
+                }
+            }
 
             var pirtsEl = document.getElementById('editPirtsDienas');
             var ballaEl = document.getElementById('editBallaDienas');

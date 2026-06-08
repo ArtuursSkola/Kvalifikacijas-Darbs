@@ -122,6 +122,39 @@ document.addEventListener('DOMContentLoaded', () => {
             link.addEventListener('click', closeMobileMenu);
         });
     }
+
+    const adminSidebar = document.querySelector('.sidebar');
+    const adminBurger = document.querySelector('.admin-burger');
+    if (adminSidebar && adminBurger) {
+        let overlay = document.querySelector('.admin-sidebar-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'admin-sidebar-overlay';
+            document.body.appendChild(overlay);
+        }
+
+        const closeAdminSidebar = () => {
+            document.body.classList.remove('admin-sidebar-open');
+        };
+        const toggleAdminSidebar = () => {
+            document.body.classList.toggle('admin-sidebar-open');
+        };
+
+        adminBurger.addEventListener('click', toggleAdminSidebar);
+        overlay.addEventListener('click', closeAdminSidebar);
+
+        adminSidebar.querySelectorAll('a').forEach(a => {
+            a.addEventListener('click', closeAdminSidebar);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAdminSidebar();
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 769) closeAdminSidebar();
+        });
+    }
     const authArea = document.querySelector('.auth-buttons');
     if (authArea && !authArea.querySelector('.profile-menu')) {
         const greeting = authArea.querySelector('span');
@@ -1191,7 +1224,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const cat = propertyCategory.value;
             const isApt = cat === 'dzivoklis';
             const isHouse = cat === 'maja';
-            aptBlocks.forEach(block => block.classList.toggle('hidden', !isApt));
+            aptBlocks.forEach(block => {
+                block.classList.toggle('hidden', !isApt);
+                const inp = block.querySelector('input, select, textarea');
+                if (inp) inp.disabled = !isApt;
+            });
             if (isHouse) {
                 floorTotalLabel.textContent = 'Stāvu skaits mājā';
             } else if (isApt) {
@@ -1682,7 +1719,6 @@ if (document.getElementById('replyOverlay')) {
         if (e.target === this) closeReplyModal();
     });
 }
-
 
 
 

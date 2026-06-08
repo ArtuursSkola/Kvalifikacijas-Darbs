@@ -167,6 +167,7 @@ while ($row = $activeData->fetch_assoc()) {
         <div class="page-header">
             <h1><i class="fas fa-shopping-cart"></i> Abonementu panelis</h1>
             <div class="header-actions">
+                <button type="button" class="btn-icon admin-burger" aria-label="Atvērt navigāciju"><i class="fas fa-bars"></i></button>
             </div>
         </div>
         
@@ -334,5 +335,6 @@ while ($row = $activeData->fetch_assoc()) {
             initChart();
         });
     </script>
+    <script src="../script.js"></script>
 </body>
 </html>
